@@ -1,0 +1,17 @@
+{
+  "name": "satpath",
+  "version": "1.0.0",
+  "description": "SAT Path - SAT preparation platform",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "dev": "npm run build && npx serve .",
+    "lint": "echo 'No linter configured yet'"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^1.4.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
