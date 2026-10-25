@@ -1079,6 +1079,190 @@ aside{height:100vh;height:100dvh}
   text-align: center;
 }
 
+
+/* === AI Admissions Chance & Portfolio Evaluator === */
+#vAI { max-width: 1100px !important; margin: 0 auto; animation: fade .35s; }
+.ai-hero {
+  background: linear-gradient(135deg, var(--panel) 0%, var(--panel2) 100%);
+  border: 1.5px solid var(--line);
+  border-radius: 28px;
+  padding: 26px 28px;
+  box-shadow: 0 12px 28px -10px rgba(0,0,0,0.2), 0 4px 0 var(--line);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.ai-badge-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.ai-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--mut);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ai-badge.gold {
+  background: var(--sand-bg);
+  border-color: var(--sand-line);
+  color: var(--sand);
+}
+.ai-grid-layout {
+  display: grid;
+  grid-template-columns: 1.12fr 0.88fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 920px) {
+  .ai-grid-layout { grid-template-columns: 1fr; }
+}
+.ai-sec-card {
+  background: var(--panel);
+  border: 1.5px solid var(--line);
+  border-radius: 24px;
+  padding: 22px 24px;
+  box-shadow: 0 8px 24px -10px rgba(0,0,0,0.12), 0 3px 0 var(--line);
+  margin-bottom: 20px;
+}
+.ai-sec-title {
+  font-size: 17px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--tx);
+}
+.ai-field-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tx);
+  margin-bottom: 6px;
+}
+.ai-field-label small {
+  font-size: 11.5px;
+  color: var(--mut);
+  font-weight: 500;
+}
+.ai-input, .ai-select, .ai-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--panel2);
+  color: var(--tx);
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color .18s;
+  font-family: inherit;
+}
+.ai-input:focus, .ai-select:focus, .ai-textarea:focus {
+  border-color: var(--acc);
+}
+.ai-tier-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+.ai-tier-btn {
+  padding: 8px 6px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--panel2);
+  color: var(--mut);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  transition: .18s;
+  cursor: pointer;
+}
+.ai-tier-btn:hover { border-color: var(--acc); color: var(--tx); }
+.ai-tier-btn.selected {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: #fff;
+  box-shadow: 0 2px 0 var(--acc2);
+}
+.ai-score-card {
+  background: linear-gradient(145deg, var(--panel) 0%, var(--panel2) 100%);
+  border: 2px solid var(--sand-line);
+  border-radius: 28px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 12px 30px -10px rgba(0,0,0,0.22);
+}
+.ai-score-circle {
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  border: 6px solid var(--sand);
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 14px auto 10px;
+  box-shadow: 0 4px 18px rgba(229,154,22,0.32);
+}
+.ai-score-num {
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--sand);
+  line-height: 1;
+}
+.ai-score-max {
+  font-size: 11px;
+  color: var(--mut);
+  font-weight: 700;
+}
+.uni-pill-tab {
+  padding: 7px 14px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--mut);
+  cursor: pointer;
+  transition: .18s;
+  border: 1.5px solid var(--line);
+  background: var(--panel);
+}
+.uni-pill-tab.on {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: #fff;
+  box-shadow: 0 2px 0 var(--acc2);
+}
+.uni-match-card {
+  background: var(--panel);
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  padding: 15px 18px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  transition: transform .18s, border-color .18s, box-shadow .18s;
+}
+.uni-match-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--acc);
+  box-shadow: 0 8px 20px -8px rgba(0,0,0,0.18);
+}
+.uni-badge-reach { background: rgba(231,76,60,0.15); color: #e74c3c; border: 1px solid rgba(231,76,60,0.35); font-weight: 800; font-size: 11px; padding: 3px 9px; border-radius: 99px; }
+.uni-badge-target { background: rgba(245,184,46,0.18); color: var(--sand); border: 1px solid var(--sand-line); font-weight: 800; font-size: 11px; padding: 3px 9px; border-radius: 99px; }
+.uni-badge-safety { background: rgba(34,163,129,0.18); color: var(--acc); border: 1px solid var(--acc); font-weight: 800; font-size: 11px; padding: 3px 9px; border-radius: 99px; }
+.pillar-row { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.pillar-row:last-child { border-bottom: 0; }
+.pillar-bar { width: 100px; height: 6px; border-radius: 99px; background: var(--cell); overflow: hidden; margin-left: auto; margin-right: 10px; }
+.pillar-bar div { height: 100%; border-radius: 99px; background: var(--acc); }
 </style>
 <script src="https://www.desmos.com/api/v1.9/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
 </head><body>
@@ -1098,6 +1282,7 @@ aside{height:100vh;height:100dvh}
  <div class="grp">SAT</div>
 <button class="nav" id="nvPT"><i><img class="ic" src="ff.png" alt=""></i>Mock Exams</button>
  <button class="nav" id="nvSC"><i><img class="ic" src="fast.png" alt=""></i>Score Calculator</button>
+ <button class="nav" id="nvAI"><i><img class="ic" src="compas.png" alt=""></i>AI Admissions <span class="tag n">AI</span></button>
  <div class="sp"></div>
  <div class="user" id="sidebarUserBox" style="cursor:pointer;padding:10px 8px;border-radius:12px;transition:.2s" title="Edit Explorer Profile"><div class="av" id="sideAv">E</div><div style="flex:1;min-width:0"><b id="sideName" style="display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Explorer</b><small id="sideTitle" style="color:var(--sand);font-size:11px;font-weight:700;display:block">Island Scout · Edit ✎</small></div></div>
  <div style="display:flex;gap:8px;padding:4px 8px 0"><button class="so" id="btnEditProfile" style="padding:4px 0;color:var(--acc);font-weight:700">✎ Edit Profile</button><span style="color:var(--line)">·</span><button class="so" style="padding:4px 0">Sign Out</button></div>
@@ -1109,7 +1294,6 @@ aside{height:100vh;height:100dvh}
    <span id="topLocLabel">Base Camp · Archipelago</span>
   </div>
   <div class="hud-bar">
-   <button class="hud-pill" id="hudEnergyBtn" title="Explorer Energy"><img class="ui-ic" src="energy.png" alt=""> <span id="hudEnergy">5/5</span> <small id="hudEnergyTimer" style="opacity:.75;font-size:10.5px;margin-left:2px"></small></button>
    <button class="hud-pill coin" id="hudCoinBtn" title="Pathcoins"><img class="ui-ic" src="logo.png" alt=""> <span id="hudCoins">100</span> PC</button>
    <button class="hud-pill shop-btn" id="hudShopBtn" title="Open Outpost Supply Shop"><img class="ui-ic" src="camp.png" alt=""> Shop</button>
    <button class="tbtn" id="th" aria-label="Theme">◐</button>
@@ -1120,7 +1304,8 @@ aside{height:100vh;height:100dvh}
 <div class="qbk" id="vLB" hidden style="max-width:960px"></div>
 <div class="qbk" id="vPT" hidden style="max-width:960px"></div>
 <div class="qbk" id="vBZ" hidden style="max-width:960px"></div>
- <div class="qbk" id="vSC" hidden style="max-width:960px">
+  <div class="qbk" id="vAI" hidden style="max-width:1100px"></div>
+<div class="qbk" id="vSC" hidden style="max-width:960px">
   <h1>Score Calculator</h1>
   <p class="sub">Set how many you got right in each module — the 200–800 sections, the 400–1600 total, and the range they honestly land in.</p>
   <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:20px;margin-top:24px">
@@ -7355,7 +7540,7 @@ const svgTrapPrism = (lblB1, lblB2, lblH, lblL) => gSvg(250, 175, `<polygon poin
       () => { const m=R(4,16); const xPos = Math.sqrt(m); // x^3 = mx -> x(x^2 - m) = 0 -> x = sqrt(m)
         return grid(`<i>y</i> = <i>x</i>³<br><i>y</i> = ${m}<i>x</i><br><br>For how many positive values of <i>x</i> do the graphs of the equations above intersect in the <i>xy</i>-plane?`, 1); }, // x=0 is origin, x=sqrt(m) is 1 positive
       // 19. Окружность смещенная от центра: (x-h)^2 + y^2 = r^2 пересечение с осью y
-      () => { const c=R(2,4), a=c*R(1,4), b=c*R(1,5); return grid(`If <i>x</i> > 0, the expression <f>${a}<i>x</i>² + ${b}<i>x</i>/${c}<i>x</i></f> is equivalent to <i>px</i> + <i>q</i>. What is the value of <i>p</i>?`, a/c); },
+      () => { const [a,b,c]=getEl(TR); return grid(`In the <i>xy</i>-plane, the circle (<i>x</i> - ${a})² + <i>y</i>² = ${c*c} intersects the <i>y</i>-axis at two points. What is the positive <i>y</i>-coordinate of these intersection points?`, b); },
       // 20. Найти расстояние между двумя точками пересечения прямой и окружности
       () => { const r=R(5,10); // x^2 + y^2 = r^2 and y = 0 -> intersects at (-r,0) and (r,0), distance = 2r
         return grid(`The circle <i>x</i>² + <i>y</i>² = ${r*r} is intersected by the line <i>y</i> = 0 at two points. What is the distance between these two points of intersection?`, 2*r); },
@@ -7819,7 +8004,7 @@ const svgTrapPrism = (lblB1, lblB2, lblH, lblL) => gSvg(250, 175, `<polygon poin
         return grid(`The number <i>A</i> is ${inc}% greater than the positive number <i>B</i>. The number <i>B</i> is what percent less than <i>A</i>?`, dec);
       },
       // 10. Последовательное повышение на p% и снижение на p%: на сколько процентов изменилась величина?
-      () => { const [a,b,c]=getEl(TR); return grid(`A circle in the <i>xy</i>-plane has the equation <i>x</i>² + <i>y</i>² = ${c*c}. The horizontal line <i>y</i> = ${a} intersects the circle at two points. What is the <i>x</i>-coordinate of the point with the positive <i>x</i>-coordinate?`, b); },
+      () => { const p = getEl([10, 20, 30, 40, 50]); const netLoss = (p * p) / 100; return grid(`The price of a stock increased by ${p}% in May and then decreased by ${p}% in June. The price at the end of June was <i>k</i>% less than the original price at the beginning of May. What is the value of <i>k</i>?`, netLoss); },
       // 11. Изменение площади прямоугольника при изменении длины и ширины в процентах
       () => {
         const incL = getEl([10, 20, 30, 40, 50]), decW = getEl([10, 20, 30]);
@@ -7888,7 +8073,7 @@ const svgTrapPrism = (lblB1, lblB2, lblH, lblL) => gSvg(250, 175, `<polygon poin
         return grid(`${tbl}The table above summarizes the results of a survey of 100 high school students. What percent of the <b>Seniors</b> surveyed agreed with the statement?`, pct);
       },
       // 19. Зарплата с базовой ставкой и комиссией в процентах от продаж
-      () => { const [a,b,c]=getEl(TR); return grid(`In the <i>xy</i>-plane, the circle (<i>x</i> - ${a})² + <i>y</i>² = ${c*c} intersects the <i>y</i>-axis at two points. What is the positive <i>y</i>-coordinate of these intersection points?`, b); },
+      () => { const base = R(4, 9) * 100, comm = getEl([5, 8, 10, 12]), sales = R(2, 8) * 1000; const totalPay = base + (sales * comm) / 100; return grid(`A salesperson earns a weekly base salary of $${base} plus a ${comm}% commission on all sales made during the week. If the salesperson made $${sales} in sales this week, what was their total weekly pay, in dollars?`, totalPay); },
       // 20. Изменение дроби: числитель вырос на p%, знаменатель уменьшился на q%
       () => {
         // e.g. x increases by 20% (1.2x), y decreases by 20% (0.8y) -> 1.2/0.8 = 1.5 -> +50%
@@ -8606,7 +8791,7 @@ const svgTrapPrism = (lblB1, lblB2, lblH, lblL) => gSvg(250, 175, `<polygon poin
       () => {
         const n = getEl([20, 25, 40, 50]), div = getEl([3, 4, 6, 7]);
         const count = Math.floor(n / div);
-        return grid(`An integer is chosen at random from the integers 1 to ${n}, inclusive. How many of these integers are multiples of ${div}, if you are calculating the numerator of the probability of selecting a multiple of ${div}?`, (n / 5) / n);
+        return grid(`An integer is chosen at random from the integers 1 to ${n}, inclusive. What is the probability (expressed as a decimal) that the chosen integer is a multiple of ${div}?`, count / n);
       },
       // 22. Вероятность кратности A ИЛИ B на диапазоне 1..20
       () => {
@@ -9270,7 +9455,7 @@ const svgTrapPrism = (lblB1, lblB2, lblH, lblL) => gSvg(250, 175, `<polygon poin
       // 7. Cube surface area with SVG figure
       () => { const s=R(6,28); const fig = svgBox(`${s}`, `${s}`, `${s}`, false); return grid(`${fig}What is the total exterior surface area of a closed cube with edge length ${s}?`, 6*s*s); },
       // 8. Square pyramid volume from slant height and base side with SVG figure
-      () => { const triples = [[6, 4, 5], [12, 8, 10], [18, 12, 15], [12, 5, 13], [24, 16, 20], [30, 12, 39/2*0+13]]; const [s, h, slant] = getEl([[6, 4, 5], [12, 8, 10], [18, 12, 15], [12, 5, 13], [24, 16, 20], [24, 10, 26]]); const fig = svgPyramid(`s = ${s}`, `h`, `l = ${slant}`); return grid(`${fig}A right square pyramid has a square base with side length ${s} meters and a slant height of ${slant} meters, as shown. What is the volume, in cubic meters, of the pyramid?`, (s*s*h)/3); },
+      () => { const [s, h, slant] = getEl([[6, 4, 5], [12, 8, 10], [18, 12, 15], [12, 5, 13], [24, 16, 20], [24, 10, 26]]); const fig = svgPyramid(`s = ${s}`, `h`, `l = ${slant}`); return grid(`${fig}A right square pyramid has a square base with side length ${s} meters and a slant height of ${slant} meters, as shown. What is the volume, in cubic meters, of the pyramid?`, (s*s*h)/3); },
       // 9. SVG-чертеж: круг, вписанный в квадрат — найти площадь закрашенной области (r^2(4 - pi))
       () => {
         const r = R(3, 10), s = 2 * r;
@@ -9366,7 +9551,6 @@ const svgTrapPrism = (lblB1, lblB2, lblH, lblL) => gSvg(250, 175, `<polygon poin
       // 22. Пространственная диагональ куба или параллелепипеда (3D Space Diagonal = sqrt(l^2 + w^2 + h^2))
       () => {
         // 3D Pythagorean quadruples: (3, 4, 12 -> 13), (2, 3, 6 -> 7), (4, 6, 12 -> 14), (6, 8, 24 -> 26), (1, 4, 8 -> 9)
-        const quads = [[3, 4, 12, 13], [2, 3, 6, 7], [4, 6, 12, 14], [6, 8, 24, 26], [3, 12, 16, 20.2]];
         const [l, w, h, d] = getEl([[3, 4, 12, 13], [2, 3, 6, 7], [4, 6, 12, 14], [6, 8, 24, 26]]);
         return grid(`What is the length, in inches, of the longest straight rod that can fit completely inside a rectangular box with interior dimensions ${l} inches by ${w} inches by ${h} inches?`, d);
       },
@@ -9445,7 +9629,7 @@ const svgTrapPrism = (lblB1, lblB2, lblH, lblL) => gSvg(250, 175, `<polygon poin
       () => { // Frustum of a pyramid or cone (Big cone minus small top cone using similarity 1:2 -> V_frustum = (7/8)*V_big)
         const rBig=R(2,5)*2, hBig=R(2,5)*6; // rSmall = rBig/2, hSmall = hBig/2 -> V_big = (1/3)*pi*rBig^2*hBig, V_small = V_big / 8 -> frustum = (7/8)*V_big
         const vBigK = (rBig*rBig*hBig)/3, frustumK = (7 * vBigK) / 8;
-        return grid(`A right circular cone with base radius ${rBig} cm and height ${hBig} cm is sliced parallel to its base exatamente halfway up its height (at ${hBig/2} cm), removing a smaller top cone of radius ${rBig/2} cm and height ${hBig/2} cm. The volume of the remaining bottom frustum is <i>k</i>π cubic centimeters. What is the value of <i>k</i>?`, frustumK); },
+        return grid(`A right circular cone with base radius ${rBig} cm and height ${hBig} cm is sliced parallel to its base exactly halfway up its height (at ${hBig/2} cm), removing a smaller top cone of radius ${rBig/2} cm and height ${hBig/2} cm. The volume of the remaining bottom frustum is <i>k</i>π cubic centimeters. What is the value of <i>k</i>?`, frustumK); },
       () => { // Sector rolled into a cone: sector of radius L and angle theta -> cone slant height = L, base circumference 2*pi*r = (theta/360)*2*pi*L -> r = L*(theta/360)
         const [r, h, l] = getEl([[3,4,5],[6,8,10],[9,12,15]]); const deg = (r / l) * 360; const fig = svgCircleSector(`R = ${l}`, `${deg}°`);
         return grid(`${fig}The shaded circular sector shown above has a radius of ${l} centimeters and a central angle of ${deg}°. When the two straight radial edges of the sector are joined together without overlap to form the lateral surface of a right circular cone (with slant height ${l} cm), what is the radius, in centimeters, of the circular base of the resulting cone?`, r); },
@@ -10378,7 +10562,7 @@ var SAT_VOCAB_DICT = {
   "eclectic": { d: "Deriving ideas, style, or taste from a broad and diverse range of sources.", ru: "эклектичный, разнородный, сочетающий разные стили" },
   "didactic": { d: "Intended to teach, particularly in having moral instruction as an ulterior motive.", ru: "дидактический, поучительный, назидательный" },
   "decipher": { d: "To succeed in understanding, interpreting, or translating a coded or obscure text.", ru: "расшифровывать, разгадывать" },
-  "divergence": { d: "Adifference in opinions, interests, or developmental paths.", ru: "расхождение, различие во взглядах" },
+  "divergence": { d: "A difference in opinions, interests, or developmental paths.", ru: "расхождение, различие во взглядах" },
   "mitigate": { d: "To make less severe, serious, or painful.", ru: "смягчать, ослаблять, уменьшать (вред)" },
   "integral": { d: "Necessary to make a whole complete; essential or fundamental.", ru: "неотъемлемый, существенно важный" },
   "peripheral": { d: "Of secondary or minor importance; marginal.", ru: "периферийный, второстепенный" },
@@ -10741,60 +10925,29 @@ function addCoins(amount, reason) {
 }
 
 function addFreeEnergy(amount, reason) {
-  var e = getEcon();
-  var before = e.energy;
-  e.energy = Math.min(e.maxEnergy, e.energy + amount);
-  if (e.energy >= e.maxEnergy) e.lastEnergyTs = Date.now();
-  saveEcon(e);
-  if (reason && e.energy > before) toast(IC_ENERGY_HTML + ' +' + (e.energy - before) + ' Energy · ' + reason);
+  return;
 }
 
 function spendEnergy(cost) {
-  cost = cost || 1;
-  var e = getEcon();
-  if (e.energy < cost) {
-    var waitStr = formatRegenTime(getNextEnergyLeftMs());
-    toast(IC_ENERGY_HTML + ' Need ' + cost + ' Energy! Next +1 in ' + (waitStr || 'soon') + ' or visit Shop');
-    openSupplyShop();
-    return false;
-  }
-  if (e.energy >= e.maxEnergy) {
-    e.lastEnergyTs = Date.now();
-  }
-  e.energy = Math.max(0, e.energy - cost);
-  saveEcon(e);
   return true;
 }
 
 function miniHudHtml() {
   var e = getEcon();
-  var waitStr = e.energy < e.maxEnergy ? ' (+1 in ' + formatRegenTime(getNextEnergyLeftMs()) + ')' : '';
-  return '<button type="button" class="hud-pill" onclick="openSupplyShop()" title="Explorer Energy' + waitStr + '" style="padding:4px 10px;font-size:12px">' +
-    IC_ENERGY_HTML + ' <span class="q-hud-energy">' + e.energy + '/' + e.maxEnergy + '</span></button>' +
-    '<button type="button" class="hud-pill coin" onclick="openSupplyShop()" title="Pathcoins" style="padding:4px 10px;font-size:12px">' +
+  return '<button type="button" class="hud-pill coin" onclick="openSupplyShop()" title="Pathcoins" style="padding:4px 10px;font-size:12px">' +
     IC_COIN_HTML + ' <span class="q-hud-coins">' + e.coins.toLocaleString() + '</span> PC</button>';
 }
 
 function paintHud() {
   var e = getEcon();
   var cEl = document.getElementById('hudCoins');
-  var eEl = document.getElementById('hudEnergy');
-  var tEl = document.getElementById('hudEnergyTimer');
   var crEl = document.getElementById('dashCrest');
   if (cEl) cEl.textContent = e.coins.toLocaleString();
-  if (eEl) eEl.textContent = e.energy + '/' + e.maxEnergy;
-  if (tEl) {
-    tEl.textContent = e.energy < e.maxEnergy ? ('+1 in ' + formatRegenTime(getNextEnergyLeftMs())) : '';
-  }
   if (crEl) crEl.hidden = !e.crest;
   document.querySelectorAll('.q-hud-coins').forEach(function(el) {
     el.textContent = e.coins.toLocaleString();
   });
-  document.querySelectorAll('.q-hud-energy').forEach(function(el) {
-    el.textContent = e.energy + '/' + e.maxEnergy;
-  });
 }
-setInterval(paintHud, 30000);
 
 /* ===== EXPLORER PROFILE, AVATARS, SKINS & COSMETIC SHOP ===== */
 var AVATAR_ITEMS = [
@@ -10986,22 +11139,15 @@ function openSupplyShop() {
     var p = getProfile();
     var today = new Date().toISOString().slice(0, 10);
     var rationClaimed = (cur.dailyRationDate === today);
-    var waitStr = cur.energy < cur.maxEnergy ? ('Next free +1 ' + IC_ENERGY_HTML + ' in <b>' + formatRegenTime(getNextEnergyLeftMs()) + '</b>') : ('Energy is full (' + cur.energy + '/' + cur.maxEnergy + ')');
 
     var bodyHtml = '';
     if (shopTab === 'gear') {
       bodyHtml = '<div style="display:grid;gap:12px">' +
         '<div class="card" style="padding:15px 18px;border-radius:20px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-color:var(--acc)">' +
-        '<div><b style="font-size:15px;display:flex;align-items:center;gap:6px">' + IC_CAMP_HTML + ' Daily Base Camp Ration (+2 ' + IC_ENERGY_HTML + ')</b><div class="sub" style="font-size:12px;margin-top:2px">Free daily supply drop for explorers. Resets every day at midnight.</div></div>' +
-        '<button class="cta" data-buy="daily_ration" ' + (rationClaimed || cur.energy >= cur.maxEnergy ? 'disabled style="opacity:.5;padding:9px 15px;font-size:12.5px;border-radius:12px;white-space:nowrap"' : 'style="padding:9px 15px;font-size:12.5px;border-radius:12px;white-space:nowrap"') + '>' + (rationClaimed ? 'Claimed Today ✓' : (cur.energy >= cur.maxEnergy ? 'Energy Full' : 'Claim Free +2')) + '</button></div>' +
+        '<div><b style="font-size:15px;display:flex;align-items:center;gap:6px">' + IC_CAMP_HTML + ' Daily Base Camp Chest (+25 ' + IC_COIN_HTML + ')</b><div class="sub" style="font-size:12px;margin-top:2px">Free daily Pathcoin supply drop for explorers. Resets every day at midnight.</div></div>' +
+        '<button class="cta" data-buy="daily_ration" ' + (rationClaimed ? 'disabled style="opacity:.5;padding:9px 15px;font-size:12.5px;border-radius:12px;white-space:nowrap"' : 'style="padding:9px 15px;font-size:12.5px;border-radius:12px;white-space:nowrap"') + '>' + (rationClaimed ? 'Claimed Today ✓' : 'Claim Free +25 PC') + '</button></div>' +
         '<div class="card" style="padding:15px 18px;border-radius:20px;display:flex;justify-content:space-between;align-items:center;gap:12px">' +
-        '<div><b style="font-size:15px;display:flex;align-items:center;gap:6px">' + IC_ENERGY_HTML + ' Emergency Energy Pack (+2 ' + IC_ENERGY_HTML + ')</b><div class="sub" style="font-size:12px;margin-top:2px">Instant +2 energy refill when you don&apos;t want to wait. (Current: ' + cur.energy + '/' + cur.maxEnergy + ')</div></div>' +
-        '<button class="cta-amber" data-buy="energy" ' + (cur.energy >= cur.maxEnergy ? 'disabled style="opacity:.5;padding:9px 15px;font-size:12.5px;white-space:nowrap"' : 'style="padding:9px 15px;font-size:12.5px;white-space:nowrap"') + '>' + (cur.energy >= cur.maxEnergy ? 'Full ✓' : IC_COIN_HTML + ' 180 PC') + '</button></div>' +
-        '<div class="card" style="padding:15px 18px;border-radius:20px;display:flex;justify-content:space-between;align-items:center;gap:12px">' +
-        '<div><b style="font-size:15px;display:flex;align-items:center;gap:6px">' + IC_ENERGY_HTML + ' Stamina Canteen Upgrade (+1 Max ' + IC_ENERGY_HTML + ')</b><div class="sub" style="font-size:12px;margin-top:2px">Permanently increases your maximum Energy capacity from ' + cur.maxEnergy + ' to ' + Math.min(8, cur.maxEnergy + 1) + ' (Max 8).</div></div>' +
-        '<button class="cta-amber" data-buy="max_energy" ' + (cur.maxEnergy >= 8 ? 'disabled style="opacity:.5;padding:9px 15px;font-size:12.5px;white-space:nowrap"' : 'style="padding:9px 15px;font-size:12.5px;white-space:nowrap"') + '>' + (cur.maxEnergy >= 8 ? 'Maxed (8/8) ✓' : IC_COIN_HTML + ' 600 PC') + '</button></div>' +
-        '<div class="card" style="padding:15px 18px;border-radius:20px;display:flex;justify-content:space-between;align-items:center;gap:12px">' +
-        '<div><b style="font-size:15px;display:flex;align-items:center;gap:6px">' + IC_COMPAS_HTML + ' Amber Compass Boost (1.5× PC) ' + (cur.compass ? '<span class="tag n" style="margin-left:6px">ACTIVE</span>' : '') + '</b><div class="sub" style="font-size:12px;margin-top:2px">Permanently boosts Pathcoin rewards from first-time Island clears &amp; Stars by 50%.</div></div>' +
+        '<div><b style="font-size:15px;display:flex;align-items:center;gap:6px">' + IC_COMPAS_HTML + ' Amber Compass Boost (1.5× PC) ' + (cur.compass ? '<span class="tag n" style="margin-left:6px">ACTIVE</span>' : '') + '</b><div class="sub" style="font-size:12px;margin-top:2px">Permanently boosts Pathcoin rewards from Island clears, drills &amp; Stars by 50%.</div></div>' +
         '<button class="cta-amber" data-buy="compass" ' + (cur.compass ? 'disabled style="opacity:.5;padding:9px 15px;font-size:12.5px"' : 'style="padding:9px 15px;font-size:12.5px;white-space:nowrap"') + '>' + (cur.compass ? 'Active ✓' : IC_COIN_HTML + ' 900 PC') + '</button></div>' +
         '<div class="card" style="padding:15px 18px;border-radius:20px;display:flex;justify-content:space-between;align-items:center;gap:12px">' +
         '<div><b style="font-size:15px;display:flex;align-items:center;gap:6px">' + IC_LORD_HTML + ' Navigator&apos;s Golden Crest ' + (cur.crest ? '<span class="tag n" style="margin-left:6px">UNLOCKED</span>' : '') + '</b><div class="sub" style="font-size:12px;margin-top:2px">Prestigious emblem displaying the royal navigator crown at Base Camp.</div></div>' +
@@ -11046,10 +11192,9 @@ function openSupplyShop() {
       '</div>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:14px 0;flex-wrap:wrap">' +
       '<div class="island-pills">' +
-      '<button class="island-pill' + (shopTab === 'gear' ? ' on' : '') + '" data-shtab="gear">' + IC_ENERGY_HTML + ' Supplies &amp; Boosts</button>' +
+      '<button class="island-pill' + (shopTab === 'gear' ? ' on' : '') + '" data-shtab="gear">' + IC_COMPAS_HTML + ' Boosts &amp; Relics</button>' +
       '<button class="island-pill sand' + (shopTab === 'cosmetics' ? ' on' : '') + '" data-shtab="cosmetics">🎨 Skins, Avatars &amp; Titles</button>' +
       '</div>' +
-      '<small style="color:var(--sand);font-weight:700">' + waitStr + '</small>' +
       '</div>' +
       bodyHtml + '</div>';
 
@@ -11100,25 +11245,9 @@ function openSupplyShop() {
         var todayStr = new Date().toISOString().slice(0, 10);
         if (k === 'daily_ration') {
           if (st.dailyRationDate === todayStr) return toast('Already claimed today!');
-          if (st.energy >= st.maxEnergy) return toast('Your energy is already full!');
           st.dailyRationDate = todayStr;
-          st.energy = Math.min(st.maxEnergy, st.energy + 2);
-          if (st.energy >= st.maxEnergy) st.lastEnergyTs = Date.now();
-          saveEcon(st); renderShop(); toast(IC_ENERGY_HTML + ' +2 Free Daily Energy claimed!');
-        } else if (k === 'energy') {
-          if (st.energy >= st.maxEnergy) return toast('Energy is already full!');
-          if (st.coins < 180) return toast('Not enough Pathcoins (need 180 PC)!');
-          st.coins -= 180;
-          st.energy = Math.min(st.maxEnergy, st.energy + 2);
-          if (st.energy >= st.maxEnergy) st.lastEnergyTs = Date.now();
-          saveEcon(st); renderShop(); toast(IC_ENERGY_HTML + ' +2 Energy restored!');
-        } else if (k === 'max_energy' && st.maxEnergy < 8) {
-          if (st.coins < 600) return toast('Not enough Pathcoins (need 600 PC)!');
-          st.coins -= 600;
-          st.maxEnergy += 1;
-          st.energy = st.maxEnergy;
-          st.lastEnergyTs = Date.now();
-          saveEcon(st); renderShop(); confetti(); toast(IC_ENERGY_HTML + ' Max Energy upgraded to ' + st.maxEnergy + '!');
+          st.coins += 25;
+          saveEcon(st); renderShop(); confetti(); toast(IC_COIN_HTML + ' +25 Free Daily Pathcoins claimed!');
         } else if (k === 'compass' && !st.compass) {
           if (st.coins < 900) return toast('Not enough Pathcoins (need 900 PC)!');
           st.coins -= 900; st.compass = true;
@@ -11342,7 +11471,7 @@ function runQuiz(n, qs) {
     }
 
     var q = qs[i];
-    var modeBadge = '<span class="tag n" style="margin:0;font-size:10px">-' + entryCost + ' ' + IC_ENERGY_HTML + ' · +5 PC/ans · Bonus +' + (isFirstClear ? firstReward : replayReward) + ' PC</span>';
+    var modeBadge = '<span class="tag n" style="margin:0;font-size:10px">+5 PC/ans · Bonus +' + (isFirstClear ? firstReward : replayReward) + ' PC</span>';
     ov.innerHTML = '<div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:8px"><small style="font-weight:800">' + n.type.l + ' · ' + (i + 1) + '/' + qs.length + '</small>' + modeBadge + '</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + '<button id="qcalc" style="background:var(--acc2);color:#fff;padding:4px 10px;border-radius:8px;font-weight:bold;font-size:12px;">' + IC_MATH_HTML + ' Calculator</button><button id="qx" class="tbtn">✕</button></div></div><div id="q-panel" style="display:none; width:100%; height:350px; margin:15px 0; border-radius:12px; border:2px solid var(--line); overflow:hidden;"></div><div class="bar" style="margin:10px 0"><div style="width:' + (i / qs.length * 100) + '%"></div></div><p style="font-size:20px;margin:18px 0">' + fx(q.q) + '</p><div id="qa"></div><div id="qf"></div></div>';
 
     var a = document.getElementById('qa'), f = document.getElementById('qf'), done = false;
@@ -11371,11 +11500,6 @@ function runQuiz(n, qs) {
         ok++;
         earnedInQuiz += 5;
         addCoins(5);
-      } else if (getEcon().energy > 0) {
-        var eNow = getEcon();
-        if (eNow.energy >= eNow.maxEnergy) eNow.lastEnergyTs = Date.now();
-        eNow.energy = Math.max(0, eNow.energy - 1);
-        saveEcon(eNow);
       }
       lbAdd(good);
       a.querySelectorAll('button').forEach(function(b) {
@@ -11387,7 +11511,7 @@ function runQuiz(n, qs) {
       var gi = document.getElementById('qi');
       if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
 
-      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect (-1 ' + IC_ENERGY_HTML + '). Answer: ' + fx(fmtAns(q.ans)))) + '</p><button class="cta-amber" id="qn">' + (i < qs.length - 1 ? 'Next Waypoint →' : 'Finish Island') + '</button>';
+      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect. Answer: ' + fx(fmtAns(q.ans)))) + '</p><button class="cta-amber" id="qn">' + (i < qs.length - 1 ? 'Next Waypoint →' : 'Finish Island') + '</button>';
       document.getElementById('qn').onclick = function() { i++; show(); };
     }
 
@@ -11674,7 +11798,7 @@ function bankOpen(ti) {
   function draw() {
     var starsNow = getTopicStars(ti, false, ti);
     var q = getMathQ(ti, 'bank', R(0, 999)), done = false;
-    ov.innerHTML = '<div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_MATH_HTML + ' MATH ISLAND DRILL (-1 ' + IC_ENERGY_HTML + ')</small><div style="font-weight:800;font-size:16px">' + TOPS[ti] + '</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + renderStarsHtml(starsNow) + '<button id="bcalc" style="background:var(--acc2);color:#fff;padding:5px 11px;border-radius:10px;font-weight:bold;font-size:12px;">' + IC_MATH_HTML + ' Calculator</button><button id="bx" class="tbtn">✕</button></div></div><div id="d-panel" style="display:none; width:100%; height:350px; margin:15px 0; border-radius:12px; border:2px solid var(--line); overflow:hidden;"></div><div class="chips"><span class="sc" style="margin-left:0">✓ ' + ok + ' / ' + tot + ' solved · Earn ★ Mastery Stars for +15 PC</span></div><p style="font-size:20px;margin:22px 0 14px">' + rHTML(q.q) + '</p><div id="ba"></div><div id="bf"></div></div>';
+    ov.innerHTML = '<div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_MATH_HTML + ' MATH ISLAND DRILL</small><div style="font-weight:800;font-size:16px">' + TOPS[ti] + '</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + renderStarsHtml(starsNow) + '<button id="bcalc" style="background:var(--acc2);color:#fff;padding:5px 11px;border-radius:10px;font-weight:bold;font-size:12px;">' + IC_MATH_HTML + ' Calculator</button><button id="bx" class="tbtn">✕</button></div></div><div id="d-panel" style="display:none; width:100%; height:350px; margin:15px 0; border-radius:12px; border:2px solid var(--line); overflow:hidden;"></div><div class="chips"><span class="sc" style="margin-left:0">✓ ' + ok + ' / ' + tot + ' solved · Earn ★ Mastery Stars for +15 PC</span></div><p style="font-size:20px;margin:22px 0 14px">' + rHTML(q.q) + '</p><div id="ba"></div><div id="bf"></div></div>';
     document.getElementById('bx').onclick = close;
     var dPanel = document.getElementById('d-panel');
     var calcBtn = document.getElementById('bcalc');
@@ -11709,11 +11833,6 @@ function bankOpen(ti) {
       if (good) {
         ok++;
         addCoins(5);
-      } else if (getEcon().energy > 0) {
-        var eNow = getEcon();
-        if (eNow.energy >= eNow.maxEnergy) eNow.lastEnergyTs = Date.now();
-        eNow.energy = Math.max(0, eNow.energy - 1);
-        saveEcon(eNow);
       }
       bankSave(ti, good); lbAdd(good);
       var newStars = getTopicStars(ti, false, ti);
@@ -11728,7 +11847,7 @@ function bankOpen(ti) {
       var gi = document.getElementById('bi');
       if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
 
-      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect (-1 ' + IC_ENERGY_HTML + '). Answer: ' + rHTML(fmtAns(q.ans)))) + '</p><button class="cta-amber" id="bn">Next Question →</button>';
+      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect. Answer: ' + rHTML(fmtAns(q.ans)))) + '</p><button class="cta-amber" id="bn">Next Question →</button>';
       var nb = document.getElementById('bn');
       nb.onclick = draw;
       setTimeout(function() { nb.focus() }, 60);
@@ -13118,7 +13237,7 @@ var RQ=[
   ],
   [
     "<i>Entomologists studying monarch butterflies (Danaus plexippus) observed that females infected with the protozoan parasite Ophryocystis elektroscirrha preferentially lay their eggs on tropical milkweed (Asclepias curassavica), which contains high levels of toxic cardenolides, rather than on less toxic swamp milkweed. The entomologists claim this is a form of transgenerational 'medication' to protect their offspring.</i><br><br>Which experimental finding would most directly support the entomologists' claim?",
-    "Infected caterpillars reared on high-cardenolide tropical milkweed had 60 percent lower parasite loads and lived twice as long as infected caterpillars reared on swamp milkweed, whereas uninfectedfemales showed no plant preference.",
+    "Infected caterpillars reared on high-cardenolide tropical milkweed had 60 percent lower parasite loads and lived twice as long as infected caterpillars reared on swamp milkweed, whereas uninfected females showed no plant preference.",
     "Uninfected monarch caterpillars grew at the same rate on both tropical milkweed and swamp milkweed when raised in predator-free laboratory cages.",
     "Birds that attempted to eat adult monarch butterflies reared on tropical milkweed immediately regurgitated the insects due to the bitter taste of the cardenolides.",
     "Tropical milkweed planted in gardens in the southern United States remains green year-round, sometimes disrupting the monarchs' autumn migration to Mexico."
@@ -13266,7 +13385,7 @@ var RQ=[
     "duplication"
   ],
   [
-    "<i>In pharmacology, a 'prodrug' is a medication administered in an biologically inactive form. Only after the compound is metabolized by specific enzymes in the patient's liver does it convert into its active state, a design that helps ______ gastrointestinal irritation during absorption.</i><br><br>Which choice completes the text with the most logical and precise word or phrase?",
+    "<i>In pharmacology, a 'prodrug' is a medication administered in a biologically inactive form. Only after the compound is metabolized by specific enzymes in the patient's liver does it convert into its active state, a design that helps ______ gastrointestinal irritation during absorption.</i><br><br>Which choice completes the text with the most logical and precise word or phrase?",
     "mitigate",
     "induce",
     "amplify",
@@ -15269,7 +15388,7 @@ var RQ=[
     "Otherwise,"
   ],
   [
-    "<i>When an massive star exhausts its nuclear fuel and collapses in a supernova, its core is crushed by gravity until protons and electrons merge into neutrons. A resulting neutron star packs roughly 1.4 times the mass of our Sun into a sphere just twenty kilometers across. ______ a single teaspoon of neutron-star material would weigh approximately a billion tons on Earth.</i><br><br>Which choice completes the text with the most logical transition?",
+    "<i>When a massive star exhausts its nuclear fuel and collapses in a supernova, its core is crushed by gravity until protons and electrons merge into neutrons. A resulting neutron star packs roughly 1.4 times the mass of our Sun into a sphere just twenty kilometers across. ______ a single teaspoon of neutron-star material would weigh approximately a billion tons on Earth.</i><br><br>Which choice completes the text with the most logical transition?",
     "To illustrate,",
     "However,",
     "Conversely,",
@@ -15502,7 +15621,7 @@ var RQ=[
     "1904:"
   ],
   [
-    "<i>When supercooled water droplets in cumulonimbus clouds collide with soft hail particles called graupel, electrical charges separate within the storm ______ positivamente charged ice crystals rise to the upper anvil of the cloud, while negatively charged graupel settles toward the base, creating the voltage potential for lightning.</i><br><br>Which choice completes the text so that it conforms to the conventions of Standard English?",
+    "<i>When supercooled water droplets in cumulonimbus clouds collide with soft hail particles called graupel, electrical charges separate within the storm ______ positively charged ice crystals rise to the upper anvil of the cloud, while negatively charged graupel settles toward the base, creating the voltage potential for lightning.</i><br><br>Which choice completes the text so that it conforms to the conventions of Standard English?",
     "column:",
     "column,",
     "column; whereas",
@@ -15600,7 +15719,7 @@ var RQ=[
     "meters—"
   ],
   [
-    "<i>The ancient Nabataean city of Petra, carved directly into rose-red sandstone cliffs in southern Jordan around the fourth century BCE, thrived in an hyper-arid desert receiving less than 15 centimeters of rain annually; ______ Nabataean hydrologists engineered an intricate network of terracotta pipes, rock-cut cisterns, and flood-diversion dams that supported thirty thousand residents.</i><br><br>Which choice completes the text so that it conforms to the conventions of Standard English?",
+    "<i>The ancient Nabataean city of Petra, carved directly into rose-red sandstone cliffs in southern Jordan around the fourth century BCE, thrived in a hyper-arid desert receiving less than 15 centimeters of rain annually; ______ Nabataean hydrologists engineered an intricate network of terracotta pipes, rock-cut cisterns, and flood-diversion dams that supported thirty thousand residents.</i><br><br>Which choice completes the text so that it conforms to the conventions of Standard English?",
     "nonetheless,",
     "nonetheless;",
     "nonetheless",
@@ -15740,7 +15859,7 @@ var RQ=[
     "consequently,"
   ],
   [
-    "<i>During the construction of the transcontinental railroad across the Sierra Nevada mountains in the 1860s, Central Pacific engineers struggled to blast tunnels through solid granite using black powder; ______ they turned to nitroglycerin, a volatile liquid explosive invented by Italian chemist Ascanio Sobrero that wasmixed on-site in small batches.</i><br><br>Which choice completes the text so that it conforms to the conventions of Standard English?",
+    "<i>During the construction of the transcontinental railroad across the Sierra Nevada mountains in the 1860s, Central Pacific engineers struggled to blast tunnels through solid granite using black powder; ______ they turned to nitroglycerin, a volatile liquid explosive invented by Italian chemist Ascanio Sobrero that was mixed on-site in small batches.</i><br><br>Which choice completes the text so that it conforms to the conventions of Standard English?",
     "therefore,",
     "therefore;",
     "therefore",
@@ -16163,7 +16282,7 @@ var RQ=[
   ],
   [
     "<i>Synthesizing decades of field observations on the foraging behavior of chimpanzees at Gombe Stream National Park in Tanzania, ______</i><br><br>Which choice completes the text so that it conforms to the conventions of Standard English?",
-    "primatologist Jane Goodall overturning the long-held belief that only humans make tools.",
+    "primatologist Jane Goodall overturned the long-held belief that only humans make tools.",
     "Jane Goodall's landmark 1986 book 'The Chimpanzees of Gombe' documented systematic tool manufacture and cooperative hunting.",
     "the long-standing anthropological definition of humans as the sole 'Man the Toolmaker' was dismantled by Jane Goodall.",
     "chimpanzees were shown by Jane Goodall to strip leaves from twigs to fish termites out of subterranean mounds."
@@ -16246,7 +16365,7 @@ var RQ=[
     "the discovery of hundreds of new pulsars has been achieved by Chinese astrophysicists operating the FAST dish since 2016."
   ],
   [
-    "<i>In the symbiotic relationship between the cleaner wrasse (Labroides dimidiatus) and larger coral-reef client fish, the wrasse removes ectoparasitic gnathiid isopods from the client's gills and scales, and if a wrasse cheats by biting the client's protective mucus layer instead, the client fisheither chases the wrasse away or ______ to a different cleaning station on its next visit.</i><br><br>Which choice completes the text so that it conforms to the conventions of Standard English?",
+    "<i>In the symbiotic relationship between the cleaner wrasse (Labroides dimidiatus) and larger coral-reef client fish, the wrasse removes ectoparasitic gnathiid isopods from the client's gills and scales, and if a wrasse cheats by biting the client's protective mucus layer instead, the client fish either chases the wrasse away or ______ to a different cleaning station on its next visit.</i><br><br>Which choice completes the text so that it conforms to the conventions of Standard English?",
     "switches",
     "switching",
     "switched",
@@ -16459,7 +16578,7 @@ function rwBankOpen(ti){
     }
     var starsNow = getTopicStars('rw_' + ti, true, ti);
     var x=myPool[qIndex](), ans=x[1], opts=shuffle(x.slice(1)), done=false;
-    ov.innerHTML='<div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_BOOK_HTML + ' R&amp;W ISLAND DRILL (-1 ' + IC_ENERGY_HTML + ')</small><div style="font-weight:800;font-size:16px">'+RTOPS[ti]+'</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+miniHudHtml()+renderStarsHtml(starsNow)+'<button id="rx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">Waypoint '+(qIndex + 1)+' of '+myPool.length+' · ✓ '+ok+' · Earn ★ Mastery Stars for +15 PC</span></div><p style="font-size:18px;line-height:1.55;margin:18px 0 14px">'+x[0]+'</p><div id="ra"></div><div id="rf"></div></div>';
+    ov.innerHTML='<div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_BOOK_HTML + ' R&amp;W ISLAND DRILL</small><div style="font-weight:800;font-size:16px">'+RTOPS[ti]+'</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+miniHudHtml()+renderStarsHtml(starsNow)+'<button id="rx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">Waypoint '+(qIndex + 1)+' of '+myPool.length+' · ✓ '+ok+' · Earn ★ Mastery Stars for +15 PC</span></div><p style="font-size:18px;line-height:1.55;margin:18px 0 14px">'+x[0]+'</p><div id="ra"></div><div id="rf"></div></div>';
     var a=document.getElementById('ra'),f=document.getElementById('rf');
     document.getElementById('rx').onclick=close;
     function fin(v){
@@ -16469,18 +16588,13 @@ function rwBankOpen(ti){
       if(good){
         ok++;
         addCoins(5);
-      } else if (getEcon().energy > 0) {
-        var eNow = getEcon();
-        if (eNow.energy >= eNow.maxEnergy) eNow.lastEnergyTs = Date.now();
-        eNow.energy = Math.max(0, eNow.energy - 1);
-        saveEcon(eNow);
       }
       bankSave('rw_' + ti, good);
       lbAdd(good);
       var newStars = getTopicStars('rw_' + ti, true, ti);
       if(newStars > prevStars){confetti();addCoins(15 * (newStars - prevStars), 'Mastery Star ★ unlocked!');}
       a.querySelectorAll('button').forEach(function(b){b.disabled=true;if(b.dataset.v===ans)b.classList.add('good');else if(b.dataset.v===v)b.classList.add('bad')});
-      f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'#e74c3c')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect (-1 ' + IC_ENERGY_HTML + '). Answer: '+ans))+'</p><button class="cta-amber" id="rn">Next Waypoint →</button>';
+      f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'#e74c3c')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect. Answer: '+ans))+'</p><button class="cta-amber" id="rn">Next Waypoint →</button>';
       document.getElementById('rn').onclick=function(){qIndex++;draw()};
     }
     opts.forEach(function(o,k){var b=document.createElement('button');b.className='qo';b.dataset.v=o;b.innerHTML='<b>'+'ABCD'[k]+'</b>&nbsp; '+o;b.onclick=function(){fin(o)};a.appendChild(b)});
@@ -16638,12 +16752,6 @@ function startBlitzRun() {
         lbAdd(true);
       } else {
         streak = 0;
-        if (getEcon().energy > 0) {
-          var eNow = getEcon();
-          if (eNow.energy >= eNow.maxEnergy) eNow.lastEnergyTs = Date.now();
-          eNow.energy = Math.max(0, eNow.energy - 1);
-          saveEcon(eNow);
-        }
         lbAdd(false);
       }
       ansBox.querySelectorAll('button').forEach(function(b) {
@@ -16654,7 +16762,7 @@ function startBlitzRun() {
       var gi = ov.querySelector('#bzGridInp');
       if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
       feedBox.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)">' +
-        '<b style="color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? '⚡ Correct! +' + Math.round((100 + qLeft * 2 + streak * 25) * mult) + ' pts (+5 ' + IC_COIN_HTML + ')' : '✗ (-1 ' + IC_ENERGY_HTML + ') Answer: ' + (q.rw ? q.ans : rHTML(fmtAns(q.ans)))) + '</b>' +
+        '<b style="color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? '⚡ Correct! +' + Math.round((100 + qLeft * 2 + streak * 25) * mult) + ' pts (+5 ' + IC_COIN_HTML + ')' : '✗ Incorrect. Answer: ' + (q.rw ? q.ans : rHTML(fmtAns(q.ans)))) + '</b>' +
         '<button class="cta-amber" id="bzNextBtn">' + (idx < 9 ? 'Next Blitz →' : 'See Results 🏆') + '</button></div>';
       ov.querySelector('#bzNextBtn').onclick = function() { idx++; renderStep(); };
     }
@@ -16689,9 +16797,9 @@ function startBlitzRun() {
 }
 
 function show(w){
-  var V={d:document.getElementById('vDash'),m:mp,b:qk,r:rw,sc:document.getElementById('vSC'),lb:document.getElementById('vLB'),pt:document.getElementById('vPT'),bz:document.getElementById('vBZ')};
-  var N={d:'nvD',m:'nvMP',b:'nvQB',r:'nvRW',sc:'nvSC',lb:'nvLB',pt:'nvPT',bz:'nvBZ'};
-  var titles={d:'Base Camp · Archipelago',m:'Math Path · Odyssey',b:'Atlas · Training Grounds',r:'R&W Path · Odyssey',sc:'Score Calculator',lb:'Explorer Leaderboard',pt:'Mock Exams · Expeditions',bz:'Blitz 10 · High-Speed Arena'};
+  var V={d:document.getElementById('vDash'),m:mp,b:qk,r:rw,sc:document.getElementById('vSC'),lb:document.getElementById('vLB'),pt:document.getElementById('vPT'),bz:document.getElementById('vBZ'),ai:document.getElementById('vAI')};
+  var N={d:'nvD',m:'nvMP',b:'nvQB',r:'nvRW',sc:'nvSC',lb:'nvLB',pt:'nvPT',bz:'nvBZ',ai:'nvAI'};
+  var titles={d:'Base Camp · Archipelago',m:'Math Path · Odyssey',b:'Atlas · Training Grounds',r:'R&W Path · Odyssey',sc:'Score Calculator',lb:'Explorer Leaderboard',pt:'Mock Exams · Expeditions',bz:'Blitz 10 · High-Speed Arena',ai:'AI Admissions & Portfolio Evaluator'};
   for(var k in V){
     if(V[k]) V[k].hidden=(k!==w);
     var nb=document.getElementById(N[k]);
@@ -16707,6 +16815,7 @@ function show(w){
   else if(w==='lb'){lbOff=0;buildLB();scrollTo(0,0)}
   else if(w==='sc'){updateSatCalculator();scrollTo(0,0)}
   else if(w==='pt'){buildPT();scrollTo(0,0)}
+  else if(w==='ai'){buildAIAdmissions();scrollTo(0,0)}
   else if(w==='bz'){buildBlitz();scrollTo(0,0)}
   else {scrollTo(0,0);refreshDash()}
 }
@@ -16718,11 +16827,11 @@ document.getElementById('nvRW').onclick=function(){show('r')};
 document.getElementById('nvSC').onclick=function(){show('sc')};
 document.getElementById('nvPT').onclick=function(){show('pt')};
 var nvBzEl = document.getElementById('nvBZ'); if(nvBzEl) nvBzEl.onclick=function(){show('bz')};
+var nvAiEl = document.getElementById('nvAI'); if(nvAiEl) nvAiEl.onclick=function(){show('ai')};
 var sbUserEl = document.getElementById('sidebarUserBox'); if(sbUserEl) sbUserEl.onclick=openProfileModal;
 var btnProfEl = document.getElementById('btnEditProfile'); if(btnProfEl) btnProfEl.onclick=openProfileModal;
 document.getElementById('hudShopBtn').onclick=openSupplyShop;
 document.getElementById('hudCoinBtn').onclick=openSupplyShop;
-document.getElementById('hudEnergyBtn').onclick=openSupplyShop;
 
 var sd=document.getElementById('side');
 document.getElementById('bg').onclick=function(e){e.stopPropagation();sd.classList.toggle('o')};
@@ -16922,7 +17031,7 @@ function renderDailyWidget(type, data, storageKey) {
     badge.textContent = '3/3 ✓';
     stat.textContent = 'Score today: ' + data.ok + '/3';
     if (topElem) topElem.textContent = '';
-    qElem.innerHTML = '<div style="text-align:center;padding:15px 0"><div><img class="ui-ic-lg" src="art.png" alt=""></div><b style="font-size:15px">Daily set finished!</b><p style="color:var(--mut);font-size:12px;margin-top:2px">You got ' + data.ok + ' of 3 right (+1 ' + IC_ENERGY_HTML + ' bonus). Come back tomorrow!</p></div>';
+    qElem.innerHTML = '<div style="text-align:center;padding:15px 0"><div><img class="ui-ic-lg" src="art.png" alt=""></div><b style="font-size:15px">Daily set finished!</b><p style="color:var(--mut);font-size:12px;margin-top:2px">You got ' + data.ok + ' of 3 right (+15 ' + IC_COIN_HTML + ' bonus). Come back tomorrow!</p></div>';
     optsBox.innerHTML = '';
     msgBox.textContent = '';
     return;
@@ -16960,7 +17069,7 @@ function renderDailyWidget(type, data, storageKey) {
         data.done = true;
         if (!data.energyClaimed) {
           data.energyClaimed = true;
-          addFreeEnergy(1, type + ' Daily Set complete!');
+          addCoins(15, type + ' Daily Set complete!');
         }
       }
       spSet(storageKey, JSON.stringify(data));
@@ -16981,4 +17090,731 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 applyProfileUI();
 refreshDash();
 initDailyChallenges();
+
+/* ===== AI ADMISSIONS CHANCE & PORTFOLIO EVALUATOR ===== */
+var AI_STORAGE_KEY = 'satpath_ai_admissions';
+
+var UNIVERSITIES_DB = [
+  // US Top 20 & Ivy League
+  { id: 'harvard', name: 'Harvard University', country: 'USA', flag: '🇺🇸', region: 'us', rate: 3.4, sat25: 1510, sat75: 1580, gpa: 4.0, minTier: 1, needBlind: true, stem: 5, notes: 'Need-Blind 100% full aid for internationals. Extremely selective; requires Tier 1/2 spikes.' },
+  { id: 'mit', name: 'Massachusetts Institute of Technology (MIT)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 4.0, sat25: 1520, sat75: 1580, gpa: 4.0, minTier: 1, needBlind: true, stem: 5, notes: 'Need-Blind for internationals. Heavily weighs Math 780-800, olympiad medals, and novel technical projects.' },
+  { id: 'stanford', name: 'Stanford University', country: 'USA', flag: '🇺🇸', region: 'us', rate: 3.7, sat25: 1500, sat75: 1580, gpa: 3.96, minTier: 1, needBlind: false, stem: 5, notes: 'Silicon Valley hub. Need-Aware for intl students (aid requests lower odds). Values entrepreneurial drive.' },
+  { id: 'princeton', name: 'Princeton University', country: 'USA', flag: '🇺🇸', region: 'us', rate: 4.4, sat25: 1510, sat75: 1580, gpa: 3.95, minTier: 1, needBlind: true, stem: 5, notes: 'Need-Blind for internationals with one of the most generous financial aid programs worldwide.' },
+  { id: 'yale', name: 'Yale University', country: 'USA', flag: '🇺🇸', region: 'us', rate: 4.5, sat25: 1500, sat75: 1580, gpa: 3.95, minTier: 1, needBlind: true, stem: 4, notes: 'Need-Blind for internationals. Renowned for humanities, social sciences, law, and research.' },
+  { id: 'columbia', name: 'Columbia University', country: 'USA', flag: '🇺🇸', region: 'us', rate: 3.9, sat25: 1500, sat75: 1570, gpa: 3.93, minTier: 1, needBlind: false, stem: 4, notes: 'Core Curriculum in NYC. Need-Aware for internationals. High yield in finance and literature.' },
+  { id: 'upenn', name: 'University of Pennsylvania (Penn / Wharton)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 5.8, sat25: 1500, sat75: 1570, gpa: 3.92, minTier: 1, needBlind: false, stem: 4, notes: 'World premier business school (Wharton). Need-Aware for internationals; highly competitive for finance & bio.' },
+  { id: 'caltech', name: 'California Institute of Technology (Caltech)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 3.1, sat25: 1530, sat75: 1590, gpa: 4.0, minTier: 1, needBlind: false, stem: 5, notes: 'Intense STEM focus (only ~240 students per class). Extremely high math/physics standards.' },
+
+  // US T20-T45 & Top Public Ivies
+  { id: 'cmu', name: 'Carnegie Mellon University (CMU)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 11.0, sat25: 1500, sat75: 1580, gpa: 3.90, minTier: 2, needBlind: false, stem: 5, notes: 'World top 3 in Computer Science. School of Computer Science has ~4% acceptance rate.' },
+  { id: 'nyu', name: 'New York University (NYU)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 12.2, sat25: 1450, sat75: 1570, gpa: 3.82, minTier: 2, needBlind: false, stem: 4, notes: 'Global campuses in NYC, Abu Dhabi, Shanghai. High competition for Stern Business and Tisch Arts.' },
+  { id: 'umich', name: 'University of Michigan (Ann Arbor)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 18.0, sat25: 1360, sat75: 1530, gpa: 3.90, minTier: 2, needBlind: false, stem: 5, notes: 'Top Public Ivy. Outstanding engineering and business, but limited aid for non-US residents.' },
+  { id: 'gatech', name: 'Georgia Institute of Technology (Georgia Tech)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 16.0, sat25: 1380, sat75: 1530, gpa: 3.88, minTier: 2, needBlind: false, stem: 5, notes: 'Elite engineering and computing power. Fast-growing tech hub in Atlanta.' },
+  { id: 'bu', name: 'Boston University (BU)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 14.1, sat25: 1380, sat75: 1510, gpa: 3.81, minTier: 3, needBlind: false, stem: 4, notes: 'Prestigious Boston urban campus. Offers competitive Presidential and Trustee merit scholarships.' },
+  { id: 'usc', name: 'University of Southern California (USC)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 12.0, sat25: 1440, sat75: 1550, gpa: 3.85, minTier: 2, needBlind: false, stem: 4, notes: 'Famous Trojan alumni network. Full and half-tuition merit scholarships available if applying by Dec 1.' },
+  { id: 'ucb', name: 'University of California, Berkeley (UC Berkeley)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 11.4, sat25: 1420, sat75: 1540, gpa: 3.92, minTier: 2, needBlind: false, stem: 5, notes: 'Test-blind in admissions (SAT used for placement). Extremely strong in sciences, zero aid for intl.' },
+  { id: 'purdue', name: 'Purdue University', country: 'USA', flag: '🇺🇸', region: 'us', rate: 52.0, sat25: 1260, sat75: 1480, gpa: 3.70, minTier: 3, needBlind: false, stem: 5, notes: 'One of the best value engineering and aviation universities in the USA. Frozen tuition for 12 years.' },
+
+  // UK & Europe
+  { id: 'oxford', name: 'University of Oxford', country: 'UK', flag: '🇬🇧', region: 'uk', rate: 14.0, sat25: 1480, sat75: 1570, gpa: 3.90, minTier: 2, needBlind: false, stem: 5, notes: 'Requires 3-4 AP scores of 5 or SAT 1480+ plus subject tests. Heavy weight on entrance exam & academic interview.' },
+  { id: 'cambridge', name: 'University of Cambridge', country: 'UK', flag: '🇬🇧', region: 'uk', rate: 16.0, sat25: 1500, sat75: 1580, gpa: 3.95, minTier: 2, needBlind: false, stem: 5, notes: 'Requires 5 AP scores of 5 and rigorous collegiate interview. Uncompromising depth in chosen subject.' },
+  { id: 'imperial', name: 'Imperial College London', country: 'UK', flag: '🇬🇧', region: 'uk', rate: 11.5, sat25: 1460, sat75: 1560, gpa: 3.85, minTier: 2, needBlind: false, stem: 5, notes: 'Top European institute focused purely on Science, Engineering, Medicine and Business.' },
+  { id: 'ucl', name: 'University College London (UCL)', country: 'UK', flag: '🇬🇧', region: 'uk', rate: 29.0, sat25: 1380, sat75: 1520, gpa: 3.75, minTier: 3, needBlind: false, stem: 4, notes: 'Central London multidisciplinary powerhouse. Strong international student body.' },
+  { id: 'eth', name: 'ETH Zurich', country: 'Switzerland', flag: '🇨🇭', region: 'eu', rate: 27.0, sat25: 1450, sat75: 1560, gpa: 3.90, minTier: 2, needBlind: true, stem: 5, notes: 'Continental Europe top STEM university. Very low tuition (~$1,600/yr), but extremely demanding exams.' },
+  { id: 'tum', name: 'Technical University of Munich (TUM)', country: 'Germany', flag: '🇩🇪', region: 'eu', rate: 30.0, sat25: 1350, sat75: 1520, gpa: 3.70, minTier: 3, needBlind: true, stem: 5, notes: 'German elite tech hub. Top tier CS, robotics, and engineering with affordable European fees.' },
+  { id: 'bocconi', name: 'Bocconi University', country: 'Italy', flag: '🇮🇹', region: 'eu', rate: 25.0, sat25: 1380, sat75: 1520, gpa: 3.75, minTier: 3, needBlind: false, stem: 3, notes: 'Top European business, economics, and finance school in Milan. Accepts SAT for direct entry.' },
+  { id: 'amsterdam', name: 'University of Amsterdam (UvA)', country: 'Netherlands', flag: '🇳🇱', region: 'eu', rate: 40.0, sat25: 1320, sat75: 1460, gpa: 3.60, minTier: 3, needBlind: false, stem: 4, notes: 'Leading European research university with hundreds of English-taught undergraduate programs.' },
+
+  // Asia & Global
+  { id: 'nus', name: 'National University of Singapore (NUS)', country: 'Singapore', flag: '🇸🇬', region: 'asia', rate: 6.0, sat25: 1500, sat75: 1580, gpa: 3.95, minTier: 1, needBlind: false, stem: 5, notes: 'Consistently ranked #1 in Asia. Exceptional STEM, business, and global internships.' },
+  { id: 'ntu', name: 'Nanyang Technological University (NTU)', country: 'Singapore', flag: '🇸🇬', region: 'asia', rate: 10.0, sat25: 1470, sat75: 1560, gpa: 3.90, minTier: 2, needBlind: false, stem: 5, notes: 'World-leading engineering, materials science, and artificial intelligence programs in Singapore.' },
+  { id: 'kaist', name: 'KAIST', country: 'South Korea', flag: '🇰🇷', region: 'asia', rate: 15.0, sat25: 1440, sat75: 1560, gpa: 3.80, minTier: 2, needBlind: true, stem: 5, notes: 'Korea top tech university. 100% of classes in English; all admitted international students receive full scholarship + stipend!' },
+  { id: 'hku', name: 'University of Hong Kong (HKU)', country: 'Hong Kong', flag: '🇭🇰', region: 'asia', rate: 20.0, sat25: 1380, sat75: 1530, gpa: 3.75, minTier: 3, needBlind: false, stem: 4, notes: 'English-medium instruction. Generous entrance merit scholarships for students with SAT 1450+.' },
+  { id: 'utoronto', name: 'University of Toronto', country: 'Canada', flag: '🇨🇦', region: 'us', rate: 43.0, sat25: 1350, sat75: 1520, gpa: 3.80, minTier: 3, needBlind: false, stem: 5, notes: 'Canada premier research institution. Lester B. Pearson scholarship covers full tuition and room & board.' },
+
+  // Regional & High-Value Safeties
+  { id: 'nu', name: 'Nazarbayev University (NU)', country: 'Kazakhstan', flag: '🇰🇿', region: 'kz', rate: 25.0, sat25: 1250, sat75: 1420, gpa: 3.60, minTier: 3, needBlind: true, stem: 5, notes: 'Top Western-style research university in Central Asia. Full state grant covering 100% tuition + monthly stipend for admitted students!' },
+  { id: 'pennstate', name: 'Penn State University (University Park)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 55.0, sat25: 1210, sat75: 1410, gpa: 3.60, minTier: 4, needBlind: false, stem: 4, notes: 'Massive alumni network and top tier engineering research with high acceptance rates.' },
+  { id: 'asu', name: 'Arizona State University (ASU)', country: 'USA', flag: '🇺🇸', region: 'us', rate: 88.0, sat25: 1150, sat75: 1370, gpa: 3.40, minTier: 4, needBlind: false, stem: 4, notes: 'Ranked #1 in US for innovation. Rolling admissions, high acceptance rates, and automatic merit scholarships.' }
+];
+
+function getStoredAdmissionsProfile() {
+  try {
+    var raw = spGet(AI_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return {
+    sat: 1420,
+    gpa: 3.85,
+    gpaScale: 4.0,
+    classRank: 'top5',
+    apCount: 4,
+    ielts: '7.5',
+    major: 'cs',
+    activities: [
+      { title: 'Robotics & STEM Club', role: 'Team Captain / Lead Programmer', tier: 2, hours: 8 },
+      { title: 'Math Peer Tutoring & Volunteering', role: 'Co-founder / Tutor', tier: 3, hours: 4 }
+    ],
+    honors: {
+      olympiad: true,
+      intl: false,
+      research: false,
+      startup: false,
+      volunteer100: true
+    },
+    finAid: 'full',
+    regions: ['us', 'uk', 'eu', 'asia', 'kz'],
+    essay: '',
+    apiKey: ''
+  };
+}
+
+function saveAdmissionsProfile(p) {
+  try {
+    spSet(AI_STORAGE_KEY, JSON.stringify(p));
+  } catch(e) {}
+}
+
+function evaluateAdmissionsChances(profile) {
+  var sat = parseInt(profile.sat) || 1200;
+  var gpa = parseFloat(profile.gpa) || 3.5;
+  var scale = parseFloat(profile.gpaScale) || 4.0;
+  var normGpa = Math.min(4.0, Math.max(2.0, (gpa / scale) * 4.0));
+
+  // 1. Academic Index (0-100)
+  var satScorePct = Math.min(100, Math.max(0, ((sat - 900) / 700) * 100)); // 1600 = 100, 1500 = 85.7, 1400 = 71.4, 1200 = 42.8
+  var gpaScorePct = Math.min(100, Math.max(0, ((normGpa - 2.5) / 1.5) * 100)); // 4.0 = 100, 3.8 = 86.6, 3.5 = 66.6
+  var rankBonus = profile.classRank === 'top1' ? 8 : (profile.classRank === 'top5' ? 5 : (profile.classRank === 'top10' ? 2 : 0));
+  var apBonus = Math.min(10, (profile.apCount || 0) * 1.5);
+  var academicIndex = Math.round(0.50 * satScorePct + 0.38 * gpaScorePct + rankBonus + apBonus);
+  academicIndex = Math.min(99, Math.max(25, academicIndex));
+
+  // 2. Extracurricular & Leadership Index (0-100)
+  var bestTier = 4;
+  var totalHours = 0;
+  if (profile.activities && profile.activities.length) {
+    profile.activities.forEach(function(act) {
+      if (act.tier < bestTier) bestTier = act.tier;
+      totalHours += (parseInt(act.hours) || 0);
+    });
+  }
+  var baseTierPoints = { 1: 52, 2: 38, 3: 24, 4: 12 }[bestTier] || 20;
+  var ecHoursBonus = Math.min(15, totalHours * 0.9);
+  var honorsBonus = 0;
+  if (profile.honors) {
+    if (profile.honors.intl) honorsBonus += 18;
+    if (profile.honors.olympiad) honorsBonus += 10;
+    if (profile.honors.research) honorsBonus += 8;
+    if (profile.honors.startup) honorsBonus += 7;
+    if (profile.honors.volunteer100) honorsBonus += 4;
+  }
+  var ecIndex = Math.round(baseTierPoints + ecHoursBonus + honorsBonus);
+  ecIndex = Math.min(99, Math.max(20, ecIndex));
+
+  // 3. Major Fit & Competitiveness Modifier
+  var majorModifiers = {
+    'cs': { mult: 0.82, label: 'Computer Science & AI', comp: 'Extreme', spikeReq: 'High' },
+    'premed': { mult: 0.85, label: 'Pre-Med & Biology', comp: 'Very High', spikeReq: 'High' },
+    'engineering': { mult: 0.88, label: 'Engineering & Robotics', comp: 'High', spikeReq: 'High' },
+    'business': { mult: 0.89, label: 'Business & Finance', comp: 'High', spikeReq: 'Moderate' },
+    'stem_math': { mult: 0.92, label: 'Mathematics & Physics', comp: 'High', spikeReq: 'High' },
+    'social': { mult: 0.96, label: 'Social Sciences & Law', comp: 'Moderate', spikeReq: 'Moderate' },
+    'humanities': { mult: 1.04, label: 'Humanities & Literature', comp: 'Moderate/Favorable', spikeReq: 'Moderate' },
+    'arts': { mult: 1.02, label: 'Arts & Architecture', comp: 'Portfolio-Dependent', spikeReq: 'Portfolio' },
+    'undecided': { mult: 0.96, label: 'Undecided / Liberal Arts', comp: 'Standard', spikeReq: 'Low' }
+  };
+  var majorInfo = majorModifiers[profile.major] || majorModifiers['cs'];
+
+  // Overall Composite Profile Strength (0-100)
+  var compositeScore = Math.round(academicIndex * 0.46 + ecIndex * 0.42 + (profile.activities.length >= 3 ? 5 : 2) + (profile.ielts >= '7.5' ? 4 : 1));
+  compositeScore = Math.min(98, Math.max(30, compositeScore));
+
+  // 4. Match against Universities
+  var matches = [];
+  UNIVERSITIES_DB.forEach(function(uni) {
+    // Check if region is selected
+    if (profile.regions && profile.regions.length && profile.regions.indexOf(uni.region) < 0) return;
+
+    // Sat match factor
+    var satDiff = sat - uni.sat25;
+    var satSpan = (uni.sat75 - uni.sat25) || 70;
+    var satFactor = 0.5 + (satDiff / satSpan) * 0.5; // 0.5 at 25th percentile, 1.0 at 75th percentile
+    satFactor = Math.min(1.4, Math.max(0.1, satFactor));
+
+    // GPA match factor
+    var gpaFactor = normGpa >= uni.gpa ? 1.15 : (normGpa >= uni.gpa - 0.2 ? 0.95 : 0.70);
+
+    // EC Tier match factor
+    var tierFactor = bestTier <= uni.minTier ? 1.25 : (bestTier === uni.minTier + 1 ? 0.85 : 0.45);
+
+    // Major modifier
+    var majorFactor = (uni.stem >= 4 && (profile.major === 'cs' || profile.major === 'engineering')) ? majorInfo.mult : 0.95;
+
+    // Financial Aid reality penalty
+    var aidFactor = 1.0;
+    var aidAlert = null;
+    if (profile.finAid === 'full') {
+      if (uni.needBlind) {
+        aidFactor = 1.0; // Need-blind: zero disadvantage!
+        aidAlert = 'Need-Blind (100% Aid)';
+      } else if (uni.region === 'kz' || uni.id === 'kaist') {
+        aidFactor = 1.05; // Free state grant / automatic scholarship
+        aidAlert = 'Full Scholarship Program';
+      } else if (uni.id === 'ucb' || uni.id === 'ucla' || uni.id === 'umich') {
+        aidFactor = 0.25;
+        aidAlert = 'Warning: No need-based aid for intl students ($70k/yr)';
+      } else {
+        // Need-aware US / UK private institutions
+        aidFactor = 0.42; // Asking for full aid drops acceptance odds by ~58%
+        aidAlert = 'Need-Aware (Requesting full aid reduces odds)';
+      }
+    } else if (profile.finAid === 'partial') {
+      if (!uni.needBlind) aidFactor = 0.78;
+    }
+
+    // Base acceptance rate combined with student profile power
+    var baseRate = uni.rate; // e.g. 3.4%
+    var estimatedOdds = baseRate * (compositeScore / 50) * satFactor * gpaFactor * tierFactor * majorFactor * aidFactor;
+    estimatedOdds = Math.round(estimatedOdds * 10) / 10;
+    estimatedOdds = Math.min(95, Math.max(1, estimatedOdds));
+
+    var category = 'reach';
+    if (estimatedOdds >= 72 || uni.rate >= 50) {
+      category = 'safety';
+    } else if (estimatedOdds >= 30 || (uni.rate >= 14 && compositeScore >= 78)) {
+      category = 'target';
+    } else {
+      category = 'reach';
+    }
+
+    matches.push({
+      uni: uni,
+      odds: estimatedOdds,
+      category: category,
+      aidAlert: aidAlert
+    });
+  });
+
+  // Sort matches
+  var reachList = matches.filter(function(m){ return m.category === 'reach'; }).sort(function(a,b){ return b.odds - a.odds; });
+  var targetList = matches.filter(function(m){ return m.category === 'target'; }).sort(function(a,b){ return b.odds - a.odds; });
+  var safetyList = matches.filter(function(m){ return m.category === 'safety'; }).sort(function(a,b){ return b.odds - a.odds; });
+
+  // 5. Generate Qualitative Insights & Action Plan in Russian
+  var strengths = [];
+  var gaps = [];
+  var actionItems = [];
+
+  // Strengths
+  if (sat >= 1520) strengths.push('Балл SAT ' + sat + ' помещает тебя в топ-1% абитуриентов мира и превосходит 25-й перцентиль даже в Harvard и MIT.');
+  else if (sat >= 1400) strengths.push('Балл SAT ' + sat + ' является конкурентным для Top-30 вузов США и даёт право на прямые гранты в Nazarbayev University, KAIST и Европе.');
+  else strengths.push('Текущий SAT ' + sat + ' — отличная база. Увеличение на 80-120 баллов в секции Math кардинально повысит шансы.');
+
+  if (normGpa >= 3.85) strengths.push('Высокий средний балл GPA ' + normGpa.toFixed(2) + ' (' + (profile.classRank==='top5'?'Top 5%':'сильный академический рейтинг') + ') показывает приёмной комиссии академическую дисциплину.');
+  if (bestTier <= 2) strengths.push('Наличие внешкольной активности уровня Tier ' + bestTier + ' (лидерская роль / олимпиады) выделяет портфолио среди тысяч кандидатов с одинаковыми оценками.');
+  if (profile.honors && profile.honors.research) strengths.push('Научно-исследовательский опыт (Research) даёт мощное преимущество при подаче на STEM и Natural Sciences.');
+
+  // Gaps & Risks
+  if (profile.finAid === 'full') {
+    gaps.push('Запрос 100% финансовой помощи (Full Need) — главный фильтр для международных студентов в Need-Aware вузах (Stanford, Columbia, NYU, Penn). Обязательно фокусируйся на Need-Blind университетах (Harvard, MIT, Princeton, Yale, Dartmouth, Bowdoin, Amherst).');
+  }
+  if (majorInfo.comp === 'Extreme' && bestTier > 1) {
+    gaps.push('Для специальности ' + majorInfo.label + ' в мировых Top-20 критически важен глубокий «Spike» (победы на олимпиадах уровня IOI/USACO, разработка открытых IT-проектов с реальными пользователями).');
+  }
+  if (totalHours < 12) {
+    gaps.push('Суммарная нагрузка во внешкольной деятельности (' + totalHours + ' ч/нед) выглядит скромно. Топовые вузы ищут студентов с глубокой отдачей (15–20+ ч/нед).');
+  }
+  if (!profile.apCount || profile.apCount < 3) {
+    gaps.push('Небольшое количество курсов повышенной сложности (AP / IB / Advanced). Приёмные комиссии США и Великобритании (Oxford, Cambridge) любят подтверждённую академическую строгость.');
+  }
+
+  // 90-Day Action Plan
+  actionItems.push('Common App Personal Statement: Избегай шаблонных эссе («как я полюбил программирование с 7 лет»). Напиши историю личной уязвимости, нестандартного мышления или реального вклада в сообщество.');
+  if (sat < 1520) actionItems.push('Прокачай SAT Math до 780-800 баллов: В SATPath на острове Math Path решай секции «Advanced Math» и «Geometry» — это самый быстрый способ добавить +60-100 баллов к общему счёту.');
+  actionItems.push('Сбалансируй список колледжей по формуле: 4–6 Reach (Ivy / Top-15) + 4–5 Target (T30-50 / KAIST) + 2–3 Safety (Nazarbayev University, ASU, Purdue), чтобы гарантированно получить оффер и стипендию.');
+  actionItems.push('Рекомендательные письма (Letters of Recommendation): Попроси двух преподавателей (желательно точных и гуманитарных наук) описать конкретные истории твоей инициативы и лидерства в классе.');
+
+  return {
+    compositeScore: compositeScore,
+    academicIndex: academicIndex,
+    ecIndex: ecIndex,
+    bestTier: bestTier,
+    majorInfo: majorInfo,
+    reachList: reachList,
+    targetList: targetList,
+    safetyList: safetyList,
+    strengths: strengths,
+    gaps: gaps,
+    actionItems: actionItems
+  };
+}
+
+var aiSelectedTab = 'reach'; // 'reach' | 'target' | 'safety'
+
+function buildAIAdmissions() {
+  var el = document.getElementById('vAI');
+  if (!el) return;
+  var p = getStoredAdmissionsProfile();
+  var evalRes = evaluateAdmissionsChances(p);
+
+  // Sync candidate SAT from live app if available
+  var liveSat = 1420;
+  var dScoreEl = document.getElementById('dScore');
+  if (dScoreEl && parseInt(dScoreEl.textContent) >= 600) {
+    liveSat = parseInt(dScoreEl.textContent);
+  }
+
+  var h = '<div class="ai-hero">' +
+    '<div>' +
+    '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' +
+    IC_COMPAS_HTML + ' HOLISTIC ADMISSIONS ENGINE · ARCHIPELAGO AI</div>' +
+    '<h1>AI Admissions &amp; Portfolio Evaluator</h1>' +
+    '<p class="sub">Введи свои академические данные (GPA, SAT), внешкольные достижения и специальность — встроенная нейросетевая модель рассчитает шансы поступления в 30+ университетов мира, выявит пробелы и сформирует стратегию поступления.</p>' +
+    '<div class="ai-badge-group">' +
+    '<span class="ai-badge gold">' + IC_LORD_SM_HTML + ' Ivy League &amp; T50 Model</span>' +
+    '<span class="ai-badge">✓ Offline Instant Engine</span>' +
+    '<span class="ai-badge">🎓 Reach / Target / Safety Match</span>' +
+    '<span class="ai-badge">⚡ Live SAT Sync</span>' +
+    '</div>' +
+    '</div>' +
+    '</div>';
+
+  h += '<div class="ai-grid-layout">';
+
+  // LEFT COLUMN: INPUT FORM
+  h += '<div>';
+
+  // Section 1: Academics
+  h += '<div class="ai-sec-card">' +
+    '<div class="ai-sec-title"><span>📊</span> 1. Академический профиль</div>' +
+    '<div style="margin-bottom:16px">' +
+    '<div class="ai-field-label"><span>Текущий балл SAT</span><span style="font-size:15px;color:var(--acc);font-weight:800" id="aiSatVal">' + p.sat + '</span></div>' +
+    '<input type="range" id="aiSatInp" min="800" max="1600" step="10" value="' + p.sat + '" style="width:100%;accent-color:var(--acc)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">' +
+    '<small style="color:var(--mut)">Диапазон: 800 - 1600</small>' +
+    '<button type="button" class="hud-pill" id="aiSyncSatBtn" style="padding:3px 9px;font-size:11px" title="Синхронизировать с Score Calculator / Mock">' +
+    '⚡ Синхронизировать (' + liveSat + ')</button>' +
+    '</div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">' +
+    '<div>' +
+    '<div class="ai-field-label"><span>Средний балл (GPA)</span><small id="aiGpaVal">' + p.gpa + '</small></div>' +
+    '<input type="number" id="aiGpaInp" class="ai-input" min="2.0" max="5.0" step="0.01" value="' + p.gpa + '">' +
+    '</div>' +
+    '<div>' +
+    '<div class="ai-field-label"><span>Шкала GPA</span><small>Scale</small></div>' +
+    '<select id="aiGpaScale" class="ai-select">' +
+    '<option value="4.0"' + (p.gpaScale == 4.0 ? ' selected' : '') + '>4.0 Unweighted (США / межд.)</option>' +
+    '<option value="5.0"' + (p.gpaScale == 5.0 ? ' selected' : '') + '>5.0 (Казахстан / РФ / НЗШ)</option>' +
+    '</select>' +
+    '</div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">' +
+    '<div>' +
+    '<div class="ai-field-label"><span>Рейтинг в классе</span><small>Rank</small></div>' +
+    '<select id="aiRankInp" class="ai-select">' +
+    '<option value="top1"' + (p.classRank === 'top1' ? ' selected' : '') + '>Top 1% (Valedictorian)</option>' +
+    '<option value="top5"' + (p.classRank === 'top5' ? ' selected' : '') + '>Top 5% класса</option>' +
+    '<option value="top10"' + (p.classRank === 'top10' ? ' selected' : '') + '>Top 10% класса</option>' +
+    '<option value="top25"' + (p.classRank === 'top25' ? ' selected' : '') + '>Top 25% класса</option>' +
+    '<option value="average"' + (p.classRank === 'average' ? ' selected' : '') + '>Средний (Top 50%)</option>' +
+    '</select>' +
+    '</div>' +
+    '<div>' +
+    '<div class="ai-field-label"><span>AP / IB / Advanced</span><small>Сложные курсы</small></div>' +
+    '<input type="number" id="aiApInp" class="ai-input" min="0" max="15" value="' + (p.apCount || 4) + '">' +
+    '</div>' +
+    '</div>' +
+    '</div>';
+
+  // Section 2: Major & Focus
+  h += '<div class="ai-sec-card">' +
+    '<div class="ai-sec-title"><span>🎯</span> 2. Выбранная специальность (Major)</div>' +
+    '<div style="margin-bottom:12px">' +
+    '<select id="aiMajorInp" class="ai-select" style="font-weight:700">' +
+    '<option value="cs"' + (p.major === 'cs' ? ' selected' : '') + '>💻 Computer Science, Software &amp; AI (Высочайшая конкуренция)</option>' +
+    '<option value="engineering"' + (p.major === 'engineering' ? ' selected' : '') + '>⚙️ Engineering &amp; Robotics (Mechanical, Electrical, Aerospace)</option>' +
+    '<option value="business"' + (p.major === 'business' ? ' selected' : '') + '>📈 Business, Finance &amp; Economics (Wharton, Stern, LSE)</option>' +
+    '<option value="premed"' + (p.major === 'premed' ? ' selected' : '') + '>🧬 Pre-Med, Biology &amp; Neuroscience</option>' +
+    '<option value="stem_math"' + (p.major === 'stem_math' ? ' selected' : '') + '>📐 Mathematics, Physics &amp; Data Science</option>' +
+    '<option value="social"' + (p.major === 'social' ? ' selected' : '') + '>⚖️ Social Sciences, International Relations &amp; Law</option>' +
+    '<option value="humanities"' + (p.major === 'humanities' ? ' selected' : '') + '>📚 Humanities, Philosophy &amp; Literature</option>' +
+    '<option value="arts"' + (p.major === 'arts' ? ' selected' : '') + '>🎨 Arts, Architecture &amp; Design (Portfolio Required)</option>' +
+    '<option value="undecided"' + (p.major === 'undecided' ? ' selected' : '') + '>🧭 Undecided / Liberal Arts</option>' +
+    '</select>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--mut);line-height:1.45;padding:8px 12px;background:var(--panel2);border-radius:10px">' +
+    'ℹ️ <b>Уровень конкуренции:</b> ' + evalRes.majorInfo.comp + '. Программы в сфере CS и Engineering получают в 4 раза больше заявок на место, поэтому для них критичен выраженный «Spike» (олимпиады или проекты).' +
+    '</div>' +
+    '</div>';
+
+  // Section 3: Extracurriculars & Spike
+  h += '<div class="ai-sec-card">' +
+    '<div class="ai-sec-title"><span>🌟</span> 3. Внешкольная деятельность и Spike</div>' +
+    '<div style="font-size:12px;color:var(--mut);margin-bottom:12px">Приёмные комиссии США делят активности на 4 уровня (Tiers). Чем выше уровень твоей ключевой активности, тем выше шансы в Ivy League.</div>';
+
+  p.activities.forEach(function(act, idx) {
+    h += '<div style="background:var(--panel2);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+      '<b style="font-size:13px">Активность #' + (idx + 1) + (idx === 0 ? ' (Главный Spike)' : '') + '</b>' +
+      (p.activities.length > 1 ? '<button type="button" data-del-act="' + idx + '" style="color:#e74c3c;font-size:11px;font-weight:700">Удалить ✕</button>' : '') +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">' +
+      '<input type="text" class="ai-input" placeholder="Название (напр. Robotics Club)" value="' + (act.title || '').replace(/"/g, '&quot;') + '" data-act-title="' + idx + '">' +
+      '<input type="text" class="ai-input" placeholder="Роль (напр. Captain / Founder)" value="' + (act.role || '').replace(/"/g, '&quot;') + '" data-act-role="' + idx + '">' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--mut);margin-bottom:6px">' +
+      '<span>Уровень достижения (Tier):</span>' +
+      '<label style="display:inline-flex;align-items:center;gap:6px">Часов в неделю: <input type="number" class="ai-input" min="1" max="40" value="' + (act.hours || 4) + '" data-act-hours="' + idx + '" style="width:62px;padding:3px 7px;font-size:12px;text-align:center"></label>' +
+      '</div>' +
+      '<div class="ai-tier-selector" data-act-tier-box="' + idx + '">' +
+      '<button type="button" class="ai-tier-btn' + (act.tier === 1 ? ' selected' : '') + '" data-act-idx="' + idx + '" data-set-tier="1">Tier 1 · Международный</button>' +
+      '<button type="button" class="ai-tier-btn' + (act.tier === 2 ? ' selected' : '') + '" data-act-idx="' + idx + '" data-set-tier="2">Tier 2 · Республиканский</button>' +
+      '<button type="button" class="ai-tier-btn' + (act.tier === 3 ? ' selected' : '') + '" data-act-idx="' + idx + '" data-set-tier="3">Tier 3 · Школа / Город</button>' +
+      '<button type="button" class="ai-tier-btn' + (act.tier === 4 ? ' selected' : '') + '" data-act-idx="' + idx + '" data-set-tier="4">Tier 4 · Хобби / Клуб</button>' +
+      '</div>' +
+      '</div>';
+  });
+
+  if (p.activities.length < 5) {
+    h += '<button type="button" id="aiAddActBtn" class="cta" style="border-radius:12px;padding:8px 14px;font-size:12px;margin-bottom:14px">+ Добавить ещё активность</button>';
+  }
+
+  // Honors Checkboxes
+  h += '<div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)">' +
+    '<b style="display:block;font-size:13px;margin-bottom:8px">Особые достижения и награды (Honors):</b>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12.5px">' +
+    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="hOlympiad"' + (p.honors.olympiad ? ' checked' : '') + '> Призёр нац. олимпиад</label>' +
+    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="hIntl"' + (p.honors.intl ? ' checked' : '') + '> Медаль межд. олимпиады / ISEF</label>' +
+    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="hResearch"' + (p.honors.research ? ' checked' : '') + '> Научная публикация (Research)</label>' +
+    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="hStartup"' + (p.honors.startup ? ' checked' : '') + '> Запуск стартапа / НКО</label>' +
+    '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="hVolunteer"' + (p.honors.volunteer100 ? ' checked' : '') + '> 100+ часов волонтёрства</label>' +
+    '</div></div></div>';
+
+  // Section 4: FinAid & Regions
+  h += '<div class="ai-sec-card">' +
+    '<div class="ai-sec-title"><span>💰</span> 4. Финансовая помощь и География</div>' +
+    '<div style="margin-bottom:14px">' +
+    '<div class="ai-field-label"><span>Потребность в стипендии / Financial Aid</span><small>Критичный фактор</small></div>' +
+    '<select id="aiFinAidInp" class="ai-select">' +
+    '<option value="full"' + (p.finAid === 'full' ? ' selected' : '') + '>Need Full Aid (Нужна полная оплата 100% Tuition + Living)</option>' +
+    '<option value="partial"' + (p.finAid === 'partial' ? ' selected' : '') + '>Partial Aid (Нужна скидка / помощь до $20,000–$40,000 в год)</option>' +
+    '<option value="none"' + (p.finAid === 'none' ? ' selected' : '') + '>No Aid / Full Pay (Готовы оплачивать обучение полностью)</option>' +
+    '</select>' +
+    '</div>' +
+    '<div class="ai-field-label"><span>Целевые регионы поступления:</span></div>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:12.5px">' +
+    '<label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" data-reg="us"' + (p.regions.indexOf('us') >= 0 ? ' checked' : '') + '> 🇺🇸 США</label>' +
+    '<label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" data-reg="uk"' + (p.regions.indexOf('uk') >= 0 ? ' checked' : '') + '> 🇬🇧 Великобритания</label>' +
+    '<label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" data-reg="eu"' + (p.regions.indexOf('eu') >= 0 ? ' checked' : '') + '> 🇪🇺 Европа (Германия, Швейцария, Нидерланды)</label>' +
+    '<label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" data-reg="asia"' + (p.regions.indexOf('asia') >= 0 ? ' checked' : '') + '> 🇸🇬 🇰🇷 Азия (NUS, NTU, KAIST, HKU)</label>' +
+    '<label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" data-reg="kz"' + (p.regions.indexOf('kz') >= 0 ? ' checked' : '') + '> 🇰🇿 Казахстан (Nazarbayev University)</label>' +
+    '</div>' +
+    '</div>';
+
+  // Section 5: Essay Draft / Personal Statement
+  h += '<div class="ai-sec-card">' +
+    '<div class="ai-sec-title"><span>✍️</span> 5. Черновик эссе / Common App Essay (опционально)</div>' +
+    '<p style="font-size:12px;color:var(--mut);margin-bottom:8px">Вставь черновик эссе или тезисы о себе — алгоритм проанализирует силу нарратива, клише и убедительность темы.</p>' +
+    '<textarea id="aiEssayInp" class="ai-textarea" rows="4" placeholder="Вставь сюда черновик эссе или ключевую историю из жизни...">' + (p.essay || '') + '</textarea>' +
+    '<div style="margin-top:14px">' +
+    '<button type="button" id="aiCalcBtn" class="cta-amber" style="width:100%;text-align:center;padding:14px;font-size:15px;border-radius:16px">' +
+    '🔮 Рассчитать шансы поступления и обновить стратегию' +
+    '</button>' +
+    '</div>' +
+    '</div>';
+
+  h += '</div>'; // End Left Column
+
+  // RIGHT COLUMN: RESULTS & SCORECARD
+  h += '<div>';
+
+  // Profile Strength Scorecard
+  var compositeLabel = evalRes.compositeScore >= 90 ? 'Elite Candidate (Ivy League Caliber)' :
+                       (evalRes.compositeScore >= 80 ? 'Highly Competitive Candidate' :
+                       (evalRes.compositeScore >= 68 ? 'Competitive Applicant' : 'Developing Profile'));
+
+  h += '<div class="ai-score-card">' +
+    '<small style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sand)">ОБЩИЙ РЕЙТИНГ ПОРТФОЛИО</small>' +
+    '<div class="ai-score-circle">' +
+    '<span class="ai-score-num">' + evalRes.compositeScore + '</span>' +
+    '<span class="ai-score-max">из 100 баллов</span>' +
+    '</div>' +
+    '<b style="font-size:17px;display:block;margin-top:6px;color:var(--tx)">' + compositeLabel + '</b>' +
+    '<p style="font-size:12px;color:var(--mut);margin-top:4px">Оценка основана на holistic-модели приёмных комиссий ведущих мировых вузов.</p>' +
+    '<div style="margin-top:16px;text-align:left;border-top:1px solid var(--line);padding-top:12px">' +
+    '<div class="pillar-row"><span>Академический индекс (SAT + GPA):</span><div class="pillar-bar"><div style="width:' + evalRes.academicIndex + '%"></div></div><b>' + evalRes.academicIndex + '/100</b></div>' +
+    '<div class="pillar-row"><span>Внешкольные успехи (Spike &amp; Tiers):</span><div class="pillar-bar"><div style="width:' + evalRes.ecIndex + '%;background:var(--sand)"></div></div><b>' + evalRes.ecIndex + '/100</b></div>' +
+    '<div class="pillar-row"><span>Конкурентность специальности:</span><b>' + evalRes.majorInfo.comp + '</b></div>' +
+    '<div class="pillar-row"><span>Финансовая помощь:</span><b>' + (p.finAid === 'full' ? 'Full Need (Высокий барьер)' : (p.finAid === 'partial' ? 'Partial Need' : 'Full Pay')) + '</b></div>' +
+    '</div>' +
+    '</div>';
+
+  // University Recommendations (Reach / Target / Safety Tabs)
+  h += '<div class="ai-sec-card" style="margin-top:20px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">' +
+    '<b style="font-size:16px">🎯 Подборка университетов</b>' +
+    '<div style="display:inline-flex;gap:4px">' +
+    '<button type="button" class="uni-pill-tab' + (aiSelectedTab === 'reach' ? ' on' : '') + '" data-tab="reach">🔴 Reach (' + evalRes.reachList.length + ')</button>' +
+    '<button type="button" class="uni-pill-tab' + (aiSelectedTab === 'target' ? ' on' : '') + '" data-tab="target">🟡 Target (' + evalRes.targetList.length + ')</button>' +
+    '<button type="button" class="uni-pill-tab' + (aiSelectedTab === 'safety' ? ' on' : '') + '" data-tab="safety">🟢 Safety (' + evalRes.safetyList.length + ')</button>' +
+    '</div>' +
+    '</div>' +
+    '<div id="aiUniListContainer">';
+
+  var currentList = (aiSelectedTab === 'reach') ? evalRes.reachList : (aiSelectedTab === 'target' ? evalRes.targetList : evalRes.safetyList);
+  if (!currentList.length) {
+    h += '<div style="padding:24px;text-align:center;color:var(--mut);font-size:13px">В выбранной категории нет вузов по заданным региональным фильтрам.</div>';
+  } else {
+    currentList.forEach(function(item) {
+      var u = item.uni;
+      var badgeCls = item.category === 'reach' ? 'uni-badge-reach' : (item.category === 'target' ? 'uni-badge-target' : 'uni-badge-safety');
+      var badgeLbl = item.category === 'reach' ? 'Шанс ~' + item.odds + '% (Reach)' : (item.category === 'target' ? 'Шанс ~' + item.odds + '% (Target)' : 'Шанс ~' + item.odds + '% (Safety)');
+      h += '<div class="uni-match-card">' +
+        '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
+        '<span style="font-size:16px">' + u.flag + '</span>' +
+        '<b style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + u.name + '</b>' +
+        '</div>' +
+        '<div style="font-size:11.5px;color:var(--mut);margin-top:3px">' +
+        'SAT ср.: ' + u.sat25 + '–' + u.sat75 + ' · Приём: ' + u.rate + '% · ' + (u.needBlind ? '<span style="color:var(--acc);font-weight:700">Need-Blind Int\'l</span>' : 'Need-Aware') +
+        '</div>' +
+        (item.aidAlert ? '<div style="font-size:11px;color:' + (u.needBlind ? 'var(--acc)' : 'var(--sand)') + ';margin-top:2px;font-weight:600">ℹ️ ' + item.aidAlert + '</div>' : '') +
+        '<div style="font-size:11.5px;color:var(--tx);opacity:.85;margin-top:4px">' + u.notes + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;flex:none">' +
+        '<span class="' + badgeCls + '">' + badgeLbl + '</span>' +
+        '</div>' +
+        '</div>';
+    });
+  }
+
+  h += '</div>' +
+    '<div style="font-size:11px;color:var(--mut);margin-top:10px;text-align:center">' +
+    'Формула сбалансированного списка: подавай в 5 Reach + 5 Target + 3 Safety вузов.' +
+    '</div>' +
+    '</div>';
+
+  // Qualitative Analysis Card
+  h += '<div class="ai-sec-card">' +
+    '<div class="ai-sec-title"><span>💡</span> Анализ портфолио и Рекомендации</div>' +
+    '<div style="margin-bottom:12px">' +
+    '<b style="font-size:13px;color:var(--acc);display:flex;align-items:center;gap:6px">💪 Твои сильные стороны:</b>' +
+    '<ul style="margin:6px 0 12px 18px;font-size:12.5px;color:var(--tx);line-height:1.55;list-style:disc">' +
+    evalRes.strengths.map(function(s){ return '<li>' + s + '</li>'; }).join('') +
+    '</ul>' +
+    '</div>' +
+    '<div style="margin-bottom:12px">' +
+    '<b style="font-size:13px;color:#e74c3c;display:flex;align-items:center;gap:6px">⚠️ Зоны риска и слабые места:</b>' +
+    '<ul style="margin:6px 0 12px 18px;font-size:12.5px;color:var(--tx);line-height:1.55;list-style:disc">' +
+    evalRes.gaps.map(function(g){ return '<li>' + g + '</li>'; }).join('') +
+    '</ul>' +
+    '</div>' +
+    '<div>' +
+    '<b style="font-size:13px;color:var(--sand);display:flex;align-items:center;gap:6px">🚀 План действий на 90 дней:</b>' +
+    '<ol style="margin:6px 0 0 18px;font-size:12.5px;color:var(--tx);line-height:1.55;list-style:decimal">' +
+    evalRes.actionItems.map(function(a){ return '<li>' + a + '</li>'; }).join('') +
+    '</ol>' +
+    '</div>' +
+    '</div>';
+
+  h += '</div>'; // End Right Column
+  h += '</div>'; // End Grid Layout
+
+  el.innerHTML = h;
+
+  // Bind Form Interactivity
+  var satInp = document.getElementById('aiSatInp');
+  var satVal = document.getElementById('aiSatVal');
+  if (satInp) {
+    satInp.oninput = function() {
+      satVal.textContent = satInp.value;
+      p.sat = parseInt(satInp.value);
+      saveAdmissionsProfile(p);
+    };
+  }
+
+  var syncBtn = document.getElementById('aiSyncSatBtn');
+  if (syncBtn) {
+    syncBtn.onclick = function() {
+      if (satInp) {
+        satInp.value = liveSat;
+        satVal.textContent = liveSat;
+        p.sat = liveSat;
+        saveAdmissionsProfile(p);
+        toast('⚡ Синхронизирован SAT балл: ' + liveSat);
+        buildAIAdmissions();
+      }
+    };
+  }
+
+  var gpaInp = document.getElementById('aiGpaInp');
+  var gpaVal = document.getElementById('aiGpaVal');
+  if (gpaInp) {
+    gpaInp.oninput = function() {
+      gpaVal.textContent = gpaInp.value;
+      p.gpa = parseFloat(gpaInp.value) || 3.8;
+      saveAdmissionsProfile(p);
+    };
+  }
+
+  var gpaScale = document.getElementById('aiGpaScale');
+  if (gpaScale) {
+    gpaScale.onchange = function() {
+      p.gpaScale = parseFloat(gpaScale.value) || 4.0;
+      saveAdmissionsProfile(p);
+      buildAIAdmissions();
+    };
+  }
+
+  var rankInp = document.getElementById('aiRankInp');
+  if (rankInp) {
+    rankInp.onchange = function() {
+      p.classRank = rankInp.value;
+      saveAdmissionsProfile(p);
+    };
+  }
+
+  var apInp = document.getElementById('aiApInp');
+  if (apInp) {
+    apInp.oninput = function() {
+      p.apCount = parseInt(apInp.value) || 0;
+      saveAdmissionsProfile(p);
+    };
+  }
+
+  var majorInp = document.getElementById('aiMajorInp');
+  if (majorInp) {
+    majorInp.onchange = function() {
+      p.major = majorInp.value;
+      saveAdmissionsProfile(p);
+      buildAIAdmissions();
+    };
+  }
+
+  var finAidInp = document.getElementById('aiFinAidInp');
+  if (finAidInp) {
+    finAidInp.onchange = function() {
+      p.finAid = finAidInp.value;
+      saveAdmissionsProfile(p);
+      buildAIAdmissions();
+    };
+  }
+
+  // Region Checkboxes
+  el.querySelectorAll('[data-reg]').forEach(function(cb) {
+    cb.onchange = function() {
+      var selected = [];
+      el.querySelectorAll('[data-reg]:checked').forEach(function(c) {
+        selected.push(c.dataset.reg);
+      });
+      p.regions = selected;
+      saveAdmissionsProfile(p);
+      buildAIAdmissions();
+    };
+  });
+
+  // Honors Checkboxes
+  ['hOlympiad', 'hIntl', 'hResearch', 'hStartup', 'hVolunteer'].forEach(function(id) {
+    var elem = document.getElementById(id);
+    if (elem) {
+      elem.onchange = function() {
+        p.honors = {
+          olympiad: document.getElementById('hOlympiad').checked,
+          intl: document.getElementById('hIntl').checked,
+          research: document.getElementById('hResearch').checked,
+          startup: document.getElementById('hStartup').checked,
+          volunteer100: document.getElementById('hVolunteer').checked
+        };
+        saveAdmissionsProfile(p);
+      };
+    }
+  });
+
+  // Tier buttons for activities
+  el.querySelectorAll('[data-set-tier]').forEach(function(btn) {
+    btn.onclick = function() {
+      var actIdx = parseInt(btn.dataset.actIdx);
+      var tier = parseInt(btn.dataset.setTier);
+      if (p.activities[actIdx]) {
+        p.activities[actIdx].tier = tier;
+        saveAdmissionsProfile(p);
+        buildAIAdmissions();
+      }
+    };
+  });
+
+  // Activity title and role inputs
+  el.querySelectorAll('[data-act-title]').forEach(function(inp) {
+    inp.oninput = function() {
+      var idx = parseInt(inp.dataset.actTitle);
+      if (p.activities[idx]) { p.activities[idx].title = inp.value; saveAdmissionsProfile(p); }
+    };
+  });
+  el.querySelectorAll('[data-act-role]').forEach(function(inp) {
+    inp.oninput = function() {
+      var idx = parseInt(inp.dataset.actRole);
+      if (p.activities[idx]) { p.activities[idx].role = inp.value; saveAdmissionsProfile(p); }
+    };
+  });
+  el.querySelectorAll('[data-act-hours]').forEach(function(inp) {
+    inp.onchange = function() {
+      var idx = parseInt(inp.dataset.actHours);
+      if (p.activities[idx]) { p.activities[idx].hours = Math.max(1, Math.min(40, parseInt(inp.value) || 4)); saveAdmissionsProfile(p); buildAIAdmissions(); }
+    };
+  });
+
+  // Add / Delete activity buttons
+  var addActBtn = document.getElementById('aiAddActBtn');
+  if (addActBtn) {
+    addActBtn.onclick = function() {
+      if (p.activities.length < 5) {
+        p.activities.push({ title: 'New Extracurricular', role: 'Member / Officer', tier: 3, hours: 3 });
+        saveAdmissionsProfile(p);
+        buildAIAdmissions();
+      }
+    };
+  }
+  el.querySelectorAll('[data-del-act]').forEach(function(btn) {
+    btn.onclick = function() {
+      var idx = parseInt(btn.dataset.delAct);
+      p.activities.splice(idx, 1);
+      saveAdmissionsProfile(p);
+      buildAIAdmissions();
+    };
+  });
+
+  // Category Tabs (Reach / Target / Safety)
+  el.querySelectorAll('[data-tab]').forEach(function(tabBtn) {
+    tabBtn.onclick = function() {
+      aiSelectedTab = tabBtn.dataset.tab;
+      buildAIAdmissions();
+    };
+  });
+
+  // Essay input
+  var essayInp = document.getElementById('aiEssayInp');
+  if (essayInp) {
+    essayInp.oninput = function() {
+      p.essay = essayInp.value;
+      saveAdmissionsProfile(p);
+    };
+  }
+
+  // Calculate & Refresh Button with Animation
+  var calcBtn = document.getElementById('aiCalcBtn');
+  if (calcBtn) {
+    calcBtn.onclick = function() {
+      calcBtn.innerHTML = '⏳ Анализируем профиль кандидата...';
+      calcBtn.disabled = true;
+      setTimeout(function() {
+        saveAdmissionsProfile(p);
+        buildAIAdmissions();
+        confetti();
+        toast('✨ Профиль проанализирован! Шансы и рекомендации обновлены.');
+      }, 500);
+    };
+  }
+}
+
 </script></body></html>
