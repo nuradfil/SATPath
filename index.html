@@ -17528,6 +17528,30 @@ function paintUser(){var u=FBU,soAll=document.querySelectorAll('.so');
  var lastSo = soAll[soAll.length-1];
  if(lastSo) lastSo.textContent = u ? 'Sign Out' : 'Sign in with Google';
 }
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
+
+const handleForgotPassword = () => {
+  // Берем email из инпута, куда пользователь уже ввел свою почту
+  const email = document.getElementById('email-input').value;
+
+  if (!email) {
+    alert("Пожалуйста, введите ваш email в поле выше!");
+    return;
+  }
+
+  const auth = getAuth();
+  sendPasswordResetEmail(auth, email)
+    .then(() => {
+      alert("Ссылка для сброса пароля отправлена на почту!");
+    })
+    .catch((error) => {
+      console.error(error.code, error.message);
+      alert("Ошибка: " + error.message);
+    });
+};
+
+// Привязываем к твоей кнопке/ссылке "Forgot password?"
+document.getElementById('forgot-password-btn').addEventListener('click', handleForgotPassword);
 function lbSign(){if(!FB_CONFIG)return toast('Leaderboard is not configured yet');
  fbInit().then(function(){FBU?FB.au.signOut(FB.auth):FB.au.signInWithPopup(FB.auth,new FB.au.GoogleAuthProvider()).catch(function(e){console.error(e);toast('Sign-in failed: '+(e.code||e.message))})})}
 function lbRow(r,i,max,mine){var acc=r.q?Math.round(r.c/r.q*100):0,ok=r.photo&&/^https:\/\//.test(r.photo);
