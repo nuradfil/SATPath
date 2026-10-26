@@ -2197,4 +2197,4 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 applyProfileUI();
 refreshDash();
 initDailyChallenges();
-
+lucide.createIcons();
