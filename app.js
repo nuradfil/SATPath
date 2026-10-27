@@ -3336,6 +3336,355 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     draw();
   };
 })();
+/* ============================================================================
+ * SATPATH BLUEBOOK MASTER ENGINE (v6.0):
+ * 1. R&W TEXT SELECTION HIGHLIGHTER ("Add to Vocab" floating popup)
+ * 2. MATH SPLIT-SCREEN (Calculator toggles into left pane instead of bottom)
+ * 3. MATH REFERENCE SHEET (Clean vector SVG diagrams, zero emojis)
+ * ============================================================================ */
+
+(function upgradeMasterBluebookEngine() {
+  var mStyle = document.createElement('style');
+  mStyle.textContent = `
+    /* Плавающая кнопка Highlighter при выделении текста в R&W */
+    .sp-highlighter-pop {
+      position: fixed; z-index: 300; background: var(--tx); color: var(--panel);
+      padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 800;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 6px;
+      cursor: pointer; animation: up .15s ease; border: 1px solid var(--line);
+    }
+    .sp-highlighter-pop:hover { background: var(--acc); color: #fff; }
+
+    /* Переключаемая левая панель в Math (Reference vs Desmos Calculator) */
+    .sp-math-left-pane {
+      background: var(--panel); border: 1.5px solid var(--line); border-radius: 22px;
+      display: flex; flex-direction: column; height: calc(100vh - 155px) !important; min-height: 560px;
+      overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .sp-math-pane-tabs {
+      display: flex; background: var(--panel2); border-bottom: 1.5px solid var(--line); padding: 6px; gap: 6px; flex: none;
+    }
+    .sp-math-tab {
+      flex: 1; padding: 8px 12px; text-align: center; font-weight: 700; font-size: 12.5px;
+      border-radius: 12px; color: var(--mut); background: transparent; border: 0; transition: .15s;
+    }
+    .sp-math-tab.active {
+      background: var(--panel); color: var(--tx); box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .sp-math-content-box { flex: 1; overflow-y: auto; padding: 22px; display: none; }
+    .sp-math-content-box.active { display: block; }
+
+    /* Красивые SVG-фигурки в Reference Sheet (без эмодзи) */
+    .ref-svg-card {
+      background: var(--panel2); border: 1px solid var(--line); border-radius: 18px; padding: 14px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    }
+    .ref-svg-card svg { width: 100%; max-width: 120px; height: auto; margin-bottom: 8px; }
+  `;
+  document.head.appendChild(mStyle);
+
+  // 1. Интерактивный Highlighter для R&W (появляется при выделении текста мышкой)
+  document.addEventListener('mouseup', function(e) {
+    var sel = window.getSelection();
+    var selectedText = sel ? sel.toString().trim() : '';
+    var oldPop = document.getElementById('spHighlightPop');
+    if (oldPop) oldPop.remove();
+
+    if (selectedText.length >= 2 && selectedText.length <= 40) {
+      var range = sel.getRangeAt(0);
+      var rect = range.getBoundingClientRect();
+      if (rect.width > 0) {
+        var pop = document.createElement('div');
+        pop.id = 'spHighlightPop';
+        pop.className = 'sp-highlighter-pop';
+        pop.style.top = Math.max(10, rect.top - 44) + 'px';
+        pop.style.left = Math.min(window.innerWidth - 160, Math.max(10, rect.left + (rect.width / 2) - 60)) + 'px';
+        pop.innerHTML = '<span>★ Add to Vocab</span>';
+        
+        pop.onmousedown = function(ev) {
+          ev.stopPropagation();
+          ev.preventDefault();
+          var cleanWord = selectedText.replace(/[^a-zA-Z'-]/g, '');
+          if (cleanWord) {
+            var info = lookupWordDef(cleanWord, selectedText);
+            var curList = getVocabList();
+            var idx = curList.findIndex(function(x){return x.w.toLowerCase() === cleanWord.toLowerCase();});
+            if (idx < 0) {
+              curList.unshift({ w: cleanWord, d: info.d, ru: info.ru, ctx: selectedText });
+              saveVocabList(curList);
+              toast('★ Saved "' + cleanWord + '" to your Vocab list!');
+            } else {
+              toast('"' + cleanWord + '" is already in your Vocab!');
+            }
+          }
+          pop.remove();
+          window.getSelection().removeAllRanges();
+        };
+        document.body.appendChild(pop);
+        setTimeout(function() {
+          document.addEventListener('mousedown', function rmPop(ev2) {
+            if (!pop.contains(ev2.target)) { pop.remove(); document.removeEventListener('mousedown', rmPop); }
+          });
+        }, 100);
+      }
+    }
+  });
+
+  // 2. Модальное окно Reference Sheet с чистыми SVG-фигурами
+  function openCleanReferenceModal() {
+    var ov = document.createElement('div');
+    ov.className = 'ref-modal-ov';
+    ov.innerHTML = '<div class="ref-modal-box">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:16px">' +
+        '<b style="font-size:18px;color:var(--tx)">Math Reference Sheet</b>' +
+        '<button class="tbtn" id="refClose">✕</button>' +
+      '</div>' +
+      '<div class="ref-grid">' +
+        // Circle
+        '<div class="ref-svg-card"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="none" stroke="var(--tx)" stroke-width="2.5"/><line x1="50" y1="50" x2="88" y2="50" stroke="var(--tx)" stroke-width="2" stroke-dasharray="3,3"/><circle cx="50" cy="50" r="3" fill="var(--acc)"/><text x="65" y="44" font-size="12" fill="var(--tx)">r</text></svg><small><b>Circle</b><br><i>A = &pi;r²</i><br><i>C = 2&pi;r</i></small></div>' +
+        // Rectangle
+        '<div class="ref-svg-card"><svg viewBox="0 0 100 80"><rect x="15" y="20" width="70" height="40" fill="none" stroke="var(--tx)" stroke-width="2.5" rx="3"/><text x="50" y="14" font-size="11" fill="var(--tx)" text-anchor="middle">&ell;</text><text x="92" y="43" font-size="11" fill="var(--tx)">w</text></svg><small><b>Rectangle</b><br><i>A = &ell;w</i></small></div>' +
+        // Triangle
+        '<div class="ref-svg-card"><svg viewBox="0 0 100 85"><polygon points="50,10 15,75 85,75" fill="none" stroke="var(--tx)" stroke-width="2.5"/><line x1="50" y1="10" x2="50" y2="75" stroke="var(--mut)" stroke-width="1.5" stroke-dasharray="3,3"/><text x="50" y="82" font-size="11" fill="var(--tx)" text-anchor="middle">b</text><text x="54" y="45" font-size="11" fill="var(--mut)">h</text></svg><small><b>Triangle</b><br><i>A = &frac12;bh</i></small></div>' +
+        // Pythagorean / Right Triangle
+        '<div class="ref-svg-card"><svg viewBox="0 0 100 85"><polygon points="20,70 85,70 20,20" fill="none" stroke="var(--tx)" stroke-width="2.5"/><rect x="20" y="58" width="12" height="12" fill="none" stroke="var(--tx)" stroke-width="1.5"/><text x="50" y="40" font-size="11" fill="var(--tx)">c</text><text x="50" y="82" font-size="11" fill="var(--tx)" text-anchor="middle">a</text><text x="8" y="48" font-size="11" fill="var(--tx)">b</text></svg><small><b>Pythagorean</b><br><i>a² + b² = c²</i></small></div>' +
+        // Rectangular Prism
+        '<div class="ref-svg-card"><svg viewBox="0 0 100 80"><rect x="15" y="25" width="55" height="40" fill="none" stroke="var(--tx)" stroke-width="2.5"/><polygon points="15,25 35,10 90,10 70,25" fill="none" stroke="var(--tx)" stroke-width="2.5"/><polygon points="70,25 90,10 90,50 70,65" fill="none" stroke="var(--tx)" stroke-width="2.5"/><text x="42" y="77" font-size="11" fill="var(--tx)" text-anchor="middle">&ell;</text><text x="94" y="32" font-size="11" fill="var(--tx)">w</text><text x="6" y="48" font-size="11" fill="var(--tx)">h</text></svg><small><b>Rect. Prism</b><br><i>V = &ell;wh</i></small></div>' +
+        // Cylinder
+        '<div class="ref-svg-card"><svg viewBox="0 0 100 85"><ellipse cx="50" cy="20" rx="30" ry="10" fill="none" stroke="var(--tx)" stroke-width="2.5"/><path d="M20 20 v45 a30 10 0 0 0 60 0 v-45" fill="none" stroke="var(--tx)" stroke-width="2.5"/><line x1="50" y1="20" x2="80" y2="20" stroke="var(--tx)" stroke-width="1.5" stroke-dasharray="2,2"/><text x="66" y="15" font-size="11" fill="var(--tx)">r</text><text x="86" y="45" font-size="11" fill="var(--tx)">h</text></svg><small><b>Cylinder</b><br><i>V = &pi;r²h</i></small></div>' +
+        // Sphere
+        '<div class="ref-svg-card"><svg viewBox="0 0 100 85"><circle cx="50" cy="42" r="35" fill="none" stroke="var(--tx)" stroke-width="2.5"/><ellipse cx="50" cy="42" rx="35" ry="12" fill="none" stroke="var(--mut)" stroke-width="1.5" stroke-dasharray="3,3"/><line x1="50" y1="42" x2="85" y2="42" stroke="var(--tx)" stroke-width="1.5" stroke-dasharray="2,2"/><text x="68" y="36" font-size="11" fill="var(--tx)">r</text></svg><small><b>Sphere</b><br><i>V = &frac43;&pi;r³</i></small></div>' +
+        // Cone
+        '<div class="ref-svg-card"><svg viewBox="0 0 100 85"><ellipse cx="50" cy="65" rx="32" ry="11" fill="none" stroke="var(--tx)" stroke-width="2.5"/><path d="M18 65 L50 12 L82 65" fill="none" stroke="var(--tx)" stroke-width="2.5"/><line x1="50" y1="65" x2="82" y2="65" stroke="var(--tx)" stroke-width="1.5" stroke-dasharray="2,2"/><text x="66" y="60" font-size="11" fill="var(--tx)">r</text><text x="54" y="40" font-size="11" fill="var(--tx)">h</text></svg><small><b>Cone</b><br><i>V = &frac13;&pi;r²h</i></small></div>' +
+        // Pyramid
+        '<div class="ref-svg-card"><svg viewBox="0 0 100 85"><polygon points="50,12 15,68 85,68" fill="none" stroke="var(--tx)" stroke-width="2.5"/><path d="M15 68 L45 80 L90 68" fill="none" stroke="var(--tx)" stroke-width="2.5"/><line x1="50" y1="12" x2="50" y2="74" stroke="var(--mut)" stroke-width="1.5" stroke-dasharray="3,3"/><text x="50" y="83" font-size="11" fill="var(--tx)" text-anchor="middle">&ell;</text></svg><small><b>Pyramid</b><br><i>V = &frac13;&ell;wh</i></small></div>' +
+      '</div>' +
+      '<div style="background:var(--panel2);padding:14px;border-radius:14px;font-size:12.5px;color:var(--mut);line-height:1.6">' +
+        '&bull; The number of degrees of arc in a circle is 360.<br>' +
+        '&bull; The number of radians of arc in a circle is 2&pi;.<br>' +
+        '&bull; The sum of the measures in degrees of the angles of a triangle is 180.' +
+      '</div>' +
+    '</div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#refClose').onclick = function() { ov.remove(); };
+    ov.onclick = function(e) { if (e.target === ov) ov.remove(); };
+  }
+
+  // 3. Главный движок модуля: для Math слева переключаемые табы (Reference vs Desmos), для R&W слева только задача без инструкций
+  window.ptModule = function (cfg, done) {
+    var qs = cfg.qs, ans = [], flag = [], cur = 0, left = cfg.min * 60, ended = false, desmosCalc = null, tmr, popEl = null,
+      ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:90;background:var(--bg);overflow:auto;padding:12px';
+
+    var isMathSec = !!cfg.calc;
+
+    var leftPaneHtml = '';
+    if (isMathSec) {
+      leftPaneHtml = '<div class="sp-math-left-pane" id="spMathLeftPane">' +
+        '<div class="sp-math-pane-tabs">' +
+          '<button type="button" class="sp-math-tab active" id="tabRefBtn">📋 Reference Sheet</button>' +
+          '<button type="button" class="sp-math-tab" id="tabCalcBtn">📐 Desmos Calculator</button>' +
+        '</div>' +
+        '<div class="sp-math-content-box active" id="boxRefContent">' +
+          '<h3 style="font-size:17px;font-weight:800;margin-bottom:14px">Math Reference Sheet</h3>' +
+          '<div class="ref-grid" style="grid-template-columns:repeat(2,1fr)">' +
+            '<div class="ref-svg-card"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="none" stroke="var(--tx)" stroke-width="2.5"/><line x1="50" y1="50" x2="85" y2="50" stroke="var(--tx)" stroke-width="2" stroke-dasharray="3,3"/><circle cx="50" cy="50" r="3" fill="var(--acc)"/><text x="65" y="44" font-size="12" fill="var(--tx)">r</text></svg><small><b>Circle</b><br><i>A = &pi;r²</i> · <i>C = 2&pi;r</i></small></div>' +
+            '<div class="ref-svg-card"><svg viewBox="0 0 100 80"><rect x="15" y="20" width="70" height="40" fill="none" stroke="var(--tx)" stroke-width="2.5" rx="3"/><text x="50" y="14" font-size="11" fill="var(--tx)" text-anchor="middle">&ell;</text><text x="92" y="43" font-size="11" fill="var(--tx)">w</text></svg><small><b>Rectangle</b><br><i>A = &ell;w</i></small></div>' +
+            '<div class="ref-svg-card"><svg viewBox="0 0 100 85"><polygon points="50,10 15,75 85,75" fill="none" stroke="var(--tx)" stroke-width="2.5"/><line x1="50" y1="10" x2="50" y2="75" stroke="var(--mut)" stroke-width="1.5" stroke-dasharray="3,3"/><text x="50" y="82" font-size="11" fill="var(--tx)" text-anchor="middle">b</text><text x="54" y="45" font-size="11" fill="var(--mut)">h</text></svg><small><b>Triangle</b><br><i>A = &frac12;bh</i></small></div>' +
+            '<div class="ref-svg-card"><svg viewBox="0 0 100 85"><polygon points="20,70 85,70 20,20" fill="none" stroke="var(--tx)" stroke-width="2.5"/><rect x="20" y="58" width="12" height="12" fill="none" stroke="var(--tx)" stroke-width="1.5"/><text x="50" y="40" font-size="11" fill="var(--tx)">c</text><text x="50" y="82" font-size="11" fill="var(--tx)" text-anchor="middle">a</text><text x="8" y="48" font-size="11" fill="var(--tx)">b</text></svg><small><b>Pythagorean</b><br><i>a² + b² = c²</i></small></div>' +
+          '</div>' +
+          '<div style="background:var(--panel2);padding:12px;border-radius:12px;font-size:12px;color:var(--mut);margin-top:10px">&bull; Arc = 360° &nbsp;·&nbsp; Radians = 2&pi; &nbsp;·&nbsp; Triangle angles = 180°</div>' +
+        '</div>' +
+        '<div class="sp-math-content-box" id="boxCalcContent" style="padding:0;height:100%"></div>' +
+      '</div>';
+    } else {
+      leftPaneHtml = '<div class="sp-pane-left" id="spPaneLeft" style="height:calc(100vh - 155px) !important;min-height:560px"><div id="ptQ"></div><div id="ptG" hidden></div></div>';
+    }
+
+    ov.innerHTML = '<div id="ptShell" class="pt-shell">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);padding:12px 20px;border-radius:18px;border:1.5px solid var(--line);box-shadow:0 4px 16px rgba(0,0,0,0.06);margin-bottom:12px">' +
+        '<div><b style="font-size:15px">' + cfg.title + '</b><small style="display:block;color:var(--mut);font-size:11px">Bluebook Simulation · Resizable Split-Screen</small></div>' +
+        '<b id="ptT" style="font-size:18px;font-variant-numeric:tabular-nums;color:var(--sand);background:var(--sand-bg);padding:4px 14px;border-radius:99px;border:1px solid var(--sand-line)"></b>' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+          '<button id="ptVocBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--sand);border-color:var(--sand-line)">📖 Vocab (<span id="ptVocCnt">' + getVocabList().length + '</span>)</button>' +
+          (isMathSec ? '<button id="ptRefBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--acc);border-color:var(--acc)">📋 Reference Sheet</button>' : '') +
+          '<button id="ptEnd" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700">Question Map</button>' +
+          '<button id="ptEx" class="chip" style="padding:6px 12px;text-transform:none">Exit</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sp-split-layout" id="spSplitGrid">' +
+        leftPaneHtml +
+        '<div class="sp-splitter" id="spSplitter"></div>' +
+        '<div class="sp-pane-right" id="spPaneRight" style="height:calc(100vh - 155px) !important;min-height:560px">' +
+          '<div>' +
+            '<div class="bb-q-bar">' +
+              '<div style="display:flex;align-items:center;gap:10px"><span class="bb-q-num" id="spQNumBadge">1</span><button id="ptF" class="chip" style="font-size:12px;text-transform:none;border:0">⚑ Mark for Review</button></div>' +
+              '<small id="spTopBadge" style="color:var(--acc);font-weight:700"></small>' +
+            '</div>' +
+            (isMathSec ? '<div id="ptQ" style="font-size:19px;line-height:1.6;margin-bottom:18px"></div>' : '') +
+            '<div id="spAnsArea"></div>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)">' +
+            '<button class="cta" id="ptP" style="border-radius:14px">← Back</button>' +
+            '<button class="chip" id="ptMidMap" style="font-weight:800;font-size:13px;padding:8px 16px">Question 1 of ' + qs.length + ' ▾</button>' +
+            '<button class="cta-amber" id="ptN" style="border-radius:14px">Next →</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div id="ptG" hidden></div>' +
+    '</div>';
+
+    document.body.appendChild(ov);
+    var $ = function (i) { return ov.querySelector('#' + i); }, Q = $('ptQ'), G = $('ptG'), ansArea = $('spAnsArea'), topBadge = $('spTopBadge'), qNumBadge = $('spQNumBadge');
+
+    // Если это Math, настраиваем табы слева (Reference vs Calculator)
+    if (isMathSec) {
+      var tabRef = $('tabRefBtn'), tabCalc = $('tabCalcBtn'), boxRef = $('boxRefContent'), boxCalc = $('boxCalcContent');
+      if (tabRef && tabCalc) {
+        tabRef.onclick = function() {
+          tabRef.classList.add('active'); tabCalc.classList.remove('active');
+          boxRef.classList.add('active'); boxCalc.classList.remove('active');
+        };
+        tabCalc.onclick = function() {
+          tabCalc.classList.add('active'); tabRef.classList.remove('active');
+          boxCalc.classList.add('active'); boxRef.classList.remove('active');
+          if (!desmosCalc && window.Desmos) {
+            desmosCalc = Desmos.GraphingCalculator(boxCalc, { keypad: true, expressions: true, settingsMenu: false, folders: false, images: false });
+          }
+          if (desmosCalc) setTimeout(function() { desmosCalc.resize(); }, 35);
+        };
+      }
+      var topRefBtn = $('ptRefBtn');
+      if (topRefBtn) {
+        topRefBtn.onclick = function() {
+          if (tabRef) tabRef.click();
+        };
+      }
+    }
+
+    // Ресайзер сплиттера
+    var grid = $('spSplitGrid'), splitter = $('spSplitter'), isDragging = false;
+    if (splitter) {
+      splitter.onmousedown = function() { isDragging = true; splitter.classList.add('dragging'); };
+      document.onmousemove = function(e) {
+        if (!isDragging) return;
+        var rect = grid.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var pct = Math.max(25, Math.min(75, (x / rect.width) * 100));
+        grid.style.gridTemplateColumns = pct + 'fr 6px ' + (100 - pct) + 'fr';
+      };
+      document.onmouseup = function() { isDragging = false; splitter.classList.remove('dragging'); };
+    }
+
+    function closePop() { if (popEl) { popEl.remove(); popEl = null; } }
+    function stop() {
+      closePop(); ended = true; clearInterval(tmr);
+      if (document.fullscreenElement && document.exitFullscreen) {
+        try { document.exitFullscreen(); } catch (e) {}
+      }
+      ov.remove();
+    }
+    function fin() {
+      var un = 0; qs.forEach(function (q, i) { if (ans[i] == null || ans[i] === '') un++; });
+      spModalConfirm(un ? 'You have <b>' + un + ' unanswered question(s)</b>. Submit this module now?' : 'Submit this module and proceed to the next stage?', function () { submit(); });
+    }
+    function submit() {
+      if (ended) return; stop(); var ok = 0;
+      qs.forEach(function (q, i) { if (ptRight(q, ans[i])) ok++; });
+      done({ ok: ok, n: qs.length, qs: qs, ans: ans });
+    }
+    tmr = setInterval(function () {
+      left--; $('ptT').textContent = ptFmt(left);
+      if (left <= 0) { toast('Time is up for this module!'); submit(); }
+    }, 1000);
+    $('ptT').textContent = ptFmt(left);
+    $('ptVocBtn').onclick = function () { openVocabDrawer(); };
+
+    function map() {
+      closePop();
+      var h = '<b>Question Map · ' + cfg.title + '</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0">';
+      qs.forEach(function (q, i) {
+        var a = ans[i] != null && ans[i] !== '';
+        h += '<button data-i="' + i + '" style="width:46px;height:42px;border-radius:10px;text-align:center;font-weight:700;border:2.5px solid ' + (a ? 'var(--acc)' : 'var(--line)') + ';background:' + (a ? 'rgba(34,163,129,.25)' : 'transparent') + '">' + (i + 1) + (flag[i] ? '🚩' : '') + '</button>';
+      });
+      G.innerHTML = h + '</div><small style="color:var(--mut)">Filled = answered · 🚩 = flagged</small><div style="margin-top:14px"><button class="cta-amber" id="ptS">Submit Module →</button></div>';
+      Q.hidden = true; ansArea.hidden = true; G.hidden = false;
+    }
+    G.onclick = function (e) {
+      var b = e.target.closest('[data-i]');
+      if (b) { cur = +b.dataset.i; draw(); }
+      if (e.target.id === 'ptS') fin();
+    };
+
+    function draw() {
+      closePop(); G.hidden = false; Q.hidden = false; ansArea.hidden = false;
+      var q = qs[cur], fx = function (s) { return q.rw ? wrapWordsForVocab(s) : rHTML(s); };
+
+      qNumBadge.textContent = (cur + 1);
+      topBadge.textContent = q.top || '';
+      var midBtn = $('ptMidMap');
+      if (midBtn) midBtn.textContent = 'Question ' + (cur + 1) + ' of ' + qs.length + ' ▾';
+
+      // Слева — текст пассажа (для R&W)
+      if (!isMathSec) {
+        Q.innerHTML = '<div style="font-size:17px;line-height:1.6">' + fx(q.q) + '</div>';
+      } else {
+        // Для Math слева может быть график или пояснение, а само условие задачи справа под номером
+        Q.innerHTML = '<div style="font-size:19px;line-height:1.6">' + rHTML(q.q) + '</div>';
+      }
+
+      // Справа — варианты ответов / поле ввода
+      var h = '';
+      if (q.isGrid) {
+        var curVal = ans[cur] != null ? String(ans[cur]).replace(/"/g, '&quot;') : '';
+        h += '<div style="margin-top:10px"><label style="display:block;font-size:12.5px;font-weight:700;color:var(--mut);margin-bottom:8px">Enter your answer</label>' +
+             '<input id="ptI" class="qin" style="max-width:240px;text-align:left;padding:12px 16px;font-size:20px" maxlength="6" autocomplete="off" value="' + curVal + '">' +
+             '<div style="margin-top:12px;font-size:13px;color:var(--mut)">Answer Preview: <b id="bbAnsPrev" style="color:var(--tx);font-size:15px;margin-left:6px">' + (curVal || '—') + '</b></div></div>';
+      } else {
+        q.opts.forEach(function (o, k) {
+          h += '<button class="qo" data-k="' + k + '"' + (ans[cur] === o ? ' style="border-color:var(--acc);background:rgba(34,163,129,.2)"' : '') + '><b>' + 'ABCD'[k] + '</b>&nbsp; ' + (q.rw ? String(o) : rHTML(o)) + '</button>';
+        });
+      }
+      ansArea.innerHTML = h;
+
+      ansArea.querySelectorAll('.qo').forEach(function (b) {
+        b.onclick = function () {
+          ans[cur] = q.opts[+b.dataset.k];
+          ansArea.querySelectorAll('.qo').forEach(function (x) {
+            x.style.cssText = x === b ? 'border-color:var(--acc);background:rgba(34,163,129,.2)' : '';
+          });
+        };
+      });
+      var inp = $('ptI');
+      if (inp) {
+        inp.oninput = function () {
+          ans[cur] = inp.value.trim();
+          var prev = $('bbAnsPrev');
+          if (prev) prev.innerHTML = ans[cur] ? rHTML(ans[cur]) : '—';
+        };
+      }
+      var flagBtn = $('ptF');
+      if (flagBtn) {
+        flagBtn.textContent = flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review';
+        flagBtn.onclick = function () {
+          flag[cur] = !flag[cur];
+          this.textContent = flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review';
+        };
+      }
+      $('ptP').style.opacity = cur ? 1 : 0.35;
+      $('ptN').textContent = cur < qs.length - 1 ? 'Next →' : 'Review →';
+    }
+
+    $('ptP').onclick = function () { if (cur > 0) { cur--; draw(); } };
+    $('ptN').onclick = function () { if (cur < qs.length - 1) { cur++; draw(); } else map(); };
+    $('ptEnd').onclick = map;
+    $('ptMidMap').onclick = map;
+    $('ptEx').onclick = function () {
+      spModalConfirm('Exit this mock exam? Progress in the current module will be lost.', function () { stop(); done(null); });
+    };
+    draw();
+  };
+})();
 applyProfileUI();
 refreshDash();
 initDailyChallenges();
