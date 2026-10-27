@@ -2182,15 +2182,28 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         fgBtn.onclick = async function() {
           var em = ov.querySelector('#spAuthEmail').value.trim();
           if (!em) return setErr('Please enter your email address above first.');
+          
+          setErr('');
+          toast('Sending reset link...');
+
           try {
+            // Гарантированно дожидаемся инициализации Firebase и модуля auth
             await fbInit();
-            await FB.au.sendPasswordResetEmail(FB.auth, em);
+            if (!FB || !FB.auth) {
+              throw new Error('Authentication service is not initialized.');
+            }
+            var authModule = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+            await authModule.sendPasswordResetEmail(FB.auth, em);
+
             setErr('');
             toast('✓ Password reset link sent to ' + em);
           } catch (e) {
-            var msg = e.message;
-            if (e.code === 'auth/user-not-found') msg = 'No account found with this email.';
-            else if (e.code === 'auth/invalid-email') msg = 'Please enter a valid email address.';
+            var msg = e.message || 'Could not send reset email.';
+            if (e.code === 'auth/user-not-found') {
+              msg = 'No account found with this email.';
+            } else if (e.code === 'auth/invalid-email') {
+              msg = 'Please enter a valid email address.';
+            }
             setErr(msg);
           }
         };
