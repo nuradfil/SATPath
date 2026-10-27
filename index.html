@@ -3,7 +3,7 @@
 <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SATPath</title>
-<link rel="icon" type="image/png" href="logo.png">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
 <link rel="apple-touch-icon" href="logo.png">
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <style>
@@ -79,7 +79,7 @@ h1{font-size:34px;font-weight:600;letter-spacing:-.02em}h1 span{color:var(--mut)
 .isl.cur{animation:pl 1.4s infinite}@keyframes pl{50%{transform:translateX(var(--x)) scale(1.08)}}
 .isl.cur::after{content:"START";position:absolute;bottom:100%;margin-bottom:8px;left:50%;transform:translateX(-50%);background:var(--panel);border:2px solid var(--c);border-radius:10px;padding:2px 10px;font-size:11px;font-weight:800}
 .lb{position:absolute;top:100%;margin-top:9px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;font-style:normal;white-space:nowrap;color:var(--mut);background:var(--panel);border:1px solid var(--line);padding:2px 9px;border-radius:99px}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;background:var(--acc2);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;transition:.25s;pointer-events:none;z-index:300;display:inline-flex;align-items:center;gap:8px;box-shadow:0 10px 28px rgba(0,0,0,.28)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;background:var(--acc2);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;transition:.25s;pointer-events:none;z-index:4000;display:inline-flex;align-items:center;gap:8px;box-shadow:0 10px 28px rgba(0,0,0,.28)}
 .toast.s{opacity:1;transform:translate(-50%,0)}
 @media(max-width:1000px){.grid{grid-template-columns:1fr}.grid>.card:last-child{grid-column:auto}.steps{grid-template-columns:1fr}.stats{grid-template-columns:1fr}}
 @media(max-width:820px){aside{position:fixed;z-index:60;left:0;top:0;transform:translateX(-100%);transition:.25s;width:270px}aside.o{transform:none;box-shadow:0 0 0 100vmax rgba(0,0,0,.45)}.main{margin-left:0}.burger{display:block}}
@@ -910,7 +910,7 @@ aside {
   font-size: 22px;
   font-weight: 800;
 }
-.mph b img.ic {
+.mph b img.ic, .mph b svg.ic {
   display: inline-block !important;
   width: 28px !important;
   height: 28px !important;
@@ -1059,7 +1059,7 @@ aside{height:100vh;height:100dvh}
 <div class="app">
 <aside id="side">
 <div class="sidebar-header" style="display: flex; align-items: center; gap: 10px; padding: 14px 12px 18px;">
-    <img src="logo.png" alt="SATPath Logo" style="width: 30px; height: 30px; object-fit: contain;">
+    <svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:30px;height:30px;color:var(--acc);flex:none"><path d="M16.6 7.2c-.5-1.7-2.4-2.7-4.6-2.7-2.6 0-4.5 1.2-4.5 3 0 4.6 9 2.4 9 7 0 1.9-1.9 3-4.5 3-2.3 0-4.2-1-4.7-2.8"/></svg>
     <span style="font-size: 20px; font-weight: 800; color: var(--tx); letter-spacing: -0.02em;">SAT<b style="color:var(--acc)">Path</b></span>
 </div>
  <div class="grp">Practice</div>
@@ -1094,8 +1094,8 @@ aside{height:100vh;height:100dvh}
    <span id="topLocLabel">Base Camp · Archipelago</span>
   </div>
   <div class="hud-bar">
-   <button class="hud-pill coin" id="hudCoinBtn" title="Pathcoins"><img class="ui-ic" src="logo.png" alt=""> <span id="hudCoins">100</span> PC</button>
-   <button class="hud-pill shop-btn" id="hudShopBtn" title="Open Outpost Supply Shop"><img class="ui-ic" src="camp.png" alt=""> Shop</button>
+   <button class="hud-pill coin" id="hudCoinBtn" title="Pathcoins"><svg class="ui-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg> <span id="hudCoins">100</span> PC</button>
+   <button class="hud-pill shop-btn" id="hudShopBtn" title="Open Outpost Supply Shop"><svg class="ui-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20 12 4l9 16H3z"/><path d="M9.8 20 12 15.5l2.2 4.5"/></svg> Shop</button>
    <button class="tbtn" id="hudSupBtn" title="Tech Support"><i data-lucide="life-buoy" style="width:16px;height:16px"></i></button>
    <button class="tbtn" id="th" aria-label="Theme"><i data-lucide="sun-moon" style="width:16px;height:16px"></i></button>
   </div></div>
@@ -1111,14 +1111,14 @@ aside{height:100vh;height:100dvh}
  <div class="wrap" id="vDash">
   <div class="head">
    <div>
-    <div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px"><img class="ui-ic" src="camp.png" alt=""> BASE CAMP · ARCHIPELAGO EXPEDITION</div>
-    <h1 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span id="gr"></span> <span style="color:var(--acc);cursor:pointer;border-bottom:2px dashed var(--line)" id="dashExplorerName" onclick="openProfileModal()" title="Click to change your name &amp; avatar">Explorer</span> <span id="dashTitleBadge" class="tag" style="margin:0;font-size:11px;cursor:pointer" onclick="openProfileModal()">Island Scout</span> <span id="dashCrest" hidden><img src="lord.png" alt="Crest" style="width:28px;height:28px;object-fit:contain;display:inline-block"></span></h1>
+    <div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px"><svg class="ui-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20 12 4l9 16H3z"/><path d="M9.8 20 12 15.5l2.2 4.5"/></svg> BASE CAMP · ARCHIPELAGO EXPEDITION</div>
+    <h1 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span id="gr"></span> <span style="color:var(--acc);cursor:pointer;border-bottom:2px dashed var(--line)" id="dashExplorerName" onclick="openProfileModal()" title="Click to change your name &amp; avatar">Explorer</span> <span id="dashTitleBadge" class="tag" style="margin:0;font-size:11px;cursor:pointer" onclick="openProfileModal()">Island Scout</span> <span id="dashCrest" hidden><svg class="" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:28px;height:28px;color:var(--sand);display:inline-block"><path d="M4.5 8 8.3 11.5 12 5l3.7 6.5L19.5 8 18 18H6z"/><path d="M6 21h12"/></svg></span></h1>
     <p class="sub">Chart your course across the islands, collect Mastery Stars in the Atlas, and earn Pathcoins.</p>
    </div>
    <div style="display:flex;gap:10px;flex-wrap:wrap">
-    <button class="cta-amber" onclick="show('bz')"><img class="ui-ic" src="energy.png" alt=""> Blitz 10</button>
-    <button class="cta" style="border-radius:16px;padding:12px 18px" onclick="show('b')"><img class="ui-ic" src="map.png" alt=""> Open Atlas</button>
-    <button class="cta" style="border-radius:16px;padding:12px 18px;background:var(--acc2)" onclick="show('pt')"><img class="ui-ic" src="compas.png" alt=""> Mock Exams</button>
+    <button class="cta-amber" onclick="show('bz')"><svg class="ui-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg> Blitz 10</button>
+    <button class="cta" style="border-radius:16px;padding:12px 18px" onclick="show('b')"><svg class="ui-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg> Open Atlas</button>
+    <button class="cta" style="border-radius:16px;padding:12px 18px;background:var(--acc2)" onclick="show('pt')"><svg class="ui-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.6 8.4-1.9 5.3-5.3 1.9 1.9-5.3z"/></svg> Mock Exams</button>
    </div>
   </div>
   <div class="grid" style="grid-template-columns:repeat(3,1fr);align-items:stretch">
@@ -1167,7 +1167,7 @@ aside{height:100vh;height:100dvh}
    <div class="card" style="padding:18px;display:flex;flex-direction:column;justify-content:space-between">
     <div>
      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
-      <span class="tag n" style="margin:0;font-size:9px;display:inline-flex;align-items:center;gap:4px"><img class="ui-ic" src="energy.png" alt=""> MATH DAILY</span>
+      <span class="tag n" style="margin:0;font-size:9px;display:inline-flex;align-items:center;gap:4px"><svg class="ui-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg> MATH DAILY</span>
       <small id="dMathDate" style="color:var(--mut);font-size:11px"></small>
      </div>
      <div id="dMathQContainer">
@@ -1187,7 +1187,7 @@ aside{height:100vh;height:100dvh}
    <div class="card" style="padding:18px;display:flex;flex-direction:column;justify-content:space-between">
     <div>
      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
-      <span class="tag" style="margin:0;font-size:9px;background:var(--acc2);color:#fff;border-color:var(--acc2);display:inline-flex;align-items:center;gap:4px"><img class="ui-ic" src="book.png" alt=""> R&amp;W DAILY</span>
+      <span class="tag" style="margin:0;font-size:9px;background:var(--acc2);color:#fff;border-color:var(--acc2);display:inline-flex;align-items:center;gap:4px"><svg class="ui-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C10.5 5 8 4.5 4 4.5v13c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-13c-4 0-6.5.5-8 2z"/><path d="M12 6.5v13"/></svg> R&amp;W DAILY</span>
       <small id="dRwDate" style="color:var(--mut);font-size:11px"></small>
      </div>
      <div id="dRwQContainer">
@@ -1207,7 +1207,7 @@ aside{height:100vh;height:100dvh}
    <div class="col" style="display:flex;flex-direction:column;gap:16px">
     <div class="card" style="padding:16px">
      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <b style="font-size:13px;display:inline-flex;align-items:center;gap:6px"><img class="ui-ic" src="aim.png" alt=""> Priority Skill Radar</b><small style="color:var(--mut)">train</small>
+      <b style="font-size:13px;display:inline-flex;align-items:center;gap:6px"><svg class="ui-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> Priority Skill Radar</b><small style="color:var(--mut)">train</small>
      </div>
      <div id="dRadar"></div>
     </div>
