@@ -119,46 +119,20 @@ function removeMistakeByQuestion(qText) {
   saveMistakes(filtered);
 }
 function updateNavBadges() {
-  var mkCnt = document.getElementById('navMistakesCnt');
-  if (mkCnt) {
-    var len = getMistakes().length;
-    mkCnt.textContent = len;
-    mkCnt.style.display = len > 0 ? 'inline-block' : 'none';
-  }
-  var vcCnt = document.getElementById('navVocabCnt');
-  if (vcCnt) {
-    var vlen = getVocabList().length;
-    vcCnt.textContent = vlen;
-    vcCnt.style.display = vlen > 0 ? 'inline-block' : 'none';
-  }
-}
-
-/* ===== PRACTICE TESTS & SAVED SESSIONS ===== */
-var PT_N=8;
-var PT_RW=[[3,4],[4,2],[5,1],[0,2],[1,2],[2,3],[6,4],[7,2],[8,4],[9,3]]; /* [тема,кол-во] = 27, порядок как в SAT */
-var PT_MD=[[[0,1,2,3,4],7],[[5,6,7,8],7],[[9,10,11,12,13,14,15],4],[[16,17,18,19],4]]; /* = 22 */
-function ptLoad(){try{return JSON.parse(spGet('satpath_pt'))||{}}catch(e){return{}}}
-function ptSave(s){try{spSet('satpath_pt',JSON.stringify(s))}catch(e){}}
-function ptSeed(s){return function(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-function ptWithSeed(seed,fn){var o=Math.random;Math.random=ptSeed(seed);try{return fn()}finally{Math.random=o}}
-function ptRight(q,v){return v!=null&&v!==''&&(q.isGrid?same(v,q.ans):String(v)===q.ans)}
-function ptFmt(s){s=Math.max(0,s);return Math.floor(s/60)+':'+('0'+s%60).slice(-2)}
-function ptScore(sec,a,b,hard){var tot=sec==='r'?54:44,sc=sec==='r'?50:40,c=Math.round((a+b)*sc/tot),s=scaleSectionScore(c,sc,hard);if(!hard)s=Math.min(s,sec==='r'?600:590);return s}
-function ptMathPlan(t,m){var p=[];PT_MD.forEach(function(d,k){var L=d[0],o=(t*3+m*2+k)%L.length;for(var j=0;j<d[1];j++)p.push(L[(o+j)%L.length])});return p}
-
-var MOCK_SESS_KEY = 'satpath_mock_sessions_v1';
-function getMockSessions() {
-  try { return JSON.parse(spGet(MOCK_SESS_KEY)) || {}; } catch (e) { return {}; }
-}
-function getMockSession(t) {
-  var all = getMockSessions();
-  return all[t] || null;
-}
-function saveMockSession(t, data) {
-  var all = getMockSessions();
-  if (data === null) delete all[t];
-  else all[t] = data;
-  try { spSet(MOCK_SESS_KEY, JSON.stringify(all)); } catch (e) {}
+  var mkLen = getMistakes().length;
+  ['navMistakesCnt', 'sideErrCnt'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = mkLen;
+    el.style.display = mkLen > 0 ? 'inline-block' : 'none';
+  });
+  var vLen = getVocabList().length;
+  ['navVocabCnt', 'sideVocCnt'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = vLen;
+    el.style.display = vLen > 0 ? 'inline-block' : 'none';
+  });
 }
 
 /* ===== IN-PAGE CONFIRM MODAL & VOCABULARY HIGHLIGHTER FOR MOCK EXAMS ===== */
@@ -183,6 +157,221 @@ function saveVocabList(list) {
   try { spSet('satpath_vocab_v1', JSON.stringify(list)); } catch (e) {}
   updateNavBadges();
 }
+/* ===== FREE DICTIONARY API (https://dictionaryapi.dev) ===== */
+var GENERIC_RU = 'Academic SAT Vocabulary';
+var DICT_CACHE_KEY = 'satpath_dict_v1';
+var _dictMem = null, _dictInflight = {}, _dictActive = 0, _dictQ = [], _vocState = {};
+
+function dictCacheLoad() {
+  if (_dictMem) return _dictMem;
+  try { _dictMem = JSON.parse(spGet(DICT_CACHE_KEY)) || {}; } catch (e) { _dictMem = {}; }
+  return _dictMem;
+}
+function dictCacheSave() {
+  try { spSet(DICT_CACHE_KEY, JSON.stringify(_dictMem || {})); } catch (e) {}
+}
+function dictPump() {
+  while (_dictActive < 4 && _dictQ.length) {
+    (function(job) {
+      _dictActive++;
+      job.fn().then(function(r) { _dictActive--; job.resolve(r); dictPump(); });
+    })(_dictQ.shift());
+  }
+}
+function dictRun(fn) {
+  return new Promise(function(resolve) { _dictQ.push({ fn: fn, resolve: resolve }); dictPump(); });
+}
+function dictCandidates(word) {
+  var w = String(word || '').toLowerCase().trim().replace(/[^a-z'\- ]/g, '').replace(/\s+/g, ' ');
+  if (!w) return [];
+  var c = [w];
+  if (w.indexOf(' ') < 0) {
+    if (/ies$/.test(w)) c.push(w.slice(0, -3) + 'y');
+    if (/(ches|shes|sses|xes|zes)$/.test(w)) c.push(w.slice(0, -2));
+    if (/[^s]s$/.test(w)) c.push(w.slice(0, -1));
+    if (/ing$/.test(w) && w.length > 5) { c.push(w.slice(0, -3)); c.push(w.slice(0, -3) + 'e'); if (/(.)\1ing$/.test(w)) c.push(w.slice(0, -4)); }
+    if (/ed$/.test(w) && w.length > 4) { c.push(w.slice(0, -2)); c.push(w.slice(0, -1)); if (/(.)\1ed$/.test(w)) c.push(w.slice(0, -3)); }
+    if (/ly$/.test(w) && w.length > 4) c.push(w.slice(0, -2));
+  }
+  return c.filter(function(x, i) { return x.length > 2 && c.indexOf(x) === i; });
+}
+function dictParse(data) {
+  if (!Array.isArray(data) || !data.length) return null;
+  var out = { phonetic: '', audio: '', meanings: [] }, byPos = {};
+  data.forEach(function(entry) {
+    if (!out.phonetic && entry.phonetic) out.phonetic = entry.phonetic;
+    (entry.phonetics || []).forEach(function(p) {
+      if (!out.phonetic && p.text) out.phonetic = p.text;
+      if (!out.audio && p.audio) out.audio = p.audio.indexOf('//') === 0 ? 'https:' + p.audio : p.audio;
+    });
+    (entry.meanings || []).forEach(function(m) {
+      var pos = m.partOfSpeech || 'word';
+      var defs = (m.definitions || []).map(function(df) {
+        return { d: df.definition || '', ex: df.example || '' };
+      }).filter(function(df) { return df.d; });
+      if (!defs.length) return;
+      if (byPos[pos]) {
+        byPos[pos].defs = byPos[pos].defs.concat(defs).slice(0, 3);
+      } else {
+        byPos[pos] = { pos: pos, defs: defs.slice(0, 3), syn: (m.synonyms || []).slice(0, 5) };
+        out.meanings.push(byPos[pos]);
+      }
+    });
+  });
+  return out.meanings.length ? out : null;
+}
+/* Resolves (never rejects) to {ok:true,data} | {ok:false,notFound:true} | {ok:false,error:true} */
+function fetchDictEntry(word) {
+  var cands = dictCandidates(word);
+  if (!cands.length) return Promise.resolve({ ok: false, notFound: true });
+  var key = cands[0], cache = dictCacheLoad();
+  if (cache[key]) return Promise.resolve(cache[key].none ? { ok: false, notFound: true } : { ok: true, data: cache[key] });
+  if (_dictInflight[key]) return _dictInflight[key];
+
+  function get(url) {
+    var ctl = window.AbortController ? new AbortController() : null;
+    var tm = setTimeout(function() { if (ctl) ctl.abort(); }, 8000);
+    return fetch(url, ctl ? { signal: ctl.signal } : undefined).then(
+      function(r) { clearTimeout(tm); return r; },
+      function(e) { clearTimeout(tm); throw e; }
+    );
+  }
+  function tryNext(i, hadError) {
+    if (i >= cands.length) return Promise.resolve(hadError ? { ok: false, error: true } : { ok: false, notFound: true });
+    return get('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(cands[i]))
+      .then(function(r) {
+        if (r.status === 404) return tryNext(i + 1, hadError);
+        if (!r.ok) return tryNext(i + 1, true);
+        return r.json().then(function(j) {
+          var d = dictParse(j);
+          return d ? { ok: true, data: d } : tryNext(i + 1, hadError);
+        });
+      })
+      .catch(function() { return tryNext(i + 1, true); });
+  }
+  var p = dictRun(function() { return tryNext(0, false); }).then(function(res) {
+    delete _dictInflight[key];
+    if (res.ok) { cache[key] = res.data; dictCacheSave(); }
+    else if (res.notFound) { cache[key] = { none: 1 }; dictCacheSave(); }
+    return res;
+  });
+  _dictInflight[key] = p;
+  return p;
+}
+function isGenericVocab(x) {
+  return !x.manual && (!x.d || x.ru === GENERIC_RU);
+}
+/* Fetch meanings for a saved word and write them into the saved list */
+function enrichVocabWord(word) {
+  var k = String(word).toLowerCase();
+  return fetchDictEntry(word).then(function(res) {
+    if (res.ok || res.notFound) {
+      delete _vocState[k];
+      var list = getVocabList(), changed = false;
+      list.forEach(function(x) {
+        if (x.w.toLowerCase() !== k) return;
+        if (res.ok) {
+          var wasGeneric = isGenericVocab(x);
+          x.dict = res.data;
+          delete x.dictNone;
+          if (wasGeneric) {
+            x.d = res.data.meanings[0].defs[0].d;
+            x.ru = res.data.meanings[0].pos;
+            x.fromApi = true;
+          }
+        } else {
+          x.dictNone = true;
+        }
+        changed = true;
+      });
+      if (changed) saveVocabList(list);
+    } else {
+      _vocState[k] = 'error';
+    }
+    vocRefreshCards(k);
+    return res;
+  });
+}
+function vocBackfill() {
+  getVocabList().forEach(function(x) {
+    if (x.dict || x.dictNone) return;
+    var k = x.w.toLowerCase();
+    if (_vocState[k]) return;
+    _vocState[k] = 'loading';
+    enrichVocabWord(x.w);
+  });
+}
+var VOC_ICON_SPEAKER = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>';
+function vocMeaningHTML(item) {
+  var label = '<b style="color:var(--acc);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:2px">Meaning</b>';
+  var wrap = 'font-size:13.5px;color:var(--tx);line-height:1.55';
+  var dd = item.dict, h = '';
+  if (dd && dd.meanings && dd.meanings.length) {
+    if (dd.phonetic || dd.audio) {
+      h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;color:var(--mut);font-size:12.5px">' +
+        (dd.phonetic ? '<span>' + lbEsc(dd.phonetic) + '</span>' : '') +
+        (dd.audio ? '<button type="button" class="tbtn" data-voc-audio="' + lbEsc(dd.audio) + '" title="Listen" style="width:26px;height:26px">' + VOC_ICON_SPEAKER + '</button>' : '') +
+      '</div>';
+    }
+    h += '<div style="' + wrap + '">' + label;
+    dd.meanings.slice(0, 3).forEach(function(m) {
+      h += '<div style="margin-top:8px"><span class="tag" style="margin:0;font-size:10px">' + lbEsc(m.pos) + '</span></div>' +
+        '<ol style="margin:4px 0 0 18px;padding:0">';
+      m.defs.slice(0, 2).forEach(function(df) {
+        h += '<li style="margin-bottom:3px">' + lbEsc(df.d) +
+          (df.ex ? '<div style="color:var(--mut);font-style:italic;font-size:12px">&ldquo;' + lbEsc(df.ex) + '&rdquo;</div>' : '') + '</li>';
+      });
+      h += '</ol>';
+      if (m.syn && m.syn.length) h += '<div style="color:var(--mut);font-size:11.5px;margin-top:2px">Synonyms: ' + lbEsc(m.syn.join(', ')) + '</div>';
+    });
+    h += '</div>';
+    if (!item.fromApi && !isGenericVocab(item) && item.d) {
+      h += '<div style="margin-top:8px;font-size:12.5px;color:var(--mut)"><b>Note:</b> ' + lbEsc(item.d) + '</div>';
+    }
+    return h;
+  }
+  var k = String(item.w).toLowerCase();
+  var own = isGenericVocab(item) ? '' : lbEsc(item.d);
+  if (item.dictNone) {
+    return '<div style="' + wrap + '">' + label + (own || lbEsc(item.d || '')) +
+      '<div style="color:var(--mut);font-size:11.5px;margin-top:4px">No dictionary entry found for this word.</div></div>';
+  }
+  if (_vocState[k] === 'error') {
+    return '<div style="' + wrap + '">' + label + own +
+      '<div style="color:var(--mut);font-size:11.5px;margin-top:4px">Couldn\'t reach the dictionary. ' +
+      '<button type="button" data-voc-retry="' + lbEsc(item.w) + '" style="color:var(--acc);font-weight:700;text-decoration:underline">Retry</button></div></div>';
+  }
+  return '<div style="' + wrap + '">' + label + own +
+    '<div style="color:var(--mut);font-size:12px;margin-top:' + (own ? '4' : '0') + 'px">Loading meanings from dictionary…</div></div>';
+}
+function bindVocMeanEvents(scope) {
+  scope.querySelectorAll('[data-voc-audio]').forEach(function(b) {
+    b.onclick = function() { try { new Audio(b.getAttribute('data-voc-audio')).play(); } catch (e) {} };
+  });
+  scope.querySelectorAll('[data-voc-retry]').forEach(function(b) {
+    b.onclick = function() {
+      var w = b.getAttribute('data-voc-retry');
+      _vocState[w.toLowerCase()] = 'loading';
+      vocRefreshCards(w.toLowerCase());
+      enrichVocabWord(w);
+    };
+  });
+}
+function vocRefreshCards(k) {
+  var root = document.getElementById('vVOC');
+  if (!root) return;
+  var list = getVocabList();
+  root.querySelectorAll('[data-voc-mean]').forEach(function(el) {
+    if (el.getAttribute('data-voc-mean').toLowerCase() !== k) return;
+    var item = list.filter(function(x) { return x.w.toLowerCase() === k; })[0];
+    if (!item) return;
+    el.innerHTML = vocMeaningHTML(item);
+    bindVocMeanEvents(el);
+    var ruEl = el.parentNode && el.parentNode.querySelector('[data-voc-ru]');
+    if (ruEl) ruEl.textContent = item.ru || 'SAT Term';
+  });
+}
+
 function lookupWordDef(rawWord, contextText) {
   var clean = String(rawWord || '').toLowerCase().replace(/[^a-z'-]/g, '');
   if (!clean) return null;
@@ -242,7 +431,7 @@ function openAddWordModal(defaultCtx, onSaved) {
       '<div><label style="font-size:11.5px;font-weight:800;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:5px">Word or Term</label>' +
       '<input id="awWord" class="qin" style="font-size:15px;padding:10px 14px;text-align:left" placeholder="e.g., corroborate" value="' + lbEsc(selectedText) + '"></div>' +
       '<div><label style="font-size:11.5px;font-weight:800;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:5px">Meaning / Definition</label>' +
-      '<input id="awDef" class="qin" style="font-size:14px;padding:10px 14px;text-align:left" placeholder="Leave blank to auto-generate definition..." value="' + (autoInfo ? lbEsc(autoInfo.d) : '') + '"></div>' +
+      '<input id="awDef" class="qin" style="font-size:14px;padding:10px 14px;text-align:left" placeholder="Leave blank to auto-generate definition..." value="' + (autoInfo && autoInfo.ru !== GENERIC_RU ? lbEsc(autoInfo.d) : '') + '"></div>' +
       '<div><label style="font-size:11.5px;font-weight:800;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:5px">Example Sentence (Context)</label>' +
       '<input id="awEx" class="qin" style="font-size:13.5px;padding:10px 14px;text-align:left" placeholder="Example usage in an SAT passage..." value="' + lbEsc(defaultCtx || '') + '"></div>' +
       '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">' +
@@ -251,19 +440,40 @@ function openAddWordModal(defaultCtx, onSaved) {
       '</div>' +
     '</div></div>';
   document.body.appendChild(m);
+  var awWordEl = m.querySelector('#awWord'), awDefEl = m.querySelector('#awDef');
+  var AW_PH = awDefEl.placeholder;
+  function awLookup() {
+    var w = awWordEl.value.trim();
+    if (!w || (awDefEl.value.trim() && awDefEl.dataset.auto !== '1')) return;
+    awDefEl.placeholder = 'Looking up in dictionary…';
+    fetchDictEntry(w).then(function(res) {
+      awDefEl.placeholder = AW_PH;
+      if (awWordEl.value.trim() !== w) return;
+      if (res.ok && (!awDefEl.value.trim() || awDefEl.dataset.auto === '1')) {
+        awDefEl.value = res.data.meanings[0].defs[0].d;
+        awDefEl.dataset.auto = '1';
+      }
+    });
+  }
+  awWordEl.addEventListener('change', awLookup);
+  awDefEl.addEventListener('input', function() { awDefEl.dataset.auto = ''; });
+  if (awWordEl.value.trim()) awLookup();
   m.querySelector('#awClose').onclick = function() { m.remove(); };
   m.querySelector('#awCancel').onclick = function() { m.remove(); };
   m.querySelector('#awSave').onclick = function() {
     var w = m.querySelector('#awWord').value.trim();
     if (!w) return toast('Please enter a word first');
     var info = lookupWordDef(w, defaultCtx);
-    var d = m.querySelector('#awDef').value.trim() || (info ? info.d : 'Academic SAT vocabulary term.');
+    var typedDef = m.querySelector('#awDef').value.trim();
+    var isAuto = m.querySelector('#awDef').dataset.auto === '1';
+    var d = typedDef || (info ? info.d : 'Academic SAT vocabulary term.');
     var ex = m.querySelector('#awEx').value.trim() || (info ? info.ex : '');
     var list = getVocabList();
     var existing = list.findIndex(function(x) { return x.w.toLowerCase() === w.toLowerCase(); });
     if (existing >= 0) list.splice(existing, 1);
-    list.unshift({ w: w, d: d, ru: info ? info.ru : 'SAT Term', ctx: ex });
+    list.unshift({ w: w, d: d, ru: info ? info.ru : 'SAT Term', ctx: ex, manual: !!typedDef && !isAuto });
     saveVocabList(list);
+    enrichVocabWord(w);
     toast('Saved "' + w + '" to Vocabulary');
     m.remove();
     if (onSaved) onSaved();
@@ -1536,12 +1746,23 @@ function bindVocabClicksOnContainer(containerEl, onUpdateCount) {
         '<b style="font-size:16px;color:var(--sand)">' + lbEsc(clean) + '</b>' +
         '<button id="vpClose" style="font-size:12px;opacity:.6">✕</button>' +
       '</div>' +
-      '<div style="font-size:11px;font-weight:700;color:var(--acc);margin-bottom:4px;text-transform:uppercase">' + lbEsc(info.ru) + '</div>' +
-      '<div style="font-size:12.5px;color:var(--tx);line-height:1.45;margin-bottom:8px"><b>Meaning:</b> ' + lbEsc(info.d) + '</div>' +
+      '<div id="vpRu" style="font-size:11px;font-weight:700;color:var(--acc);margin-bottom:4px;text-transform:uppercase">' + lbEsc(info.ru) + '</div>' +
+      '<div style="font-size:12.5px;color:var(--tx);line-height:1.45;margin-bottom:8px"><b>Meaning:</b> <span id="vpMean">' + lbEsc(info.d) + '</span></div>' +
       '<div style="font-size:11.5px;color:var(--mut);font-style:italic;line-height:1.4;margin-bottom:10px"><b>Example:</b> "' + lbEsc(info.ex) + '"</div>' +
       '<button class="cta-amber" id="vpSave" style="width:100%;padding:8px 12px;font-size:12px;border-radius:10px">' + (isSaved ? '✓ Saved in Vocabulary (Remove)' : spSvg('plus', 13) + ' Highlight &amp; Save Word') + '</button>';
     document.body.appendChild(activeVocabPopover);
     activeVocabPopover.querySelector('#vpClose').onclick = closeActiveVocabPopover;
+    if (info.ru === GENERIC_RU) {
+      var popRef = activeVocabPopover, popMean = popRef.querySelector('#vpMean'), popRu = popRef.querySelector('#vpRu');
+      popMean.textContent = 'Looking up in dictionary…';
+      fetchDictEntry(clean).then(function(res) {
+        if (res.ok) {
+          var m0 = res.data.meanings[0];
+          info.d = m0.defs[0].d; info.ru = m0.pos; info.fromApi = true;
+        }
+        if (popRef.isConnected) { popMean.textContent = info.d; popRu.textContent = info.ru; }
+      });
+    }
     activeVocabPopover.querySelector('#vpSave').onclick = function() {
       var curList = getVocabList();
       var idx = curList.findIndex(function(x){return x.w.toLowerCase()===clean.toLowerCase()});
@@ -1550,7 +1771,8 @@ function bindVocabClicksOnContainer(containerEl, onUpdateCount) {
         wEl.classList.remove('hl');
         toast('Removed "' + clean + '" from Vocabulary');
       } else {
-        curList.unshift({ w: clean, d: info.d, ru: info.ru, ctx: info.ex });
+        curList.unshift({ w: clean, d: info.d, ru: info.ru, ctx: info.ex, fromApi: !!info.fromApi });
+        enrichVocabWord(clean);
         wEl.classList.add('hl');
         toast('Saved "' + clean + '" to Vocabulary');
       }
@@ -1904,10 +2126,10 @@ function buildVocabTab() {
       h += '<div class="card" style="padding:20px;border-radius:22px;display:flex;flex-direction:column;justify-content:space-between;gap:12px">' +
         '<div>' +
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">' +
-            '<div><b style="font-size:20px;color:var(--sand);letter-spacing:-.01em">' + lbEsc(item.w) + '</b><span class="tag" style="margin-left:8px;font-size:10px">' + lbEsc(item.ru || 'SAT Term') + '</span></div>' +
+            '<div><b style="font-size:20px;color:var(--sand);letter-spacing:-.01em">' + lbEsc(item.w) + '</b><span class="tag" data-voc-ru style="margin-left:8px;font-size:10px">' + lbEsc(item.ru || 'SAT Term') + '</span></div>' +
             '<button class="tbtn" data-voc-del="' + idx + '" title="Remove word" style="width:30px;height:30px;font-size:12px">✕</button>' +
           '</div>' +
-          '<div style="font-size:13.5px;color:var(--tx);line-height:1.55;margin-top:10px"><b style="color:var(--acc);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:2px">Meaning</b>' + lbEsc(item.d) + '</div>' +
+          '<div data-voc-mean="' + lbEsc(item.w) + '" style="margin-top:10px">' + vocMeaningHTML(item) + '</div>' +
         '</div>' +
         '<div style="background:var(--panel2);border:1px solid var(--line);padding:10px 12px;border-radius:14px;font-size:12.5px;color:var(--mut);line-height:1.45">' +
           '<b style="color:var(--tx);font-size:11px;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:2px;font-style:normal">Example in Context</b>' +
@@ -1937,11 +2159,13 @@ function buildVocabTab() {
       buildVocabTab();
     };
   });
+  bindVocMeanEvents(el);
+  vocBackfill();
 }
 
 var mkFilter = 'all'; // 'all' | 'math' | 'rw'
 function buildMistakesTab() {
-  var el = document.getElementById('vMK');
+  var el = document.getElementById('vERR');
   if (!el) return;
   var all = getMistakes();
   var filtered = all.filter(function(x) {
@@ -2177,7 +2401,7 @@ function openSupportModal() {
   ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
 }
 
-/* Автоматическая настройка сайдбара и контейнеров (Удаление Score Calculator, добавление Vocabulary, Mistakes, Support) */
+/* Настройка сайдбара и контейнеров: кнопки Vocabulary / Mistake Log уже есть в HTML (nvVOC, nvERR) — вешаем на них обработчики */
 (function setupNavigationAndContainers() {
   var scBtn = document.getElementById('nvSC');
   if (scBtn) scBtn.remove();
@@ -2186,55 +2410,44 @@ function openSupportModal() {
 
   var mainEl = document.querySelector('.main');
   var dashEl = document.getElementById('vDash');
-  if (mainEl && dashEl) {
-    if (!document.getElementById('vVOC')) {
-      var vVoc = document.createElement('div');
-      vVoc.className = 'qbk';
-      vVoc.id = 'vVOC';
-      vVoc.hidden = true;
-      vVoc.style.maxWidth = '1080px';
-      mainEl.insertBefore(vVoc, dashEl);
-    }
-    if (!document.getElementById('vMK')) {
-      var vMk = document.createElement('div');
-      vMk.className = 'qbk';
-      vMk.id = 'vMK';
-      vMk.hidden = true;
-      vMk.style.maxWidth = '1080px';
-      mainEl.insertBefore(vMk, dashEl);
-    }
+  function ensureView(id) {
+    if (document.getElementById(id) || !mainEl || !dashEl) return;
+    var v = document.createElement('div');
+    v.className = 'qbk';
+    v.id = id;
+    v.hidden = true;
+    v.style.maxWidth = '1080px';
+    mainEl.insertBefore(v, dashEl);
   }
+  ensureView('vVOC');
+  ensureView('vERR');
 
-  var ptBtn = document.getElementById('nvPT');
-  if (ptBtn && ptBtn.parentNode) {
-    if (!document.getElementById('nvVOC')) {
-      var vocBtn = document.createElement('button');
-      vocBtn.className = 'nav';
-      vocBtn.id = 'nvVOC';
-      vocBtn.innerHTML = '<i data-lucide="book-marked" style="width:20px;height:20px;vertical-align:-4px"></i> Vocabulary <span class="tag" id="navVocabCnt" style="display:none">0</span>';
-      ptBtn.insertAdjacentElement('afterend', vocBtn);
-      vocBtn.onclick = function() { show('voc'); };
-
-      var mkBtn = document.createElement('button');
-      mkBtn.className = 'nav';
-      mkBtn.id = 'nvMK';
-      mkBtn.innerHTML = '<i data-lucide="clipboard-x" style="width:20px;height:20px;vertical-align:-4px"></i> Mistakes <span class="tag n" id="navMistakesCnt" style="display:none">0</span>';
-      vocBtn.insertAdjacentElement('afterend', mkBtn);
-      mkBtn.onclick = function() { show('mk'); };
-
-      var supBtn = document.createElement('button');
-      supBtn.className = 'nav';
-      supBtn.id = 'nvSUP';
-      supBtn.innerHTML = '<i data-lucide="headset" style="width:20px;height:20px;vertical-align:-4px"></i> Support';
-      mkBtn.insertAdjacentElement('afterend', supBtn);
-      supBtn.onclick = openSupportModal;
+  function ensureNav(id, afterId, html, target) {
+    var b = document.getElementById(id);
+    if (!b) {
+      var after = document.getElementById(afterId);
+      if (!after) return;
+      b = document.createElement('button');
+      b.className = 'nav';
+      b.id = id;
+      b.innerHTML = html;
+      after.insertAdjacentElement('afterend', b);
     }
+    b.onclick = function() { show(target); };
   }
+  ensureNav('nvVOC', 'nvPT', '<i data-lucide="bookmark-check"></i> Vocabulary <span class="tag" id="sideVocCnt">0</span>', 'voc');
+  ensureNav('nvERR', 'nvVOC', '<i data-lucide="shield-alert"></i> Mistake Log <span class="tag" id="sideErrCnt">0</span>', 'mk');
+
+  ['btnOpenSupport', 'hudSupBtn'].forEach(function(id) {
+    var b = document.getElementById(id);
+    if (b) b.onclick = openSupportModal;
+  });
 
   var footerEl = document.querySelector('.legal-footer');
   if (footerEl) {
     footerEl.innerHTML = 'SAT is a registered trademark of College Board, which is not affiliated with SATPath. &nbsp;·&nbsp; <button type="button" onclick="openSupportModal()" style="color:var(--acc);font-weight:700">Support: @slayerofprep · @gOlvzZ · satpath1600@gmail.com</button>';
   }
+  updateNavBadges();
 })();
 
 function show(w){
@@ -2247,9 +2460,9 @@ function show(w){
     pt:document.getElementById('vPT'),
     bz:document.getElementById('vBZ'),
     voc:document.getElementById('vVOC'),
-    mk:document.getElementById('vMK')
+    mk:document.getElementById('vERR')
   };
-  var N={d:'nvD',m:'nvMP',b:'nvQB',r:'nvRW',lb:'nvLB',pt:'nvPT',bz:'nvBZ',voc:'nvVOC',mk:'nvMK'};
+  var N={d:'nvD',m:'nvMP',b:'nvQB',r:'nvRW',lb:'nvLB',pt:'nvPT',bz:'nvBZ',voc:'nvVOC',mk:'nvERR'};
   var titles={
     d:'Base Camp · Archipelago',
     m:'Math Path · Odyssey',
