@@ -2181,13 +2181,17 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
       if (fgBtn) {
         fgBtn.onclick = async function() {
           var em = ov.querySelector('#spAuthEmail').value.trim();
-          if (!em) return setErr('Enter your email above first.');
+          if (!em) return setErr('Please enter your email address above first.');
           try {
             await fbInit();
             await FB.au.sendPasswordResetEmail(FB.auth, em);
-            toast('Reset link sent to ' + em);
+            setErr('');
+            toast('✓ Password reset link sent to ' + em);
           } catch (e) {
-            setErr(e.message || 'Could not send reset email.');
+            var msg = e.message;
+            if (e.code === 'auth/user-not-found') msg = 'No account found with this email.';
+            else if (e.code === 'auth/invalid-email') msg = 'Please enter a valid email address.';
+            setErr(msg);
           }
         };
       }
@@ -2198,7 +2202,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         var pw = ov.querySelector('#spAuthPass').value;
         var nmEl = ov.querySelector('#spAuthName');
         var nm = nmEl ? nmEl.value.trim() : '';
-        if (!em || !pw) return setErr('Enter both email and password.');
+        if (!em || !pw) return setErr('Please enter both email and password.');
         try {
           await fbInit();
           if (isSign) {
@@ -2214,7 +2218,18 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
           }
           ov.remove();
         } catch (e) {
-          setErr(e.message || 'Authentication error');
+          // Красивая и понятная заменяемая ошибка вместо технической auth/invalid-credential
+          var friendlyMsg = 'Incorrect email or password. Please try again.';
+          if (e.code === 'auth/user-not-found') {
+            friendlyMsg = 'No account found with this email. Please sign up.';
+          } else if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+            friendlyMsg = 'Incorrect password. Please check and try again.';
+          } else if (e.code === 'auth/invalid-email') {
+            friendlyMsg = 'Please enter a valid email address format.';
+          } else if (e.code === 'auth/too-many-requests') {
+            friendlyMsg = 'Access temporarily blocked due to too many failed attempts. Try later.';
+          }
+          setErr(friendlyMsg);
         }
       };
     }
