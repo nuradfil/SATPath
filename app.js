@@ -8,6 +8,60 @@ function spSet(k, v) {
   window._SP_MEM[k] = String(v);
   try { window.localStorage.setItem(k, String(v)); } catch(e) {}
 }
+
+/* Минималистичные SVG-иконки вместо эмодзи */
+function spSvg(name, size) {
+  var sz = size || 16;
+  var paths = {
+    compass: '<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',
+    anchor: '<circle cx="12" cy="5" r="3"/><line x1="12" y1="22" x2="12" y2="8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/>',
+    feather: '<path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+    zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    crown: '<path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>',
+    flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>',
+    book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+    lock: '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    award: '<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>',
+    layers: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+    user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+    target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    alert: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+    coffee: '<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>'
+  };
+  return '<svg width="' + sz + '" height="' + sz + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px;flex:none">' + (paths[name] || paths.compass) + '</svg>';
+}
+
+/* Полноценный Desmos как в реальном Bluebook SAT */
+function createFullDesmos(el) {
+  if (!window.Desmos || !el) return null;
+  return Desmos.GraphingCalculator(el, {
+    keypad: true,
+    expressions: true,
+    settingsMenu: true,
+    zoomButtons: true,
+    expressionsTopbar: true,
+    pointsOfInterest: true,
+    trace: true,
+    border: false,
+    lockViewport: false,
+    expressionsCollapsed: false,
+    capExpressionSize: false,
+    authorFeatures: false,
+    images: false,
+    folders: true,
+    notes: true,
+    sliders: true,
+    links: false,
+    qwertyKeyboard: true,
+    degreeMode: false
+  });
+}
+
 var h=new Date().getHours();document.getElementById('gr').textContent=(h<5?'Good night,':h<12?'Good morning,':h<18?'Good afternoon,':'Good evening,');
 var n=new Date(),sat=new Date(n.getFullYear()+(n.getMonth()>10?1:0),10,7);
 document.getElementById('mo').textContent=n.toLocaleString('en',{month:'long'})+' · 5 questions';
@@ -24,8 +78,63 @@ function confetti(){for(var i=0;i<60;i++){var p=document.createElement('i'),c=['
  document.body.appendChild(p);
  p.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:'translate('+Math.cos(a)*d+'px,'+(Math.sin(a)*d+300)+'px) rotate('+Math.random()*720+'deg)',opacity:0}],{duration:1200+Math.random()*800,easing:'cubic-bezier(.2,.8,.4,1)'}).onfinish=p.remove.bind(p)}}
 
- /* ===== PRACTICE TESTS ===== */
-var PT_N=6;
+/* ===== MISTAKES BANK (РАБОТА НАД ОШИБКАМИ · MAX 500) ===== */
+var MISTAKES_KEY = 'satpath_mistakes_v1';
+function getMistakes() {
+  try { return JSON.parse(spGet(MISTAKES_KEY)) || []; } catch (e) { return []; }
+}
+function saveMistakes(list) {
+  if (list.length > 500) list = list.slice(0, 500);
+  try { spSet(MISTAKES_KEY, JSON.stringify(list)); } catch (e) {}
+  updateNavBadges();
+}
+function recordMistake(qObj, userAns, sourceLabel) {
+  if (!qObj || !qObj.q) return;
+  var list = getMistakes();
+  var qText = String(qObj.q).trim();
+  var existingIdx = list.findIndex(function(x) { return String(x.q).trim() === qText; });
+  var entry = {
+    id: 'mk_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+    q: qObj.q,
+    ans: qObj.ans,
+    opts: Array.isArray(qObj.opts) ? qObj.opts.slice() : [],
+    isGrid: !!qObj.isGrid,
+    rw: !!qObj.rw,
+    top: qObj.top || (qObj.rw ? 'Reading & Writing' : 'SAT Math'),
+    wrongAns: userAns != null ? String(userAns) : 'Unanswered',
+    src: sourceLabel || 'Practice',
+    ts: Date.now()
+  };
+  if (existingIdx >= 0) {
+    list.splice(existingIdx, 1);
+  }
+  list.unshift(entry);
+  if (list.length > 500) list = list.slice(0, 500);
+  saveMistakes(list);
+}
+function removeMistakeByQuestion(qText) {
+  var list = getMistakes();
+  var clean = String(qText).trim();
+  var filtered = list.filter(function(x) { return String(x.q).trim() !== clean; });
+  saveMistakes(filtered);
+}
+function updateNavBadges() {
+  var mkCnt = document.getElementById('navMistakesCnt');
+  if (mkCnt) {
+    var len = getMistakes().length;
+    mkCnt.textContent = len;
+    mkCnt.style.display = len > 0 ? 'inline-block' : 'none';
+  }
+  var vcCnt = document.getElementById('navVocabCnt');
+  if (vcCnt) {
+    var vlen = getVocabList().length;
+    vcCnt.textContent = vlen;
+    vcCnt.style.display = vlen > 0 ? 'inline-block' : 'none';
+  }
+}
+
+/* ===== PRACTICE TESTS & SAVED SESSIONS ===== */
+var PT_N=8;
 var PT_RW=[[3,4],[4,2],[5,1],[0,2],[1,2],[2,3],[6,4],[7,2],[8,4],[9,3]]; /* [тема,кол-во] = 27, порядок как в SAT */
 var PT_MD=[[[0,1,2,3,4],7],[[5,6,7,8],7],[[9,10,11,12,13,14,15],4],[[16,17,18,19],4]]; /* = 22 */
 function ptLoad(){try{return JSON.parse(spGet('satpath_pt'))||{}}catch(e){return{}}}
@@ -36,6 +145,21 @@ function ptRight(q,v){return v!=null&&v!==''&&(q.isGrid?same(v,q.ans):String(v)=
 function ptFmt(s){s=Math.max(0,s);return Math.floor(s/60)+':'+('0'+s%60).slice(-2)}
 function ptScore(sec,a,b,hard){var tot=sec==='r'?54:44,sc=sec==='r'?50:40,c=Math.round((a+b)*sc/tot),s=scaleSectionScore(c,sc,hard);if(!hard)s=Math.min(s,sec==='r'?600:590);return s}
 function ptMathPlan(t,m){var p=[];PT_MD.forEach(function(d,k){var L=d[0],o=(t*3+m*2+k)%L.length;for(var j=0;j<d[1];j++)p.push(L[(o+j)%L.length])});return p}
+
+var MOCK_SESS_KEY = 'satpath_mock_sessions_v1';
+function getMockSessions() {
+  try { return JSON.parse(spGet(MOCK_SESS_KEY)) || {}; } catch (e) { return {}; }
+}
+function getMockSession(t) {
+  var all = getMockSessions();
+  return all[t] || null;
+}
+function saveMockSession(t, data) {
+  var all = getMockSessions();
+  if (data === null) delete all[t];
+  else all[t] = data;
+  try { spSet(MOCK_SESS_KEY, JSON.stringify(all)); } catch (e) {}
+}
 
 /* ===== IN-PAGE CONFIRM MODAL & VOCABULARY HIGHLIGHTER FOR MOCK EXAMS ===== */
 function spModalConfirm(msg, onYes) {
@@ -52,39 +176,47 @@ function spModalConfirm(msg, onYes) {
   m.querySelector('#spModYes').onclick = function() { m.remove(); if (onYes) onYes(); };
 }
 
-
-
 function getVocabList() {
   try { return JSON.parse(spGet('satpath_vocab_v1')) || []; } catch (e) { return []; }
 }
 function saveVocabList(list) {
   try { spSet('satpath_vocab_v1', JSON.stringify(list)); } catch (e) {}
+  updateNavBadges();
 }
 function lookupWordDef(rawWord, contextText) {
   var clean = String(rawWord || '').toLowerCase().replace(/[^a-z'-]/g, '');
   if (!clean) return null;
-  if (SAT_VOCAB_DICT[clean]) return SAT_VOCAB_DICT[clean];
-  // Check stem match
-  for (var k in SAT_VOCAB_DICT) {
-    if (clean.indexOf(k.slice(0, 6)) === 0 || k.indexOf(clean.slice(0, 6)) === 0) {
-      return SAT_VOCAB_DICT[k];
+  var dict = (typeof SAT_VOCAB_DICT !== 'undefined' && SAT_VOCAB_DICT) ? SAT_VOCAB_DICT : {};
+  if (dict[clean]) {
+    return {
+      d: dict[clean].d,
+      ru: dict[clean].ru || 'Academic Term',
+      ex: contextText || ('The author utilized the term "' + clean + '" to emphasize the central claim of the passage.')
+    };
+  }
+  for (var k in dict) {
+    if (k.length >= 5 && (clean.indexOf(k.slice(0, 5)) === 0 || k.indexOf(clean.slice(0, 5)) === 0)) {
+      return {
+        d: dict[k].d,
+        ru: dict[k].ru || 'Academic Term',
+        ex: contextText || ('In the SAT passage, "' + clean + '" conveys a precise analytical nuance.')
+      };
     }
   }
-  // Smart morphological & context-aware fallback for any English word in SAT passages
-  var clue = "Academic SAT term used in the passage context.";
-  if (clean.endsWith('tion') || clean.endsWith('sion')) clue = "Noun denoting a process, state, or action in academic analysis.";
-  else if (clean.endsWith('ous') || clean.endsWith('ive') || clean.endsWith('al') || clean.endsWith('ic')) clue = "Adjective describing a key property or characteristic in the passage.";
-  else if (clean.endsWith('ly')) clue = "Adverb modifying the degree or manner of an action in the text.";
-  else if (clean.endsWith('ate') || clean.endsWith('ize') || clean.endsWith('ify')) clue = "Verb expressing a transformation, action, or causal effect.";
+  var clue = "High-utility academic SAT vocabulary term used in analytical and literary contexts.";
+  if (clean.endsWith('tion') || clean.endsWith('sion') || clean.endsWith('ment')) clue = "Noun denoting a formal process, condition, or analytical result in the text.";
+  else if (clean.endsWith('ous') || clean.endsWith('ive') || clean.endsWith('al') || clean.endsWith('ic') || clean.endsWith('able')) clue = "Adjective characterizing a specific quality, tone, or attribute in the passage.";
+  else if (clean.endsWith('ly')) clue = "Adverb modifying the intensity, manner, or certainty of an action in the argument.";
+  else if (clean.endsWith('ate') || clean.endsWith('ize') || clean.endsWith('ify')) clue = "Verb expressing a transformation, evaluation, or causal relationship.";
   return {
-    d: clue + (contextText ? (' Context: "' + contextText.slice(0, 90) + '..."') : ''),
-    ru: "Академический термин SAT (выделено в словарь для повторения)"
+    d: clue,
+    ru: "Academic SAT Vocabulary",
+    ex: contextText ? contextText : ('The researcher\'s analysis relied on understanding how "' + clean + '" functions in context.')
   };
 }
 
 function wrapWordsForVocab(htmlStr) {
   var saved = getVocabList().map(function(x) { return x.w.toLowerCase(); });
-  // Split by HTML tags so we only wrap words >= 4 chars inside text nodes
   return String(htmlStr).split(/(<[^>]+>)/g).map(function(part, idx) {
     if (idx % 2 === 1) return part;
     return part.replace(/\b([A-Za-z]{4,})\b/g, function(m, w) {
@@ -92,6 +224,50 @@ function wrapWordsForVocab(htmlStr) {
       return '<span class="rw-word' + (isHl ? ' hl' : '') + '" data-word="' + w + '">' + w + '</span>';
     });
   }).join('');
+}
+
+function openAddWordModal(defaultCtx, onSaved) {
+  var m = document.createElement('div');
+  m.style.cssText = 'position:fixed;inset:0;z-index:160;background:rgba(6,21,23,0.78);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px';
+  var selectedText = '';
+  try { selectedText = window.getSelection().toString().trim().slice(0, 40); } catch (e) {}
+  var autoInfo = selectedText ? lookupWordDef(selectedText, defaultCtx) : null;
+
+  m.innerHTML = '<div class="qb" style="max-width:480px;width:100%;border-radius:26px;border:2px solid var(--sand-line);animation:up .2s ease">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px dashed var(--line)">' +
+      '<div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em">PERSONAL LEXICON</small><h3 style="font-size:20px;font-weight:800">Add Word to Vocabulary</h3></div>' +
+      '<button class="tbtn" id="awClose">✕</button>' +
+    '</div>' +
+    '<div style="display:grid;gap:12px">' +
+      '<div><label style="font-size:11.5px;font-weight:800;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:5px">Word or Term</label>' +
+      '<input id="awWord" class="qin" style="font-size:15px;padding:10px 14px;text-align:left" placeholder="e.g., corroborate" value="' + lbEsc(selectedText) + '"></div>' +
+      '<div><label style="font-size:11.5px;font-weight:800;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:5px">Meaning / Definition</label>' +
+      '<input id="awDef" class="qin" style="font-size:14px;padding:10px 14px;text-align:left" placeholder="Leave blank to auto-generate definition..." value="' + (autoInfo ? lbEsc(autoInfo.d) : '') + '"></div>' +
+      '<div><label style="font-size:11.5px;font-weight:800;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:5px">Example Sentence (Context)</label>' +
+      '<input id="awEx" class="qin" style="font-size:13.5px;padding:10px 14px;text-align:left" placeholder="Example usage in an SAT passage..." value="' + lbEsc(defaultCtx || '') + '"></div>' +
+      '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">' +
+        '<button class="chip" id="awCancel" style="padding:10px 16px;font-weight:700">Cancel</button>' +
+        '<button class="cta-amber" id="awSave" style="padding:10px 20px;font-size:13.5px">' + spSvg('plus', 15) + ' Save to Vocabulary</button>' +
+      '</div>' +
+    '</div></div>';
+  document.body.appendChild(m);
+  m.querySelector('#awClose').onclick = function() { m.remove(); };
+  m.querySelector('#awCancel').onclick = function() { m.remove(); };
+  m.querySelector('#awSave').onclick = function() {
+    var w = m.querySelector('#awWord').value.trim();
+    if (!w) return toast('Please enter a word first');
+    var info = lookupWordDef(w, defaultCtx);
+    var d = m.querySelector('#awDef').value.trim() || (info ? info.d : 'Academic SAT vocabulary term.');
+    var ex = m.querySelector('#awEx').value.trim() || (info ? info.ex : '');
+    var list = getVocabList();
+    var existing = list.findIndex(function(x) { return x.w.toLowerCase() === w.toLowerCase(); });
+    if (existing >= 0) list.splice(existing, 1);
+    list.unshift({ w: w, d: d, ru: info ? info.ru : 'SAT Term', ctx: ex });
+    saveVocabList(list);
+    toast('Saved "' + w + '" to Vocabulary');
+    m.remove();
+    if (onSaved) onSaved();
+  };
 }
 
 function openVocabDrawer() {
@@ -102,20 +278,21 @@ function openVocabDrawer() {
     var rows = list.length ? list.map(function(item, idx) {
       return '<div class="card" style="padding:14px 16px;border-radius:18px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px">' +
         '<div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:16px;color:var(--sand)">' + lbEsc(item.w) + '</b><span class="tag" style="margin:0;font-size:10px">' + lbEsc(item.ru || 'SAT Term') + '</span></div>' +
-        '<div style="font-size:13px;color:var(--tx);margin-top:4px;line-height:1.45">' + lbEsc(item.d) + '</div>' +
-        (item.ctx ? '<div style="font-size:11.5px;color:var(--mut);margin-top:4px;font-style:italic">"' + lbEsc(item.ctx) + '"</div>' : '') +
+        '<div style="font-size:13px;color:var(--tx);margin-top:6px;line-height:1.45"><b>Meaning:</b> ' + lbEsc(item.d) + '</div>' +
+        (item.ctx ? '<div style="font-size:12px;color:var(--mut);margin-top:6px;font-style:italic"><b>Example:</b> "' + lbEsc(item.ctx) + '"</div>' : '') +
         '</div>' +
         '<button class="tbtn" data-del-voc="' + idx + '" title="Remove word" style="flex:none;width:30px;height:30px;font-size:12px">✕</button></div>';
-    }).join('') : '<div style="text-align:center;padding:30px 10px;color:var(--mut)">No words saved yet! Click or highlight any unfamiliar word during a Mock Exam or R&amp;W passage to save it here.</div>';
+    }).join('') : '<div style="text-align:center;padding:30px 10px;color:var(--mut)">No words saved yet! Click any unfamiliar word during a Mock Exam or R&amp;W passage, or click "+ Add Word" above.</div>';
 
-    ov.innerHTML = '<div class="qb" style="max-width:600px;width:100%;border-radius:26px;border:2px solid var(--sand-line);max-height:85vh;overflow-y:auto">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1.5px dashed var(--line);margin-bottom:14px">' +
+    ov.innerHTML = '<div class="qb" style="max-width:640px;width:100%;border-radius:26px;border:2px solid var(--sand-line);max-height:85vh;overflow-y:auto">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1.5px dashed var(--line);margin-bottom:14px;gap:10px;flex-wrap:wrap">' +
       '<div><small style="color:var(--sand);font-weight:800;letter-spacing:.08em;text-transform:uppercase">PERSONAL LEXICON</small><h2 style="font-size:22px;font-weight:800">Saved SAT Vocabulary (' + list.length + ')</h2></div>' +
-      '<button class="tbtn" id="vocClose">✕</button></div>' +
+      '<div style="display:flex;gap:8px;align-items:center"><button class="cta-amber" id="vocAddCustom" style="padding:8px 14px;font-size:12px;border-radius:12px">' + spSvg('plus', 14) + ' Add Word</button><button class="tbtn" id="vocClose">✕</button></div></div>' +
       '<div style="display:grid;gap:10px">' + rows + '</div>' +
       (list.length ? '<div style="margin-top:16px;text-align:right"><button class="chip" id="vocClearAll" style="color:#e74c3c;border-color:#e74c3c">Clear All Words</button></div>' : '') +
       '</div>';
     ov.querySelector('#vocClose').onclick = function() { ov.remove(); };
+    ov.querySelector('#vocAddCustom').onclick = function() { openAddWordModal('', render); };
     var clr = ov.querySelector('#vocClearAll');
     if (clr) clr.onclick = function() { saveVocabList([]); render(); };
     ov.querySelectorAll('[data-del-voc]').forEach(function(b) {
@@ -132,156 +309,55 @@ function openVocabDrawer() {
   render();
 }
 
-function ptBuild(t,sec,m,lvl,used){
- return ptWithSeed(t*1000+(sec==='m'?100:200)+m*10+(lvl==='hard'?2:lvl==='easy'?1:0),function(){
-  var out=[];
-  if(sec==='m'){var cnt={};
-   ptMathPlan(t,m).forEach(function(ti,k){
-    var c=cnt[ti]=(cnt[ti]||0)+1,q=null,base=t*19+m*11+c*13+k*7,
-     tier=lvl==='mix'?(k%2===0?'hard':'medium'):lvl==='hard'?'hard':(k%3?'easy':'medium');
-    for(var a=0;a<10&&!q;a++){try{var x=getMathQ(ti,tier,base+a*17);if(x&&x.q)q=x}catch(e){}}
-    if(q){q.top=TOPS[ti];out.push(q)}});
-  }else{
-   PT_RW.forEach(function(x){var ti=x[0],L=RQ[ti].length,th=Math.ceil(L/3),
-    lo=lvl==='hard'?th:0,hi=lvl==='easy'?2*th:L,ids=[],u=used[ti]||(used[ti]={});
-    for(var i=0;i<L;i++)ids.push(i);
-    var cand=shuffle(ids.filter(function(i){return i>=lo&&i<hi&&!u[i]}));
-    if(cand.length<x[1])cand=cand.concat(shuffle(ids.filter(function(i){return!u[i]&&cand.indexOf(i)<0})));
-    cand.slice(0,x[1]).forEach(function(i){u[i]=1;var r=RQ[ti][i];
-     out.push({q:r[0],ans:r[1],opts:shuffle(r.slice(1)),isGrid:false,rw:true,top:RTOPS[ti]})})});
-  }
-  return out})}
-
 function ptInfo(html,btn,cb){var ov=document.createElement('div');
  ov.style.cssText='position:fixed;inset:0;z-index:90;background:var(--bg);overflow:auto;padding:24px;display:grid;place-items:center';
  ov.innerHTML='<div class="qb" style="text-align:center;border-radius:26px;border:2px solid var(--line);box-shadow:0 16px 40px rgba(0,0,0,0.25)">'+html+'<button class="cta-amber" id="pi" style="margin-top:18px">'+btn+'</button></div>';
- document.body.appendChild(ov);ov.querySelector('#pi').onclick=function(){ov.remove();cb()}}
-
-function ptModule(cfg,done){
- var qs=cfg.qs,ans=[],flag=[],cur=0,left=cfg.min*60,ended=false,calc=null,tmr,popEl=null,
- ov=document.createElement('div');
- ov.style.cssText='position:fixed;inset:0;z-index:90;background:var(--bg);overflow:auto;padding:16px';
- ov.innerHTML='<div id="ptShell" class="pt-shell"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);padding:12px 18px;border-radius:18px;border:1.5px solid var(--line)">'
-  +'<div><b style="font-size:15px">'+cfg.title+'</b><small style="display:block;color:var(--mut);font-size:11px">Click any word in the passage to highlight &amp; save to your Vocabulary</small></div>'
-  +'<b id="ptT" style="font-size:18px;font-variant-numeric:tabular-nums;color:var(--sand);background:var(--sand-bg);padding:4px 12px;border-radius:99px;border:1px solid var(--sand-line)"></b>'
-  +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-  +'<button id="ptVocBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--sand);border-color:var(--sand-line)">📖 Vocab (<span id="ptVocCnt">' + getVocabList().length + '</span>)</button>'
-  +(cfg.calc?'<button id="ptCB" style="background:var(--acc2);color:#fff;padding:6px 14px;border-radius:99px;font-weight:700;font-size:12px"><img class="ui-ic" src="math.png" alt=""> Calculator (50/50)</button>':'')
-  +'<button id="ptEnd" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700">Review / Submit</button>'
-  +'<button id="ptEx" class="chip" style="padding:6px 12px;text-transform:none">Exit</button></div></div>'
-  +'<div class="pt-split-body"><div class="qb" style="max-width:none;border-radius:24px"><div id="ptQ"></div><div id="ptG" hidden></div><div style="display:flex;justify-content:space-between;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)"><button class="cta" id="ptP" style="border-radius:14px">← Back</button><button class="cta-amber" id="ptN" style="border-radius:14px">Next →</button></div></div>'
-  +'<div id="ptCP" style="display:none;border:2px solid var(--line);border-radius:24px;overflow:hidden;background:#fff"></div></div></div>';
- document.body.appendChild(ov);
- var $=function(i){return ov.querySelector('#'+i)},Q=$('ptQ'),G=$('ptG');
- function closePop(){if(popEl){popEl.remove();popEl=null}}
- function stop(){closePop();ended=true;clearInterval(tmr);ov.remove()}
- function fin(){var un=0;qs.forEach(function(q,i){if(ans[i]==null||ans[i]==='')un++});
-  spModalConfirm(un?'You have <b>'+un+' unanswered question(s)</b>. Submit this module now?':'Submit this module and proceed to the next stage?', function(){submit()})}
- function submit(){if(ended)return;stop();var ok=0;qs.forEach(function(q,i){if(ptRight(q,ans[i]))ok++});done({ok:ok,n:qs.length,qs:qs,ans:ans})}
- tmr=setInterval(function(){left--;$('ptT').textContent=ptFmt(left);if(left<=0){toast('Time is up for this module!');submit()}},1000);
- $('ptT').textContent=ptFmt(left);
- $('ptVocBtn').onclick=function(){openVocabDrawer()};
-
- function showWordPopover(wordEl, rawWord) {
-  closePop();
-  var clean = rawWord.replace(/[^a-zA-Z'-]/g, '');
-  if (!clean) return;
-  var plainCtx = Q.textContent.replace(/\s+/g, ' ').trim().slice(0, 110);
-  var info = lookupWordDef(clean, plainCtx);
-  var list = getVocabList();
-  var isSaved = list.some(function(x){return x.w.toLowerCase()===clean.toLowerCase()});
-  popEl = document.createElement('div');
-  popEl.className = 'vocab-pop';
-  var rect = wordEl.getBoundingClientRect();
-  var topPos = Math.min(window.innerHeight - 170, Math.max(12, rect.bottom + 8));
-  var leftPos = Math.min(window.innerWidth - 320, Math.max(12, rect.left));
-  popEl.style.top = topPos + 'px';
-  popEl.style.left = leftPos + 'px';
-  popEl.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">'
-   + '<b style="font-size:16px;color:var(--sand)">' + lbEsc(clean) + '</b>'
-   + '<button id="vpClose" style="font-size:12px;opacity:.6">✕</button></div>'
-   + '<div style="font-size:11.5px;font-weight:700;color:var(--acc);margin-bottom:4px">' + lbEsc(info.ru) + '</div>'
-   + '<div style="font-size:12.5px;color:var(--tx);line-height:1.45;margin-bottom:10px">' + lbEsc(info.d) + '</div>'
-   + '<button class="cta-amber" id="vpSave" style="width:100%;padding:7px 12px;font-size:12px;border-radius:10px">' + (isSaved ? '✓ Saved in Vocab (Remove)' : '★ Highlight &amp; Save Word') + '</button>';
-  document.body.appendChild(popEl);
-  popEl.querySelector('#vpClose').onclick = closePop;
-  popEl.querySelector('#vpSave').onclick = function() {
-    var curList = getVocabList();
-    var idx = curList.findIndex(function(x){return x.w.toLowerCase()===clean.toLowerCase()});
-    if (idx >= 0) {
-      curList.splice(idx, 1);
-      wordEl.classList.remove('hl');
-      toast('Removed "' + clean + '" from Saved Vocab');
-    } else {
-      curList.unshift({ w: clean, d: info.d, ru: info.ru, ctx: plainCtx });
-      wordEl.classList.add('hl');
-      toast('★ Saved "' + clean + '" to your Vocab list!');
-    }
-    saveVocabList(curList);
-    var cntEl = $('ptVocCnt');
-    if (cntEl) cntEl.textContent = curList.length;
-    closePop();
-  };
- }
-
- Q.addEventListener('click', function(e) {
-  var wEl = e.target.closest('.rw-word');
-  if (wEl) {
-    e.stopPropagation();
-    showWordPopover(wEl, wEl.dataset.word || wEl.textContent);
-  } else {
-    closePop();
+ document.body.appendChild(ov);ov.querySelector('#pi').onclick=function(){
+  if (sessionStorage.getItem('bb_fullscreen_active') === '1' && !document.fullscreenElement && document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(function(){});
   }
- });
+  ov.remove();cb();
+ }}
 
- function map(){closePop();var h='<b>Question Map · ' + cfg.title + '</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0">';
-  qs.forEach(function(q,i){var a=ans[i]!=null&&ans[i]!=='';
-   h+='<button data-i="'+i+'" style="width:46px;height:42px;border-radius:10px;text-align:center;font-weight:700;border:2px solid '+(a?'var(--acc)':'var(--line)')+';background:'+(a?'rgba(34,163,129,.25)':'transparent')+'">'+(i+1)+(flag[i]?'🚩':'')+'</button>'});
-  G.innerHTML=h+'</div><small style="color:var(--mut)">Filled = answered · 🚩 = flagged</small><div style="margin-top:14px"><button class="cta-amber" id="ptS">Submit Module →</button></div>';
-  Q.hidden=true;G.hidden=false}
- G.onclick=function(e){var b=e.target.closest('[data-i]');if(b){cur=+b.dataset.i;draw()}if(e.target.id==='ptS')fin()};
- function draw(){closePop();G.hidden=true;Q.hidden=false;
-  var q=qs[cur],fx=function(s){return q.rw?wrapWordsForVocab(s):rHTML(s)},
-  h='<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:700">Question '+(cur+1)+' of '+qs.length+' · <span style="color:var(--acc)">'+(q.top||'')+'</span></small><button id="ptF" class="chip" style="font-size:12px;text-transform:none">'+(flag[cur]?'🚩 Flagged':'⚑ Flag for review')+'</button></div><div style="font-size:'+(q.rw?17:19)+'px;line-height:1.6;margin:18px 0">'+fx(q.q)+'</div>';
-  if(q.isGrid)h+='<input id="ptI" class="qin" placeholder="Enter your answer" autocomplete="off" value="'+(ans[cur]!=null?String(ans[cur]).replace(/"/g,'&quot;'):'')+'">';
-  else q.opts.forEach(function(o,k){h+='<button class="qo" data-k="'+k+'"'+(ans[cur]===o?' style="border-color:var(--acc);background:rgba(34,163,129,.2)"':'')+'><b>'+'ABCD'[k]+'</b>&nbsp; '+(q.rw?String(o):rHTML(o))+'</button>'});
-  Q.innerHTML=h;
-  Q.querySelectorAll('.qo').forEach(function(b){b.onclick=function(){ans[cur]=q.opts[+b.dataset.k];
-   Q.querySelectorAll('.qo').forEach(function(x){x.style.cssText=x===b?'border-color:var(--acc);background:rgba(34,163,129,.2)':''})}});
-  var inp=$('ptI');if(inp)inp.oninput=function(){ans[cur]=inp.value.trim()};
-  $('ptF').onclick=function(){flag[cur]=!flag[cur];this.textContent=flag[cur]?'🚩 Flagged':'⚑ Flag for review'};
-  $('ptP').style.opacity=cur?1:.35;$('ptN').textContent=cur<qs.length-1?'Next →':'Review →'}
- $('ptP').onclick=function(){if(cur>0){cur--;draw()}};
- $('ptN').onclick=function(){if(cur<qs.length-1){cur++;draw()}else map()};
- $('ptEnd').onclick=map;
- $('ptEx').onclick=function(){spModalConfirm('Exit this mock exam? Progress in the current module will be lost.', function(){stop();done(null)})};
- var cb=$('ptCB'),shell=$('ptShell');if(cb)cb.onclick=function(){var p=$('ptCP');
-  if(!shell.classList.contains('calc-open')){shell.classList.add('calc-open');p.style.display='block';cb.style.background='#e74c3c';cb.textContent='✕ Close Calculator';
-   if(!calc&&window.Desmos)calc=Desmos.GraphingCalculator(p,{keypad:true,expressions:true,settingsMenu:false,folders:false,images:false});
-   if(calc)setTimeout(function(){calc.resize()},35)}
-  else{shell.classList.remove('calc-open');p.style.display='none';cb.style.background='var(--acc2)';cb.innerHTML=IC_MATH_HTML+' Calculator (50/50)'}};
- draw()}
+/* 10-минутный перерыв между секциями R&W и Math в Mock Exam */
+function showTenMinuteBreak(onContinue) {
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:95;background:var(--bg);background-image:radial-gradient(circle at 20% 20%, rgba(34,163,129,0.14), transparent 40%), var(--topo-svg);display:grid;place-items:center;padding:24px;overflow:auto';
+  var left = 10 * 60;
+  ov.innerHTML = '<div class="qb" style="max-width:580px;width:100%;text-align:center;border-radius:28px;border:2px solid var(--sand-line);padding:36px 30px;box-shadow:0 24px 60px rgba(0,0,0,0.3)">' +
+    '<div style="display:inline-flex;align-items:center;gap:8px;background:var(--sand-bg);color:var(--sand);border:1px solid var(--sand-line);padding:6px 14px;border-radius:99px;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px">' + spSvg('coffee', 15) + ' INTERMISSION · SECTION BREAK</div>' +
+    '<h2 style="font-size:28px;font-weight:800;margin-bottom:8px">Reading &amp; Writing Complete</h2>' +
+    '<p class="sub" style="max-width:440px;margin:0 auto 24px">Take a 10-minute breather to stretch and hydrate before starting the Math section (2 modules, 44 questions total).</p>' +
+    '<div style="background:var(--panel2);border:2px solid var(--line);border-radius:24px;padding:22px;margin:0 auto 24px;max-width:260px">' +
+      '<small style="display:block;font-size:11px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Remaining Break Time</small>' +
+      '<div id="brkTimerVal" style="font-size:48px;font-weight:800;color:var(--sand);font-variant-numeric:tabular-nums;line-height:1.1">10:00</div>' +
+    '</div>' +
+    '<button class="cta-amber" id="brkResumeBtn" style="padding:14px 28px;font-size:14.5px;border-radius:16px">Resume to Math Section Now →</button>' +
+  '</div>';
+  document.body.appendChild(ov);
+  var tmr = setInterval(function() {
+    left--;
+    var el = ov.querySelector('#brkTimerVal');
+    if (el) el.textContent = ptFmt(left);
+    if (left <= 0) {
+      clearInterval(tmr);
+      ov.remove();
+      onContinue();
+    }
+  }, 1000);
+  ov.querySelector('#brkResumeBtn').onclick = function() {
+    clearInterval(tmr);
+    if (sessionStorage.getItem('bb_fullscreen_active') === '1' && !document.fullscreenElement && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(function(){});
+    }
+    ov.remove();
+    onContinue();
+  };
+}
 
-function ptStart(t,secs){
- var res={},used={},si=0;
- function section(){
-  if(si>=secs.length)return ptResult(t,res);
-  var sec=secs[si++],isR=sec==='r',name=isR?'Reading and Writing':'Math',nq=isR?27:22,mins=isR?32:35;
-  ptInfo('<div style="font-size:11px;font-weight:800;color:var(--sand);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">DIGITAL SAT ADAPTIVE MODULE</div><h2 style="font-size:24px;font-weight:800">'+name+' · Module 1</h2><p style="margin:10px 0;font-weight:600;color:var(--acc)">'+nq+' Questions · '+mins+' Minutes</p><p class="sub">'+(isR?'Tip: Click any unfamiliar word in a passage to highlight it, see its definition, and save it to your Vocabulary list!':'A Desmos graphing calculator is built in. Includes multi-step geometry, data tables, and coordinate graphs.')+'</p>','Start Module 1 →',function(){
-   ptModule({title:name+' · Module 1',qs:ptBuild(t,sec,1,'mix',used),min:mins,calc:!isR},function(o1){
-    if(!o1)return buildPT();
-    var hard=o1.ok>=(isR?18:15);
-    ptInfo('<div style="font-size:11px;font-weight:800;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">MODULE 1 COMPLETE ('+o1.ok+'/'+o1.n+' CORRECT)</div><h2 style="font-size:24px;font-weight:800">'+name+' · Module 2 ('+(hard?'Adaptive Harder Track':'Standard Track')+')</h2><p style="margin:10px 0" class="sub">Your Module 2 difficulty has been calibrated based on your Module 1 accuracy.</p>','Start Module 2 →',function(){
-     ptModule({title:name+' · Module 2',qs:ptBuild(t,sec,2,hard?'hard':'easy',used),min:mins,calc:!isR},function(o2){
-      if(!o2)return buildPT();
-      res[sec]={o1:o1,o2:o2,hard:hard,score:ptScore(sec,o1.ok,o2.ok,hard)};
-      if(si<secs.length)ptInfo('<h2>Reading &amp; Writing Complete!</h2><p style="margin:10px 0" class="sub">Take a breather before embarking on the Math section (2 modules, 44 questions total).</p>','Continue to Math →',section);
-      else section()})})})})}
- section()}
-
-/* ===== SATPATH ECONOMY: PATHCOIN, ENERGY & SUPPLY SHOP (BALANCED 1-2 MONTH PROGRESSION) ===== */
+/* ===== SATPATH ECONOMY: PATHCOIN, ENERGY & SUPPLY SHOP ===== */
 var ECON_KEY = 'satpath_econ_v2';
-var ENERGY_REGEN_MS = 3 * 3600 * 1000; // +1 Energy every 3 hours
+var ENERGY_REGEN_MS = 3 * 3600 * 1000;
 var IC_MAP_HTML    = '<img class="ui-ic" src="map.png" alt="">';
 var IC_COMPAS_HTML = '<img class="ui-ic" src="compas.png" alt="">';
 var IC_COIN_HTML   = '<img class="ui-ic" src="logo.png" alt="">';
@@ -369,13 +445,8 @@ function addCoins(amount, reason) {
   if (reason) toast(IC_COIN_HTML + ' +' + amount + ' Pathcoins · ' + reason);
 }
 
-function addFreeEnergy(amount, reason) {
-  return;
-}
-
-function spendEnergy(cost) {
-  return true;
-}
+function addFreeEnergy(amount, reason) { return; }
+function spendEnergy(cost) { return true; }
 
 function miniHudHtml() {
   var e = getEcon();
@@ -394,21 +465,22 @@ function paintHud() {
   });
 }
 
-/* ===== EXPLORER PROFILE, AVATARS, SKINS & COSMETIC SHOP ===== */
+/* ===== EXPLORER PROFILE, MINIMALIST AVATARS & ARCHIPELAGO SKINS ===== */
 var AVATAR_ITEMS = [
-  { id: 'av_default', ico: '🧭', name: 'Archipelago Scout', cost: 0 },
-  { id: 'av_fox',     ico: '🦊', name: 'Crimson Kitsune',   cost: 150 },
-  { id: 'av_owl',     ico: '🦉', name: 'Athena Owl',        cost: 200 },
-  { id: 'av_dragon',  ico: '🐉', name: 'Jade Dragon',       cost: 300 },
-  { id: 'av_astro',   ico: '👩‍🚀', name: 'Star Navigator',    cost: 350 },
-  { id: 'av_crown',   ico: '👑', name: 'Sovereign',         cost: 500 }
+  { id: 'av_default', ico: 'compass', name: 'Archipelago Scout', cost: 0 },
+  { id: 'av_anchor',  ico: 'anchor',  name: 'Deep Sea Captain',  cost: 150 },
+  { id: 'av_feather', ico: 'feather', name: 'Athena Scholar',    cost: 200 },
+  { id: 'av_shield',  ico: 'shield',  name: 'Citadel Guardian',  cost: 300 },
+  { id: 'av_zap',     ico: 'zap',     name: 'Storm Navigator',   cost: 350 },
+  { id: 'av_crown',   ico: 'crown',   name: 'Sovereign',         cost: 500 }
 ];
 var SKIN_ITEMS = [
   { id: 'default',  name: 'Emerald Atoll (Default)', color: '#22a381', cost: 0 },
-  { id: 'royal',    name: 'Royal Amber Gold',        color: '#d97706', cost: 250 },
-  { id: 'cyber',    name: 'Oceanic Cyber Blue',      color: '#0ea5e9', cost: 300 },
-  { id: 'crimson',  name: 'Volcanic Coral Rose',     color: '#e11d48', cost: 350 },
-  { id: 'amethyst', name: 'Obsidian Amethyst',       color: '#8b5cf6', cost: 400 }
+  { id: 'lagoon',   name: 'Sunlit Amber Lagoon',     color: '#d97706', cost: 250 },
+  { id: 'trench',   name: 'Deep Ocean Trench',       color: '#0284c7', cost: 300 },
+  { id: 'volcanic', name: 'Volcanic Obsidian',       color: '#e11d48', cost: 350 },
+  { id: 'biolum',   name: 'Bioluminescent Reef',     color: '#0d9488', cost: 400 },
+  { id: 'sovereign',name: 'Royal Sovereign',         color: '#7c3aed', cost: 500 }
 ];
 var TITLE_ITEMS = [
   { id: 't_scout',   name: 'Island Scout',       cost: 0 },
@@ -417,19 +489,27 @@ var TITLE_ITEMS = [
   { id: 't_lord',    name: 'Archipelago Lord',   cost: 450 }
 ];
 
+function renderAvatarIcon(avKey, size) {
+  var validKeys = ['compass', 'anchor', 'feather', 'shield', 'zap', 'crown'];
+  var key = validKeys.indexOf(avKey) >= 0 ? avKey : 'compass';
+  return spSvg(key, size || 20);
+}
+
 function getProfile() {
   try {
     var p = JSON.parse(spGet('satpath_profile_v1')) || {};
     var defName = (typeof FBU !== 'undefined' && FBU && (FBU.displayName || FBU.email)) ? (FBU.displayName || FBU.email.split('@')[0]) : '';
+    var av = p.avatar || 'compass';
+    if (['compass','anchor','feather','shield','zap','crown','google'].indexOf(av) < 0) av = 'compass';
     return {
       name: p.name || defName || 'Explorer',
-      avatar: p.avatar || '🧭',
+      avatar: av,
       skin: p.skin || 'default',
       title: p.title || 'Island Scout',
       unlocked: p.unlocked || ['av_default', 'default', 't_scout']
     };
   } catch (e) {
-    return { name: 'Explorer', avatar: '🧭', skin: 'default', title: 'Island Scout', unlocked: ['av_default', 'default', 't_scout'] };
+    return { name: 'Explorer', avatar: 'compass', skin: 'default', title: 'Island Scout', unlocked: ['av_default', 'default', 't_scout'] };
   }
 }
 
@@ -450,19 +530,19 @@ function applyProfileUI() {
   var dName = document.getElementById('dashExplorerName');
   if (dName) dName.textContent = displayName;
   var dTitle = document.getElementById('dashTitleBadge');
-  if (dTitle) dTitle.textContent = (p.title || 'Island Scout') + ' ✎';
+  if (dTitle) dTitle.textContent = (p.title || 'Island Scout');
   var sName = document.getElementById('sideName');
   if (sName) sName.textContent = displayName;
   var sTitle = document.getElementById('sideTitle');
-  if (sTitle) sTitle.textContent = (p.title || 'Island Scout') + ' · Edit ✎';
+  if (sTitle) sTitle.textContent = (p.title || 'Island Scout') + ' · Profile';
   var sAv = document.getElementById('sideAv');
   if (sAv) {
     if (u && u.photoURL && p.avatar === 'google') {
-      sAv.textContent = '';
+      sAv.innerHTML = '';
       sAv.style.background = 'url(' + encodeURI(u.photoURL) + ') center/cover';
     } else {
       sAv.style.background = 'var(--acc2)';
-      sAv.textContent = p.avatar || displayName[0] || 'E';
+      sAv.innerHTML = renderAvatarIcon(p.avatar, 16);
     }
   }
 }
@@ -482,18 +562,18 @@ function openProfileModal() {
       '<div style="display:flex;gap:8px"><input id="pfNameInp" class="qin" style="font-size:16px;padding:10px 14px;text-align:left" value="' + lbEsc(p.name) + '" placeholder="Enter your name...">' +
       '<button class="cta-amber" id="pfSaveName" style="padding:10px 18px;font-size:13px;white-space:nowrap">Save Name</button></div></div>' +
       '<div style="margin:16px 0">' +
-      '<label style="font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:8px">Choose Avatar</label>' +
+      '<label style="font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:8px">Choose Minimalist Emblem</label>' +
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' +
       AVATAR_ITEMS.map(function(item) {
         var unl = p.unlocked.indexOf(item.id) >= 0 || item.cost === 0;
         var act = p.avatar === item.ico;
-        return '<button class="card" data-av="' + item.id + '" style="padding:10px;border-radius:16px;text-align:center;border-color:' + (act ? 'var(--sand)' : 'var(--line)') + ';background:' + (act ? 'var(--sand-bg)' : 'var(--panel2)') + '">' +
-          '<div style="font-size:26px">' + item.ico + '</div>' +
-          '<b style="font-size:12px;display:block;margin-top:4px">' + item.name + '</b>' +
-          '<small style="font-size:11px;color:' + (act ? 'var(--sand)' : 'var(--mut)') + ';font-weight:700">' + (act ? 'Equipped ✓' : (unl ? 'Equip' : '🔒 ' + item.cost + ' PC')) + '</small></button>';
+        return '<button class="card" data-av="' + item.id + '" style="padding:12px 10px;border-radius:16px;text-align:center;border-color:' + (act ? 'var(--sand)' : 'var(--line)') + ';background:' + (act ? 'var(--sand-bg)' : 'var(--panel2)') + '">' +
+          '<div style="color:var(--acc);display:flex;justify-content:center;margin-bottom:4px">' + renderAvatarIcon(item.ico, 24) + '</div>' +
+          '<b style="font-size:12px;display:block;margin-top:2px">' + item.name + '</b>' +
+          '<small style="font-size:11px;color:' + (act ? 'var(--sand)' : 'var(--mut)') + ';font-weight:700">' + (act ? 'Equipped ✓' : (unl ? 'Equip' : item.cost + ' PC')) + '</small></button>';
       }).join('') + '</div></div>' +
       '<div style="margin:16px 0">' +
-      '<label style="font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:8px">App Theme Skin</label>' +
+      '<label style="font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:8px">Archipelago Theme Skin</label>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
       SKIN_ITEMS.map(function(sk) {
         var unl = p.unlocked.indexOf(sk.id) >= 0 || sk.cost === 0;
@@ -501,7 +581,7 @@ function openProfileModal() {
         return '<button class="card" data-sk="' + sk.id + '" style="padding:10px 12px;border-radius:14px;display:flex;align-items:center;gap:10px;border-color:' + (act ? 'var(--sand)' : 'var(--line)') + '">' +
           '<span style="width:20px;height:20px;border-radius:50%;background:' + sk.color + ';flex:none;border:2px solid #fff"></span>' +
           '<div style="flex:1;min-width:0"><b style="font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + sk.name + '</b>' +
-          '<small style="font-size:11px;color:' + (act ? 'var(--sand)' : 'var(--mut)') + ';font-weight:700">' + (act ? 'Active ✓' : (unl ? 'Apply' : '🔒 ' + sk.cost + ' PC')) + '</small></div></button>';
+          '<small style="font-size:11px;color:' + (act ? 'var(--sand)' : 'var(--mut)') + ';font-weight:700">' + (act ? 'Active ✓' : (unl ? 'Apply' : sk.cost + ' PC')) + '</small></div></button>';
       }).join('') + '</div></div>' +
       '<div style="margin:16px 0 6px">' +
       '<label style="font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:8px">Explorer Title</label>' +
@@ -520,7 +600,7 @@ function openProfileModal() {
       if (val) {
         p.name = val;
         saveProfile(p);
-        toast('✓ Profile name updated to ' + val + '!');
+        toast('Profile name updated to ' + val);
         render();
       }
     };
@@ -530,7 +610,7 @@ function openProfileModal() {
         if (!item) return;
         if (p.unlocked.indexOf(item.id) < 0 && item.cost > 0) {
           var ec = getEcon();
-          if (ec.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC needed)!');
+          if (ec.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC needed)');
           ec.coins -= item.cost; saveEcon(ec);
           p.unlocked.push(item.id);
           confetti();
@@ -545,7 +625,7 @@ function openProfileModal() {
         if (!item) return;
         if (p.unlocked.indexOf(item.id) < 0 && item.cost > 0) {
           var ec = getEcon();
-          if (ec.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC needed)!');
+          if (ec.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC needed)');
           ec.coins -= item.cost; saveEcon(ec);
           p.unlocked.push(item.id);
           confetti();
@@ -560,7 +640,7 @@ function openProfileModal() {
         if (!item) return;
         if (p.unlocked.indexOf(item.id) < 0 && item.cost > 0) {
           var ec = getEcon();
-          if (ec.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC needed)!');
+          if (ec.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC needed)');
           ec.coins -= item.cost; saveEcon(ec);
           p.unlocked.push(item.id);
           confetti();
@@ -575,7 +655,7 @@ function openProfileModal() {
   render();
 }
 
-var shopTab = 'gear'; // 'gear' | 'cosmetics'
+var shopTab = 'gear';
 function openSupplyShop() {
   var ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;z-index:95;background:rgba(6,21,23,0.78);backdrop-filter:blur(4px);overflow:auto;padding:24px;display:grid;place-items:center';
@@ -601,17 +681,17 @@ function openSupplyShop() {
     } else {
       bodyHtml = '<div style="display:grid;gap:14px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel2);padding:12px 16px;border-radius:16px;border:1px solid var(--line)">' +
-        '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:28px">' + p.avatar + '</span><div><b style="font-size:14px">' + lbEsc(p.name) + '</b><small style="display:block;color:var(--sand);font-weight:700">' + lbEsc(p.title) + '</small></div></div>' +
-        '<button class="cta" id="shEditProfBtn" style="padding:8px 14px;font-size:12px;border-radius:12px">✎ Edit Name &amp; Profile</button></div>' +
-        '<div><b style="font-size:13px;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:8px">Explorer Avatars</b><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' +
+        '<div style="display:flex;align-items:center;gap:10px"><span style="width:36px;height:36px;border-radius:10px;background:var(--acc2);color:#fff;display:grid;place-items:center">' + renderAvatarIcon(p.avatar, 20) + '</span><div><b style="font-size:14px">' + lbEsc(p.name) + '</b><small style="display:block;color:var(--sand);font-weight:700">' + lbEsc(p.title) + '</small></div></div>' +
+        '<button class="cta" id="shEditProfBtn" style="padding:8px 14px;font-size:12px;border-radius:12px">Edit Name &amp; Profile</button></div>' +
+        '<div><b style="font-size:13px;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:8px">Explorer Emblems</b><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' +
         AVATAR_ITEMS.map(function(item) {
           var unl = p.unlocked.indexOf(item.id) >= 0 || item.cost === 0;
           var act = p.avatar === item.ico;
-          return '<button class="card" data-cos-av="' + item.id + '" style="padding:10px;border-radius:16px;text-align:center;border-color:' + (act ? 'var(--sand)' : 'var(--line)') + '">' +
-            '<div style="font-size:26px">' + item.ico + '</div><b style="font-size:12px;display:block;margin-top:3px">' + item.name + '</b>' +
+          return '<button class="card" data-cos-av="' + item.id + '" style="padding:12px 10px;border-radius:16px;text-align:center;border-color:' + (act ? 'var(--sand)' : 'var(--line)') + '">' +
+            '<div style="color:var(--acc);display:flex;justify-content:center;margin-bottom:4px">' + renderAvatarIcon(item.ico, 22) + '</div><b style="font-size:12px;display:block;margin-top:3px">' + item.name + '</b>' +
             '<small style="color:' + (act ? 'var(--sand)' : 'var(--acc)') + ';font-weight:800;font-size:11px">' + (act ? 'Equipped ✓' : (unl ? 'Equip' : item.cost + ' PC')) + '</small></button>';
         }).join('') + '</div></div>' +
-        '<div><b style="font-size:13px;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:8px">App Theme Skins</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+        '<div><b style="font-size:13px;color:var(--mut);text-transform:uppercase;display:block;margin-bottom:8px">Archipelago Theme Skins</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
         SKIN_ITEMS.map(function(sk) {
           var unl = p.unlocked.indexOf(sk.id) >= 0 || sk.cost === 0;
           var act = p.skin === sk.id;
@@ -638,7 +718,7 @@ function openSupplyShop() {
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:14px 0;flex-wrap:wrap">' +
       '<div class="island-pills">' +
       '<button class="island-pill' + (shopTab === 'gear' ? ' on' : '') + '" data-shtab="gear">' + IC_COMPAS_HTML + ' Boosts &amp; Relics</button>' +
-      '<button class="island-pill sand' + (shopTab === 'cosmetics' ? ' on' : '') + '" data-shtab="cosmetics">🎨 Skins, Avatars &amp; Titles</button>' +
+      '<button class="island-pill sand' + (shopTab === 'cosmetics' ? ' on' : '') + '" data-shtab="cosmetics">' + spSvg('layers', 14) + ' Skins, Emblems &amp; Titles</button>' +
       '</div>' +
       '</div>' +
       bodyHtml + '</div>';
@@ -655,7 +735,7 @@ function openSupplyShop() {
         var item = AVATAR_ITEMS.find(function(x){return x.id===b.dataset.cosAv});
         if (!item) return;
         if (p.unlocked.indexOf(item.id) < 0 && item.cost > 0) {
-          if (cur.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC)!');
+          if (cur.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC)');
           cur.coins -= item.cost; saveEcon(cur); p.unlocked.push(item.id); confetti();
         }
         p.avatar = item.ico; saveProfile(p); renderShop();
@@ -666,7 +746,7 @@ function openSupplyShop() {
         var item = SKIN_ITEMS.find(function(x){return x.id===b.dataset.cosSk});
         if (!item) return;
         if (p.unlocked.indexOf(item.id) < 0 && item.cost > 0) {
-          if (cur.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC)!');
+          if (cur.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC)');
           cur.coins -= item.cost; saveEcon(cur); p.unlocked.push(item.id); confetti();
         }
         p.skin = item.id; saveProfile(p); renderShop();
@@ -677,7 +757,7 @@ function openSupplyShop() {
         var item = TITLE_ITEMS.find(function(x){return x.id===b.dataset.cosTi});
         if (!item) return;
         if (p.unlocked.indexOf(item.id) < 0 && item.cost > 0) {
-          if (cur.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC)!');
+          if (cur.coins < item.cost) return toast('Not enough Pathcoins (' + item.cost + ' PC)');
           cur.coins -= item.cost; saveEcon(cur); p.unlocked.push(item.id); confetti();
         }
         p.title = item.name; saveProfile(p); renderShop();
@@ -689,18 +769,18 @@ function openSupplyShop() {
         var k = btn.dataset.buy, st = getEcon();
         var todayStr = new Date().toISOString().slice(0, 10);
         if (k === 'daily_ration') {
-          if (st.dailyRationDate === todayStr) return toast('Already claimed today!');
+          if (st.dailyRationDate === todayStr) return toast('Already claimed today');
           st.dailyRationDate = todayStr;
           st.coins += 25;
-          saveEcon(st); renderShop(); confetti(); toast(IC_COIN_HTML + ' +25 Free Daily Pathcoins claimed!');
+          saveEcon(st); renderShop(); confetti(); toast(IC_COIN_HTML + ' +25 Free Daily Pathcoins claimed');
         } else if (k === 'compass' && !st.compass) {
-          if (st.coins < 900) return toast('Not enough Pathcoins (need 900 PC)!');
+          if (st.coins < 900) return toast('Not enough Pathcoins (need 900 PC)');
           st.coins -= 900; st.compass = true;
-          saveEcon(st); renderShop(); confetti(); toast(IC_COMPAS_HTML + ' Amber Compass 1.5× PC boost activated!');
+          saveEcon(st); renderShop(); confetti(); toast(IC_COMPAS_HTML + ' Amber Compass 1.5× PC boost activated');
         } else if (k === 'crest' && !st.crest) {
-          if (st.coins < 1800) return toast('Not enough Pathcoins (need 1,800 PC)!');
+          if (st.coins < 1800) return toast('Not enough Pathcoins (need 1,800 PC)');
           st.coins -= 1800; st.crest = true;
-          saveEcon(st); renderShop(); confetti(); toast(IC_LORD_HTML + ' Navigator&apos;s Golden Crest unlocked!');
+          saveEcon(st); renderShop(); confetti(); toast(IC_LORD_HTML + ' Navigator&apos;s Golden Crest unlocked');
         }
       };
     });
@@ -710,101 +790,108 @@ function openSupplyShop() {
   renderShop();
 }
 
-/* ===== MOCK EXAMS CATALOG (Roman Numerals I - VI & Island Routes) ===== */
+/* ===== MOCK EXAMS CATALOG (Roman Numerals I - VIII & Island Routes) ===== */
 var MOCK_EXPEDITIONS = [
-  { t: 1, roman: 'I',   code: 'Mock 01 · Coral Reef',      sub: 'Shallow Atoll Expedition · Adaptive', reward: 120, accent: '#22a381' },
-  { t: 2, roman: 'II',  code: 'Mock 02 · Emerald Atoll',   sub: 'Lagoon Current Expedition · Adaptive', reward: 120, accent: '#1f9d8a' },
-  { t: 3, roman: 'III', code: 'Mock 03 · Amber Lagoon',    sub: 'Sunlit Shoals Expedition · Adaptive',  reward: 120, accent: '#e59a16' },
-  { t: 4, roman: 'IV',  code: 'Mock 04 · Basalt Ridge',    sub: 'Volcanic Cliffs Expedition · Adaptive', reward: 150, accent: '#2b7f9c' },
-  { t: 5, roman: 'V',   code: 'Mock 05 · Sunken Caldera',  sub: 'Deep Trench Expedition · Adaptive',    reward: 150, accent: '#2fa59f' },
-  { t: 6, roman: 'VI',  code: 'Mock 06 · Obsidian Peak',   sub: 'Summit Spire Expedition · Adaptive',   reward: 180, accent: '#3f8f7a' }
+  { t: 1, roman: 'I',    code: 'Mock 01 · Coral Reef',      sub: 'Shallow Atoll Expedition · Static Form A',  reward: 120, accent: '#22a381' },
+  { t: 2, roman: 'II',   code: 'Mock 02 · Emerald Atoll',   sub: 'Lagoon Current Expedition · Static Form B', reward: 120, accent: '#1f9d8a' },
+  { t: 3, roman: 'III',  code: 'Mock 03 · Amber Lagoon',    sub: 'Sunlit Shoals Expedition · Static Form C',  reward: 120, accent: '#e59a16' },
+  { t: 4, roman: 'IV',   code: 'Mock 04 · Basalt Ridge',    sub: 'Volcanic Cliffs Expedition · Static Form D', reward: 150, accent: '#2b7f9c' },
+  { t: 5, roman: 'V',    code: 'Mock 05 · Sunken Caldera',  sub: 'Deep Trench Expedition · Static Form E',    reward: 150, accent: '#2fa59f' },
+  { t: 6, roman: 'VI',   code: 'Mock 06 · Obsidian Peak',   sub: 'Summit Spire Expedition · Static Form F',   reward: 180, accent: '#3f8f7a' },
+  { t: 7, roman: 'VII',  code: 'Mock 07 · Celestial Spire', sub: 'November Predictions · Static Form G',      reward: 200, accent: '#6366f1' },
+  { t: 8, roman: 'VIII', code: 'Mock 08 · Astral Sanctum',  sub: 'December Master Finale · Static Form H',    reward: 220, accent: '#ec4899' }
 ];
-var ptRouteFilter = 'rm'; // 'rm' (Full) | 'r' (R&W only) | 'm' (Math only)
+var ptRouteFilter = 'rm';
 
 function ptResult(t,res){
- var S=ptLoad(),r=S[t]||{};
- var hadRW = !!r.r, hadM = !!r.m;
- ['r','m'].forEach(function(k){if(res[k])r[k]={score:res[k].score,a:res[k].o1.ok,b:res[k].o2.ok,hard:res[k].hard}});
- if(r.r&&r.m)r.total=r.r.score+r.m.score;S[t]=r;ptSave(S);
- var mockObj = MOCK_EXPEDITIONS[(t-1)%MOCK_EXPEDITIONS.length] || {code:'Mock 0'+t, reward:120};
- var earnedPc = 0;
- if (res.r && !hadRW) earnedPc += Math.round(mockObj.reward * 0.5);
- if (res.m && !hadM)  earnedPc += Math.round(mockObj.reward * 0.5);
- if (earnedPc > 0) addCoins(earnedPc, mockObj.code + ' first completion!');
- confetti(); setTimeout(confetti, 450);
+  if (document.fullscreenElement && document.exitFullscreen) {
+    try { document.exitFullscreen(); } catch (e) {}
+  }
+  sessionStorage.removeItem('bb_fullscreen_active');
+  saveMockSession(t, null);
 
- var dispScore = (res.r && res.m) ? (res.r.score + res.m.score) : (res.r ? res.r.score : (res.m ? res.m.score : (r.total || 800)));
- var maxPossible = (res.r && res.m) ? 1600 : 800;
- var minPossible = (res.r && res.m) ? 400 : 200;
- var pctVal = Math.max(0.05, Math.min(1, (dispScore - minPossible) / (maxPossible - minPossible)));
- var nationalPct = maxPossible === 1600
-   ? (dispScore >= 1550 ? '99th+' : dispScore >= 1500 ? '98th' : dispScore >= 1400 ? '94th' : dispScore >= 1300 ? '87th' : dispScore >= 1200 ? '75th' : dispScore >= 1100 ? '59th' : '35th')
-   : (dispScore >= 760 ? '99th' : dispScore >= 700 ? '93rd' : dispScore >= 650 ? '85th' : dispScore >= 600 ? '72nd' : '50th');
+  var S=ptLoad(),r=S[t]||{};
+  var hadRW = !!r.r, hadM = !!r.m;
+  ['r','m'].forEach(function(k){if(res[k])r[k]={score:res[k].score,a:res[k].o1.ok,b:res[k].o2.ok,hard:res[k].hard}});
+  if(r.r&&r.m)r.total=r.r.score+r.m.score;S[t]=r;ptSave(S);
+  var mockObj = MOCK_EXPEDITIONS[(t-1)%MOCK_EXPEDITIONS.length] || {code:'Mock 0'+t, reward:120};
+  var earnedPc = 0;
+  if (res.r && !hadRW) earnedPc += Math.round(mockObj.reward * 0.5);
+  if (res.m && !hadM)  earnedPc += Math.round(mockObj.reward * 0.5);
+  if (earnedPc > 0) addCoins(earnedPc, mockObj.code + ' first completion!');
+  confetti(); setTimeout(confetti, 450);
 
- var circum = 2 * Math.PI * 86; // r = 86 -> 540.35
- var targetOffset = Math.round(circum * (1 - pctVal));
+  var dispScore = (res.r && res.m) ? (res.r.score + res.m.score) : (res.r ? res.r.score : (res.m ? res.m.score : (r.total || 800)));
+  var maxPossible = (res.r && res.m) ? 1600 : 800;
+  var minPossible = (res.r && res.m) ? 400 : 200;
+  var pctVal = Math.max(0.05, Math.min(1, (dispScore - minPossible) / (maxPossible - minPossible)));
+  var nationalPct = maxPossible === 1600
+    ? (dispScore >= 1550 ? '99th+' : dispScore >= 1500 ? '98th' : dispScore >= 1400 ? '94th' : dispScore >= 1300 ? '87th' : dispScore >= 1200 ? '75th' : dispScore >= 1100 ? '59th' : '35th')
+    : (dispScore >= 760 ? '99th' : dispScore >= 700 ? '93rd' : dispScore >= 650 ? '85th' : dispScore >= 600 ? '72nd' : '50th');
 
- var ov=document.createElement('div');
- ov.style.cssText='position:fixed;inset:0;z-index:95;background:var(--bg);overflow:auto;padding:28px 20px';
- var h='<div style="max-width:860px;margin:0 auto;animation:up .45s ease">' +
-  '<div class="atlas-hero" style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px 24px;border:2px solid var(--sand-line)">' +
-  '<div style="display:inline-flex;align-items:center;gap:8px;background:var(--sand-bg);border:1px solid var(--sand-line);color:var(--sand);padding:5px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">🏆 OFFICIAL MOCK EXAM SCORE REPORT</div>' +
-  '<h1 style="font-size:32px;font-weight:800;margin:0">' + mockObj.code + '</h1>' +
-  '<div class="score-ring-wrap">' +
-  '<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="86" fill="none" stroke="var(--cell)" stroke-width="14"/><circle id="mockRingProg" cx="100" cy="100" r="86" fill="none" stroke="var(--sand)" stroke-width="14" stroke-linecap="round" stroke-dasharray="'+Math.round(circum)+'" stroke-dashoffset="'+Math.round(circum)+'" style="transition:stroke-dashoffset 1.3s cubic-bezier(.2,.8,.2,1)"/></svg>' +
-  '<div class="score-ring-center"><small style="font-size:11px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.08em">' + (maxPossible===1600?'TOTAL SCORE':'SECTION SCORE') + '</small><div id="mockBigScoreNum" style="font-size:52px;font-weight:800;color:var(--tx);line-height:1.05;letter-spacing:-.03em">' + minPossible + '</div><small style="color:var(--sand);font-weight:800;font-size:12px">' + nationalPct + ' Percentile</small></div>' +
-  '</div>' +
-  '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
-  '<span class="hud-pill coin" style="font-size:14px;padding:8px 16px">' + IC_COIN_HTML + ' ' + (earnedPc > 0 ? '+'+earnedPc+' Pathcoins Earned!' : 'Practice Complete') + '</span>' +
-  '<button class="hud-pill" id="ptResVocBtn" style="font-size:13px;padding:8px 16px">📖 Review Saved Words (' + getVocabList().length + ')</button>' +
-  '</div></div>';
+  var circum = 2 * Math.PI * 86;
+  var targetOffset = Math.round(circum * (1 - pctVal));
 
- h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:20px">';
- ['r','m'].forEach(function(k){
-  var x=res[k];if(!x)return;
-  var secTot = x.o1.n + x.o2.n, secOk = x.o1.ok + x.o2.ok, secPct = Math.round(secOk/secTot*100);
-  h += '<div class="card" style="padding:22px;border-radius:24px">' +
-   '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
-   '<div><span class="tag n" style="margin:0">' + (k==='r'?'READING &amp; WRITING':'MATH SECTION') + '</span><h3 style="font-size:20px;font-weight:800;margin-top:8px">' + (k==='r'?'Evidence-Based R&amp;W':'Digital SAT Math') + '</h3></div>' +
-   '<div style="text-align:right"><div style="font-size:36px;font-weight:800;color:var(--acc);line-height:1">' + x.score + '</div><small style="color:var(--mut);font-size:11px">out of 800</small></div></div>' +
-   '<div class="bar" style="margin:14px 0"><div style="width:' + secPct + '%"></div></div>' +
-   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">' +
-   '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">Module 1 (Baseline)</small><b style="font-size:16px">' + x.o1.ok + ' / ' + x.o1.n + '</b></div>' +
-   '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">Module 2 (' + (x.hard?'Harder':'Standard') + ')</small><b style="font-size:16px;color:var(--sand)">' + x.o2.ok + ' / ' + x.o2.n + '</b></div>' +
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:95;background:var(--bg);overflow:auto;padding:28px 20px';
+  var h='<div style="max-width:860px;margin:0 auto;animation:up .45s ease">' +
+   '<div class="atlas-hero" style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px 24px;border:2px solid var(--sand-line)">' +
+   '<div style="display:inline-flex;align-items:center;gap:8px;background:var(--sand-bg);border:1px solid var(--sand-line);color:var(--sand);padding:5px 14px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase">' + spSvg('award', 15) + ' OFFICIAL MOCK EXAM SCORE REPORT</div>' +
+   '<h1 style="font-size:32px;font-weight:800;margin:0">' + mockObj.code + '</h1>' +
+   '<div class="score-ring-wrap">' +
+   '<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="86" fill="none" stroke="var(--cell)" stroke-width="14"/><circle id="mockRingProg" cx="100" cy="100" r="86" fill="none" stroke="var(--sand)" stroke-width="14" stroke-linecap="round" stroke-dasharray="'+Math.round(circum)+'" stroke-dashoffset="'+Math.round(circum)+'" style="transition:stroke-dashoffset 1.3s cubic-bezier(.2,.8,.2,1)"/></svg>' +
+   '<div class="score-ring-center"><small style="font-size:11px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.08em">' + (maxPossible===1600?'TOTAL SCORE':'SECTION SCORE') + '</small><div id="mockBigScoreNum" style="font-size:52px;font-weight:800;color:var(--tx);line-height:1.05;letter-spacing:-.03em">' + minPossible + '</div><small style="color:var(--sand);font-weight:800;font-size:12px">' + nationalPct + ' Percentile</small></div>' +
+   '</div>' +
+   '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">' +
+   '<span class="hud-pill coin" style="font-size:14px;padding:8px 16px">' + IC_COIN_HTML + ' ' + (earnedPc > 0 ? '+'+earnedPc+' Pathcoins Earned!' : 'Practice Complete') + '</span>' +
+   '<button class="hud-pill" id="ptResVocBtn" style="font-size:13px;padding:8px 16px">' + spSvg('book', 14) + ' Review Saved Words (' + getVocabList().length + ')</button>' +
    '</div></div>';
- });
- h += '</div>';
 
- ['r','m'].forEach(function(k){
-  var x=res[k];if(!x)return;
-  h+='<div class="card" style="padding:20px 22px;margin-top:18px;border-radius:24px"><b style="font-size:17px;display:block;margin-bottom:8px">Detailed Question Breakdown · '+(k==='r'?'Reading &amp; Writing':'Math')+'</b>';
-  [x.o1,x.o2].forEach(function(o,mi){
-   h+='<details style="margin-top:10px;background:var(--panel2);padding:12px 16px;border-radius:16px;border:1px solid var(--line)"><summary style="cursor:pointer;font-weight:800;color:var(--acc);font-size:14px">Module '+(mi+1)+' Question-by-Question Review ('+o.ok+'/'+o.n+' correct)</summary><div style="margin-top:10px">';
-   o.qs.forEach(function(q,i){var a=o.ans[i],g=ptRight(q,a),fx=function(s){return q.rw?String(s):rHTML(s)};
-    h+='<div style="padding:12px 0;border-top:1px solid var(--line);font-size:13.5px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:'+(g?'var(--acc)':'#e74c3c')+'">Question '+(i+1)+' · '+(g?'✓ Correct':'✗ Incorrect')+'</b><span class="tag" style="margin:0;font-size:10px">'+q.top+'</span></div><div style="margin:8px 0;line-height:1.55">'+fx(q.q)+'</div><div style="background:var(--panel);padding:8px 12px;border-radius:10px;font-size:12.5px">Your answer: <b style="color:'+(g?'var(--acc)':'#e74c3c')+'">'+(a?fx(a):'Unanswered')+'</b> &nbsp;·&nbsp; Correct answer: <b style="color:var(--acc)">'+fx(q.ans)+'</b></div></div>'});
-   h+='</div></details>'});
-  h+='</div>'});
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:20px">';
+  ['r','m'].forEach(function(k){
+   var x=res[k];if(!x)return;
+   var secTot = x.o1.n + x.o2.n, secOk = x.o1.ok + x.o2.ok, secPct = Math.round(secOk/secTot*100);
+   h += '<div class="card" style="padding:22px;border-radius:24px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+    '<div><span class="tag n" style="margin:0">' + (k==='r'?'READING &amp; WRITING':'MATH SECTION') + '</span><h3 style="font-size:20px;font-weight:800;margin-top:8px">' + (k==='r'?'Evidence-Based R&amp;W':'Digital SAT Math') + '</h3></div>' +
+    '<div style="text-align:right"><div style="font-size:36px;font-weight:800;color:var(--acc);line-height:1">' + x.score + '</div><small style="color:var(--mut);font-size:11px">out of 800</small></div></div>' +
+    '<div class="bar" style="margin:14px 0"><div style="width:' + secPct + '%"></div></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">' +
+    '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">Module 1 (Baseline)</small><b style="font-size:16px">' + x.o1.ok + ' / ' + x.o1.n + '</b></div>' +
+    '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">Module 2 (' + (x.hard?'Harder':'Standard') + ')</small><b style="font-size:16px;color:var(--sand)">' + x.o2.ok + ' / ' + x.o2.n + '</b></div>' +
+    '</div></div>';
+  });
+  h += '</div>';
 
- ov.innerHTML=h+'<div style="display:flex;gap:12px;justify-content:center;margin:24px 0 40px"><button class="cta-amber" id="ptX" style="padding:14px 28px;font-size:15px">Return to Mock Exams →</button></div></div>';
- document.body.appendChild(ov);
+  ['r','m'].forEach(function(k){
+   var x=res[k];if(!x)return;
+   h+='<div class="card" style="padding:20px 22px;margin-top:18px;border-radius:24px"><b style="font-size:17px;display:block;margin-bottom:8px">Detailed Question Breakdown · '+(k==='r'?'Reading &amp; Writing':'Math')+'</b>';
+   [x.o1,x.o2].forEach(function(o,mi){
+    h+='<details style="margin-top:10px;background:var(--panel2);padding:12px 16px;border-radius:16px;border:1px solid var(--line)"><summary style="cursor:pointer;font-weight:800;color:var(--acc);font-size:14px">Module '+(mi+1)+' Question-by-Question Review ('+o.ok+'/'+o.n+' correct)</summary><div style="margin-top:10px">';
+    o.qs.forEach(function(q,i){var a=o.ans[i],g=ptRight(q,a),fx=function(s){return q.rw?String(s):rHTML(s)};
+     h+='<div style="padding:12px 0;border-top:1px solid var(--line);font-size:13.5px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:'+(g?'var(--acc)':'#e74c3c')+'">Question '+(i+1)+' · '+(g?'✓ Correct':'✗ Incorrect')+'</b><span class="tag" style="margin:0;font-size:10px">'+q.top+'</span></div><div style="margin:8px 0;line-height:1.55">'+fx(q.q)+'</div><div style="background:var(--panel);padding:8px 12px;border-radius:10px;font-size:12.5px">Your answer: <b style="color:'+(g?'var(--acc)':'#e74c3c')+'">'+(a?fx(a):'Unanswered')+'</b> &nbsp;·&nbsp; Correct answer: <b style="color:var(--acc)">'+fx(q.ans)+'</b></div></div>'});
+    h+='</div></details>'});
+   h+='</div>'});
 
- // Animate score ring and number counter
- var numEl = ov.querySelector('#mockBigScoreNum');
- var ringEl = ov.querySelector('#mockRingProg');
- setTimeout(function() {
-   if (ringEl) ringEl.style.strokeDashoffset = String(targetOffset);
- }, 80);
- var t0 = performance.now();
- (function animScore(now) {
-   var prog = Math.min(1, (now - t0) / 1200);
-   var ease = 1 - Math.pow(1 - prog, 3);
-   if (numEl) numEl.textContent = Math.round(minPossible + (dispScore - minPossible) * ease);
-   if (prog < 1) requestAnimationFrame(animScore);
- })(t0);
+  ov.innerHTML=h+'<div style="display:flex;gap:12px;justify-content:center;margin:24px 0 40px"><button class="cta-amber" id="ptX" style="padding:14px 28px;font-size:15px">Return to Mock Exams →</button></div></div>';
+  document.body.appendChild(ov);
 
- var vocBtn = ov.querySelector('#ptResVocBtn');
- if (vocBtn) vocBtn.onclick = openVocabDrawer;
- ov.querySelector('#ptX').onclick=function(){ov.remove();buildPT()};
+  var numEl = ov.querySelector('#mockBigScoreNum');
+  var ringEl = ov.querySelector('#mockRingProg');
+  setTimeout(function() {
+    if (ringEl) ringEl.style.strokeDashoffset = String(targetOffset);
+  }, 80);
+  var t0 = performance.now();
+  (function animScore(now) {
+    var prog = Math.min(1, (now - t0) / 1200);
+    var ease = 1 - Math.pow(1 - prog, 3);
+    if (numEl) numEl.textContent = Math.round(minPossible + (dispScore - minPossible) * ease);
+    if (prog < 1) requestAnimationFrame(animScore);
+  })(t0);
+
+  var vocBtn = ov.querySelector('#ptResVocBtn');
+  if (vocBtn) vocBtn.onclick = openVocabDrawer;
+  ov.querySelector('#ptX').onclick=function(){ov.remove();buildPT()};
 }
 
 function buildPT(){
@@ -815,10 +902,10 @@ function buildPT(){
   '<div>' +
   '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + IC_COMPAS_HTML + ' ARCHIPELAGO MOCK EXPEDITIONS</div>' +
   '<h1>Mock Exams</h1>' +
-  '<p class="sub">Navigate the 4-stage adaptive island trail with all 1,000+ SAT Math &amp; R&amp;W patterns. Click any word during an exam to highlight and save it to your Vocabulary.</p>' +
+  '<p class="sub">Navigate the 4-stage adaptive island trail. Click any word during an exam to highlight and save it to your Vocabulary, or pause and resume anytime.</p>' +
   '</div>' +
   '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
-  '<button class="hud-pill coin" id="ptOpenVocabHero" style="padding:8px 14px;font-size:12.5px">📖 Saved Words (' + getVocabList().length + ')</button>' +
+  '<button class="hud-pill coin" id="ptOpenVocabHero" style="padding:8px 14px;font-size:12.5px">' + spSvg('book', 14) + ' Saved Words (' + getVocabList().length + ')</button>' +
   '<div class="island-pills">' +
   '<button class="island-pill'+(ptRouteFilter==='rm'?' sand on':'')+'" data-ptmode="rm">' + IC_COMPAS_HTML + ' Full Route</button>' +
   '<button class="island-pill'+(ptRouteFilter==='r'?' sand on':'')+'" data-ptmode="r">' + IC_BOOK_HTML + ' R&amp;W Only</button>' +
@@ -829,6 +916,7 @@ function buildPT(){
 
  MOCK_EXPEDITIONS.forEach(function(item){
   var t = item.t, r = S[t] || {};
+  var savedSess = getMockSession(t);
   var hasRW = !!r.r, hasM = !!r.m, hasFull = !!r.total;
   var bestTxt = hasFull ? r.total : (hasRW && ptRouteFilter==='r' ? r.r.score : (hasM && ptRouteFilter==='m' ? r.m.score : (hasRW || hasM ? (hasRW?'R&W '+r.r.score:'')+(hasRW&&hasM?' · ':'')+(hasM?'Math '+r.m.score:'') : 'Uncharted')));
   var dimRW = (ptRouteFilter === 'm') ? ' dim' : '';
@@ -846,6 +934,7 @@ function buildPT(){
    '</div>' +
    '<span class="mock-reward-pill">' + IC_COIN_HTML + ' ' + (alreadyClaimed ? 'Claimed ✓' : '+'+pcReward+' PC') + '</span>' +
    '</div>' +
+   (savedSess ? '<div style="margin-top:12px;padding:10px 14px;border-radius:14px;background:var(--sand-bg);border:1.5px solid var(--sand-line);display:flex;justify-content:space-between;align-items:center;gap:8px"><small style="color:var(--sand);font-weight:800">' + spSvg('clock', 14) + ' In Progress · Saved Session Available</small><button class="chip" data-discard-mock="'+t+'" style="font-size:11px;padding:3px 8px">Reset</button></div>' : '') +
    '<div class="mock-route-box" style="margin-top:16px">' +
    '<div class="mock-route-lbl"><span style="display:inline-flex;align-items:center;gap:5px">' + IC_MAP_HTML + ' '+modeLabel+'</span><span>'+(hasFull?'✓ All 4 Waypoints Charted':(hasRW||hasM?'Partial Trail Charted':'4 Waypoints'))+'</span></div>' +
    '<div class="mock-trail-nodes">' +
@@ -860,22 +949,41 @@ function buildPT(){
    '<div><small style="display:block;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.05em">Best Result</small>' +
    '<div class="mock-score-badge"><b>'+bestTxt+'</b>'+(hasFull?'<small style="color:var(--mut);font-weight:600">R&amp;W '+r.r.score+' · Math '+r.m.score+'</small>':'')+'</div></div>' +
    '<div class="mock-actions">' +
-   (ptRouteFilter==='rm' ? '<button class="mock-sub-btn" data-pt="'+t+'" data-s="r" title="Practice Reading & Writing modules only">R&amp;W only</button><button class="mock-sub-btn" data-pt="'+t+'" data-s="m" title="Practice Math modules only">Math only</button>' : '') +
-   '<button class="cta-amber" style="padding:10px 16px;font-size:13px;border-radius:14px" data-pt="'+t+'" data-s="'+ptRouteFilter+'">'+mainBtnLbl+'</button>' +
+   (savedSess ? '<button class="cta-amber" style="padding:10px 16px;font-size:13px;border-radius:14px" data-resume-pt="'+t+'">Resume Expedition →</button>' :
+    (ptRouteFilter==='rm' ? '<button class="mock-sub-btn" data-pt="'+t+'" data-s="r" title="Practice Reading & Writing modules only">R&amp;W only</button><button class="mock-sub-btn" data-pt="'+t+'" data-s="m" title="Practice Math modules only">Math only</button>' : '') +
+    '<button class="cta-amber" style="padding:10px 16px;font-size:13px;border-radius:14px" data-pt="'+t+'" data-s="'+ptRouteFilter+'">'+mainBtnLbl+'</button>') +
    '</div></div></div>';
  });
 
  el.innerHTML = h + '</div>';
  el.onclick = function(e){
-  if (e.target.closest('#ptOpenVocabHero')) { openVocabDrawer(); return; }
+  if (e.target.closest('#ptOpenVocabHero')) { show('voc'); return; }
+  var disc = e.target.closest('[data-discard-mock]');
+  if (disc) {
+    saveMockSession(+disc.dataset.discardMock, null);
+    toast('Saved session cleared');
+    buildPT();
+    return;
+  }
+  var resBtn = e.target.closest('[data-resume-pt]');
+  if (resBtn) {
+    var tId = +resBtn.dataset.resumePt;
+    var sess = getMockSession(tId);
+    if (sess) ptStart(tId, sess.secs, true);
+    return;
+  }
   var mBtn = e.target.closest('[data-ptmode]');
   if(mBtn){ ptRouteFilter = mBtn.dataset.ptmode; buildPT(); return; }
   var b = e.target.closest('[data-pt]');
-  if(b) ptStart(+b.dataset.pt, b.dataset.s.split(''));
+  if(b) {
+    saveMockSession(+b.dataset.pt, null);
+    ptStart(+b.dataset.pt, b.dataset.s.split(''), false);
+  }
  };
 }
 var renderPtCatalog = buildPT;
 
+/* ===== ISLAND QUIZ RUNNER ===== */
 function runQuiz(n, qs) {
   var doneList = n.rw ? getRDone() : getDone();
   var isFirstClear = doneList.indexOf(n.g) < 0;
@@ -886,12 +994,12 @@ function runQuiz(n, qs) {
   var firstReward = clearRewards[n.ni] || 20;
   var replayReward = Math.max(10, Math.round(firstReward * 0.5));
 
-  var fx=function(s){return n.rw?String(s):rHTML(s)};var i = 0, ok = 0, earnedInQuiz = 0, ov = document.createElement('div');
+  var fx=function(s){return n.rw?wrapWordsForVocab(s):rHTML(s)};var i = 0, ok = 0, earnedInQuiz = 0, ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;z-index:80;background:var(--bg);overflow:auto;padding:24px';
   document.body.appendChild(ov);
 
   function close() { ov.remove(); paintHud(); }
-  function show() {
+  function showQ() {
     if (i >= qs.length) {
       var pct = Math.round(ok / qs.length * 100), pass = pct >= (n.min||80);
       var bonusGiven = 0;
@@ -916,19 +1024,25 @@ function runQuiz(n, qs) {
     }
 
     var q = qs[i];
+    if (!q.top) q.top = n.topic || (n.rw ? RTOPS[n.ti] : TOPS[n.ti]);
+    q.rw = !!n.rw;
     var modeBadge = '<span class="tag n" style="margin:0;font-size:10px">+5 PC/ans · Bonus +' + (isFirstClear ? firstReward : replayReward) + ' PC</span>';
     var wasOpen = ov.dataset.calcOpen === '1' && !n.rw;
-    ov.innerHTML = '<div id="qSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:8px"><small style="font-weight:800">' + n.type.l + ' · ' + (i + 1) + '/' + qs.length + '</small>' + modeBadge + '</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + '<button id="qcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Calculator (50/50)')) + '</button><button id="qx" class="tbtn">✕</button></div></div><div class="bar" style="margin:12px 0"><div style="width:' + (i / qs.length * 100) + '%"></div></div><div style="font-size:20px;line-height:1.6;margin:18px 0">' + fx(q.q) + '</div><div id="qa"></div><div id="qf"></div></div><div id="q-panel" class="quiz-calc-pane"></div></div>';
+    ov.innerHTML = '<div id="qSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:8px"><small style="font-weight:800">' + n.type.l + ' · ' + (i + 1) + '/' + qs.length + '</small>' + modeBadge + '</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + (n.rw ? '<button id="qAddWord" class="chip" style="font-weight:700;color:var(--sand);border-color:var(--sand-line)">' + spSvg('plus', 13) + ' Add Word</button>' : '') + '<button id="qcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="qx" class="tbtn">✕</button></div></div><div class="bar" style="margin:12px 0"><div style="width:' + (i / qs.length * 100) + '%"></div></div><div id="qTextBody" style="font-size:20px;line-height:1.6;margin:18px 0">' + fx(q.q) + '</div><div id="qa"></div><div id="qf"></div></div><div id="q-panel" class="quiz-calc-pane"></div></div>';
 
     var a = document.getElementById('qa'), f = document.getElementById('qf'), done = false;
     document.getElementById('qx').onclick = close;
+    var qAddW = document.getElementById('qAddWord');
+    if (qAddW) qAddW.onclick = function() { openAddWordModal(ov.querySelector('#qTextBody').textContent.replace(/\s+/g,' ').trim().slice(0,130)); };
+    bindVocabClicksOnContainer(ov.querySelector('#qTextBody'));
+
     var qSplitWrap = document.getElementById('qSplitWrap');
     var qPanel = document.getElementById('q-panel');
     var qCalcBtn = document.getElementById('qcalc');if(n.rw)qCalcBtn.style.display='none';
     var qCalculator = null;
     function mountQCalc() {
       if (!qCalculator && window.Desmos) {
-        qCalculator = Desmos.GraphingCalculator(qPanel, { keypad: true, expressions: true, settingsMenu: false, folders: false, images: false });
+        qCalculator = createFullDesmos(qPanel);
       }
       if (qCalculator) setTimeout(function() { qCalculator.resize(); }, 35);
     }
@@ -944,7 +1058,7 @@ function runQuiz(n, qs) {
         qSplitWrap.classList.remove('calc-open');
         ov.dataset.calcOpen = '0';
         qCalcBtn.style.background = 'var(--acc2)';
-        qCalcBtn.innerHTML = IC_MATH_HTML + ' Calculator (50/50)';
+        qCalcBtn.innerHTML = IC_MATH_HTML + ' Desmos Calculator';
       }
     };
     function fin(v) {
@@ -954,6 +1068,9 @@ function runQuiz(n, qs) {
         ok++;
         earnedInQuiz += 5;
         addCoins(5);
+        removeMistakeByQuestion(q.q);
+      } else {
+        recordMistake(q, v, (n.rw ? 'R&W Path · ' : 'Math Path · ') + (q.top || ''));
       }
       lbAdd(good);
       a.querySelectorAll('button').forEach(function(b) {
@@ -965,8 +1082,8 @@ function runQuiz(n, qs) {
       var gi = document.getElementById('qi');
       if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
 
-      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect. Answer: ' + fx(fmtAns(q.ans)))) + '</p><button class="cta-amber" id="qn">' + (i < qs.length - 1 ? 'Next Waypoint →' : 'Finish Island') + '</button>';
-      document.getElementById('qn').onclick = function() { i++; show(); };
+      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + (n.rw ? String(q.ans) : rHTML(fmtAns(q.ans))))) + '</p><button class="cta-amber" id="qn">' + (i < qs.length - 1 ? 'Next Waypoint →' : 'Finish Island') + '</button>';
+      document.getElementById('qn').onclick = function() { i++; showQ(); };
     }
 
     if (q.isGrid) {
@@ -980,14 +1097,15 @@ function runQuiz(n, qs) {
         var b = document.createElement('button');
         b.className = 'qo';
         b.dataset.v = o;
-        b.innerHTML = '<b>' + 'ABCD'[k] + '</b>&nbsp; ' + fx(o);
+        b.innerHTML = '<b>' + 'ABCD'[k] + '</b>&nbsp; ' + (n.rw ? String(o) : rHTML(o));
         b.onclick = function() { fin(o) };
         a.appendChild(b);
       });
     }
   }
-  show();
+  showQ();
 }
+
 var SATPath={
   onOpen:function(n){
   if(n.ni===0){
@@ -1033,7 +1151,8 @@ function build(){var h='<div class="mph"><div style="display:flex;justify-conten
  mp.innerHTML=h+'<div class="tp" style="background:var(--acc2)">' + IC_BOOK_HTML + ' SAT Math complete!</div>';built=true;paint()}
 function paint(){if(!built)return;var d=getDone(),cur=-1;
  for(var g=0;g<100;g++)if(d.indexOf(g)<0){cur=g;break}
- mp.querySelectorAll('.isl').forEach(function(b,g){var dn=d.indexOf(g)>=0;b.className='isl'+(g%5==4?' fin':'')+(dn?' done':g==cur?' cur':' lock');b.querySelector('.bd').innerHTML=dn?'✓':g==cur?TYPES[g%5].i:'🔒'});
+ var icons = [IC_BOOK_SM_HTML, '1', '2', '3', IC_LORD_SM_HTML];
+ mp.querySelectorAll('.isl').forEach(function(b,g){var dn=d.indexOf(g)>=0;b.className='isl'+(g%5==4?' fin':'')+(dn?' done':g==cur?' cur':' lock');b.querySelector('.bd').innerHTML=dn?'✓':g==cur?icons[g%5]:spSvg('lock', 12)});
  document.getElementById('mpc').textContent='Island '+Math.min(d.length+1,100)+'/100';document.getElementById('mpb').style.width=d.length+'%'}
 mp.addEventListener('click',function(e){var b=e.target.closest('.isl');if(!b)return;if(b.classList.contains('lock'))return toast('Finish the previous island first');
  var g=+b.dataset.g,ti=Math.floor(g/5),ni=g%5;SATPath.onOpen({g:g,ti:ti,ni:ni,topic:TOPS[ti],type:TYPES[ni],theory:THEORY[ti],gens:GENERATORS[ti]})});
@@ -1041,9 +1160,9 @@ var qk=document.getElementById('vQB'),BK='satpath_bank';
 function bankStats(){try{return JSON.parse(spGet(BK))||{}}catch(e){return{}}}
 function bankSave(ti,ok){var s=bankStats(),r=s[ti]||{a:0,c:0};r.a++;if(ok)r.c++;s[ti]=r;try{spSet(BK,JSON.stringify(s))}catch(e){}}
 
-/* ===== ATLAS (Archipelago Skill Map with Roman Numerals I - IV & 0-3 Mastery Stars) ===== */
-var qbRealmMode = 'all';  // 'all' | 'rw' | 'math'
-var qbStarFilter = 'all'; // 'all' | '0' | '12' | '3'
+/* ===== ATLAS (Archipelago Skill Map) ===== */
+var qbRealmMode = 'all';
+var qbStarFilter = 'all';
 
 function getTopicStars(key, isRw, topicIdx) {
   var st = bankStats();
@@ -1091,7 +1210,7 @@ function getRankLabel(stars, statObj) {
 
 function buildBank() {
   var st = bankStats();
-  var maxStars = (RTOPS.length + TOPS.length) * 3; // 30 topics * 3 = 90 stars
+  var maxStars = (RTOPS.length + TOPS.length) * 3;
   var earnedStars = 0, masteredCount = 0;
 
   RTOPS.forEach(function(_, k) {
@@ -1252,8 +1371,10 @@ function bankOpen(ti) {
   function draw() {
     var starsNow = getTopicStars(ti, false, ti);
     var q = getMathQ(ti, 'bank', R(0, 999)), done = false;
+    q.top = TOPS[ti];
+    q.rw = false;
     var wasOpen = ov.dataset.calcOpen === '1';
-    ov.innerHTML = '<div id="bSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_MATH_HTML + ' MATH ISLAND DRILL</small><div style="font-weight:800;font-size:16px">' + TOPS[ti] + '</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + renderStarsHtml(starsNow) + '<button id="bcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Calculator (50/50)')) + '</button><button id="bx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">✓ ' + ok + ' / ' + tot + ' solved · Earn ★ Mastery Stars for +15 PC</span></div><div style="font-size:20px;line-height:1.6;margin:22px 0 14px">' + rHTML(q.q) + '</div><div id="ba"></div><div id="bf"></div></div><div id="d-panel" class="quiz-calc-pane"></div></div>';
+    ov.innerHTML = '<div id="bSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_MATH_HTML + ' MATH ISLAND DRILL</small><div style="font-weight:800;font-size:16px">' + TOPS[ti] + '</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + renderStarsHtml(starsNow) + '<button id="bcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="bx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">✓ ' + ok + ' / ' + tot + ' solved · Earn ★ Mastery Stars for +15 PC</span></div><div style="font-size:20px;line-height:1.6;margin:22px 0 14px">' + rHTML(q.q) + '</div><div id="ba"></div><div id="bf"></div></div><div id="d-panel" class="quiz-calc-pane"></div></div>';
     document.getElementById('bx').onclick = close;
     var bSplitWrap = document.getElementById('bSplitWrap');
     var dPanel = document.getElementById('d-panel');
@@ -1261,13 +1382,7 @@ function bankOpen(ti) {
     var calculator = null;
     function mountBCalc() {
       if (!calculator && window.Desmos) {
-        calculator = Desmos.GraphingCalculator(dPanel, {
-          keypad: true,
-          expressions: true,
-          settingsMenu: false,
-          folders: false,
-          images: false
-        });
+        calculator = createFullDesmos(dPanel);
       }
       if (calculator) setTimeout(function() { calculator.resize(); }, 35);
     }
@@ -1283,7 +1398,7 @@ function bankOpen(ti) {
         bSplitWrap.classList.remove('calc-open');
         ov.dataset.calcOpen = '0';
         calcBtn.style.background = 'var(--acc2)';
-        calcBtn.innerHTML = IC_MATH_HTML + ' Calculator (50/50)';
+        calcBtn.innerHTML = IC_MATH_HTML + ' Desmos Calculator';
       }
     };
 
@@ -1296,6 +1411,9 @@ function bankOpen(ti) {
       if (good) {
         ok++;
         addCoins(5);
+        removeMistakeByQuestion(q.q);
+      } else {
+        recordMistake(q, v, 'Atlas Math · ' + TOPS[ti]);
       }
       bankSave(ti, good); lbAdd(good);
       var newStars = getTopicStars(ti, false, ti);
@@ -1310,7 +1428,7 @@ function bankOpen(ti) {
       var gi = document.getElementById('bi');
       if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
 
-      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect. Answer: ' + rHTML(fmtAns(q.ans)))) + '</p><button class="cta-amber" id="bn">Next Question →</button>';
+      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + rHTML(fmtAns(q.ans)))) + '</p><button class="cta-amber" id="bn">Next Question →</button>';
       var nb = document.getElementById('bn');
       nb.onclick = draw;
       setTimeout(function() { nb.focus() }, 60);
@@ -1340,82 +1458,6 @@ var rw=document.getElementById('vRW'),rbuilt=false,RK='satpath_done_rw';
 function getRDone(){try{return JSON.parse(spGet(RK))||[]}catch(e){return[]}}
 function rwComplete(g){var d=getRDone();if(d.indexOf(g)<0){d.push(g);lbAdd(null,50)}try{spSet(RK,JSON.stringify(d))}catch(e){}paintRW();var fb=rw.querySelector('[data-g="'+g+'"]');if(fb)fb.classList.add('flash')}
 window.rwComplete=rwComplete;
-var rwM1 = document.getElementById('scRwM1');
-var rwM2 = document.getElementById('scRwM2');
-var mathM1 = document.getElementById('scMathM1');
-var mathM2 = document.getElementById('scMathM2');
-
-function updateSatCalculator() {
-  if (!rwM1) return;
-  var r1 = parseInt(rwM1.value);
-  var r2 = parseInt(rwM2.value);
-  var m1 = parseInt(mathM1.value);
-  var m2 = parseInt(mathM2.value);
-
-  document.getElementById('scRwM1Val').textContent = r1;
-  document.getElementById('scRwM2Val').textContent = r2;
-  document.getElementById('scMathM1Val').textContent = m1;
-  document.getElementById('scMathM2Val').textContent = m2;
-
-  var rTot = r1 + r2, mTot = m1 + m2;
-  var rwHard = (r1 >= 18);
-  var mathHard = (m1 >= 15);
-
-  document.getElementById('scRwSubCount').textContent = rTot + ' of 54 correct · 50 of them count';
-  document.getElementById('scMathSubCount').textContent = mTot + ' of 44 correct · 40 of them count';
-
-  var rwBadge = document.getElementById('scRwRouteBadge');
-  var rwInfo = document.getElementById('scRwRouteInfo');
-  if (!rwHard) {
-    rwBadge.textContent = 'Easier version';
-    rwBadge.className = 'tag';
-    rwInfo.textContent = r1 + ' of 27 right in Module 1 — under the 18 it takes to be routed up, so this section is capped near 600.';
-  } else {
-    rwBadge.textContent = 'Harder version';
-    rwBadge.className = 'tag n';
-    rwInfo.textContent = r1 + ' of 27 right in Module 1 — routed to the harder second module, where 800 is reachable.';
-  }
-
-  var mathBadge = document.getElementById('scMathRouteBadge');
-  var mathInfo = document.getElementById('scMathRouteInfo');
-  if (!mathHard) {
-    mathBadge.textContent = 'Easier version';
-    mathBadge.className = 'tag';
-    mathInfo.textContent = m1 + ' of 22 right in Module 1 — under the 15 it takes to be routed up, so this section is capped near 590.';
-  } else {
-    mathBadge.textContent = 'Harder version';
-    mathBadge.className = 'tag n';
-    mathInfo.textContent = m1 + ' of 22 right in Module 1 — routed to the harder second module, where 800 is reachable.';
-  }
-
-  var rwScoredCorrect = Math.min(25, Math.max(0, r1 - 1)) + Math.min(25, Math.max(0, r2 - 1));
-  var mathScoredCorrect = Math.min(20, Math.max(0, m1 - 1)) + Math.min(20, Math.max(0, m2 - 1));
-
-  var rwScore = scaleSectionScore(rwScoredCorrect, 50, rwHard);
-  var mathScore = scaleSectionScore(mathScoredCorrect, 40, mathHard);
-
-  if (!rwHard && rwScore > 600) rwScore = 600;
-  if (!mathHard && mathScore > 590) mathScore = 590;
-
-  var totalScore = rwScore + mathScore;
-  var rwLow = Math.max(200, rwScore - (rTot === 0 ? 0 : 20)), rwHigh = Math.min(800, rwScore + (rTot === 54 ? 0 : 20));
-  var mLow = Math.max(200, mathScore - (mTot === 0 ? 0 : 20)), mHigh = Math.min(800, mathScore + (mTot === 44 ? 0 : 20));
-
-  document.getElementById('scRwScoreText').textContent = rwScore;
-  document.getElementById('scRwRangeText').textContent = rwLow + '–' + rwHigh + ' likely';
-
-  document.getElementById('scMathScoreText').textContent = mathScore;
-  document.getElementById('scMathRangeText').textContent = mLow + '–' + mHigh + ' likely';
-
-  document.getElementById('scTotalScore').textContent = totalScore;
-  document.getElementById('scTotalRange').textContent = 'Realistically ' + (rwLow + mLow) + '–' + (rwHigh + mHigh);
-
-  var pct = totalScore >= 1550 ? '99th+' : totalScore >= 1500 ? '98th' : totalScore >= 1400 ? '94th' : totalScore >= 1300 ? '87th' : totalScore >= 1200 ? '75th' : totalScore >= 1100 ? '59th' : totalScore >= 1000 ? '43rd' : totalScore >= 900 ? '26th' : totalScore >= 800 ? '12th' : '1st';
-  document.getElementById('scPercentile').textContent = pct + ' percentile nationally';
-
-  document.getElementById('scSummaryRw').textContent = rwLow + '–' + rwHigh + ' · ' + rwScore;
-  document.getElementById('scSummaryMath').textContent = mLow + '–' + mHigh + ' · ' + mathScore;
-}
 
 function scaleSectionScore(correct, maxScored, isHard) {
   if (correct <= 0) return 200;
@@ -1423,12 +1465,6 @@ function scaleSectionScore(correct, maxScored, isHard) {
   var base = 200 + 600 * Math.pow(ratio, isHard ? 0.9 : 1.1);
   return Math.min(800, Math.max(200, Math.round(base / 10) * 10));
 }
-
-rwM1.oninput = updateSatCalculator;
-rwM2.oninput = updateSatCalculator;
-mathM1.oninput = updateSatCalculator;
-mathM2.oninput = updateSatCalculator;
-updateSatCalculator();
 
 function buildRW(){
   var h='<div class="mph"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:22px"><img class="ic" style="width:32px;height:32px;vertical-align:-7px" src="six.png" alt=""> R&amp;W Path</b><small id="rwc" style="color:var(--mut)"></small></div><div class="bar" style="margin:10px 0 0"><div id="rwb"></div></div></div>',g=0,ti=0;
@@ -1442,7 +1478,8 @@ function buildRW(){
 function paintRW(){
   if(!rbuilt)return;var d=getRDone(),cur=-1;
   for(var g=0;g<50;g++)if(d.indexOf(g)<0){cur=g;break}
-  rw.querySelectorAll('.isl').forEach(function(b,g){var dn=d.indexOf(g)>=0;b.className='isl'+(g%5==4?' fin':'')+(dn?' done':g==cur?' cur':' lock');b.querySelector('.bd').innerHTML=dn?'✓':g==cur?TYPES[g%5].i:'🔒'});
+  var icons = [IC_BOOK_SM_HTML, '1', '2', '3', IC_LORD_SM_HTML];
+  rw.querySelectorAll('.isl').forEach(function(b,g){var dn=d.indexOf(g)>=0;b.className='isl'+(g%5==4?' fin':'')+(dn?' done':g==cur?' cur':' lock');b.querySelector('.bd').innerHTML=dn?'✓':g==cur?icons[g%5]:spSvg('lock', 12)});
   document.getElementById('rwc').textContent='Island '+Math.min(d.length+1,50)+'/50';document.getElementById('rwb').style.width=(d.length*2)+'%';
 }
 
@@ -1467,66 +1504,121 @@ rw.addEventListener('click',function(e){
   runQuiz({g:g,ti:ti,ni:ni,type:TYPES[ni],rw:true,min:65,done:rwComplete},getRQ(ti,ni));
 });
 
+/* Интерактивный клик по словам в любом контейнере R&W */
+var activeVocabPopover = null;
+function closeActiveVocabPopover() {
+  if (activeVocabPopover) { activeVocabPopover.remove(); activeVocabPopover = null; }
+}
+function bindVocabClicksOnContainer(containerEl, onUpdateCount) {
+  if (!containerEl) return;
+  containerEl.addEventListener('click', function(e) {
+    var wEl = e.target.closest('.rw-word');
+    if (!wEl) { closeActiveVocabPopover(); return; }
+    e.stopPropagation();
+    closeActiveVocabPopover();
+    var rawWord = wEl.dataset.word || wEl.textContent;
+    var clean = rawWord.replace(/[^a-zA-Z'-]/g, '');
+    if (!clean) return;
+    var plainCtx = containerEl.textContent.replace(/\s+/g, ' ').trim().slice(0, 140);
+    var info = lookupWordDef(clean, plainCtx);
+    var list = getVocabList();
+    var isSaved = list.some(function(x){return x.w.toLowerCase()===clean.toLowerCase()});
+
+    activeVocabPopover = document.createElement('div');
+    activeVocabPopover.className = 'vocab-pop';
+    var rect = wEl.getBoundingClientRect();
+    var topPos = Math.min(window.innerHeight - 200, Math.max(12, rect.bottom + 8));
+    var leftPos = Math.min(window.innerWidth - 330, Math.max(12, rect.left));
+    activeVocabPopover.style.top = topPos + 'px';
+    activeVocabPopover.style.left = leftPos + 'px';
+    activeVocabPopover.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">' +
+        '<b style="font-size:16px;color:var(--sand)">' + lbEsc(clean) + '</b>' +
+        '<button id="vpClose" style="font-size:12px;opacity:.6">✕</button>' +
+      '</div>' +
+      '<div style="font-size:11px;font-weight:700;color:var(--acc);margin-bottom:4px;text-transform:uppercase">' + lbEsc(info.ru) + '</div>' +
+      '<div style="font-size:12.5px;color:var(--tx);line-height:1.45;margin-bottom:8px"><b>Meaning:</b> ' + lbEsc(info.d) + '</div>' +
+      '<div style="font-size:11.5px;color:var(--mut);font-style:italic;line-height:1.4;margin-bottom:10px"><b>Example:</b> "' + lbEsc(info.ex) + '"</div>' +
+      '<button class="cta-amber" id="vpSave" style="width:100%;padding:8px 12px;font-size:12px;border-radius:10px">' + (isSaved ? '✓ Saved in Vocabulary (Remove)' : spSvg('plus', 13) + ' Highlight &amp; Save Word') + '</button>';
+    document.body.appendChild(activeVocabPopover);
+    activeVocabPopover.querySelector('#vpClose').onclick = closeActiveVocabPopover;
+    activeVocabPopover.querySelector('#vpSave').onclick = function() {
+      var curList = getVocabList();
+      var idx = curList.findIndex(function(x){return x.w.toLowerCase()===clean.toLowerCase()});
+      if (idx >= 0) {
+        curList.splice(idx, 1);
+        wEl.classList.remove('hl');
+        toast('Removed "' + clean + '" from Vocabulary');
+      } else {
+        curList.unshift({ w: clean, d: info.d, ru: info.ru, ctx: info.ex });
+        wEl.classList.add('hl');
+        toast('Saved "' + clean + '" to Vocabulary');
+      }
+      saveVocabList(curList);
+      if (onUpdateCount) onUpdateCount(curList.length);
+      closeActiveVocabPopover();
+    };
+  });
+}
+
 function rwBankOpen(ti){
   if (!spendEnergy(1)) return;
   var ov = document.createElement('div'), ok = 0;
   ov.style.cssText = 'position:fixed;inset:0;z-index:80;background:var(--bg);overflow:auto;padding:24px';
   document.body.appendChild(ov);
-  
-  function close(){ ov.remove(); buildBank(); }
-  
-  // 1. Формируем пул с привязкой к ID, чтобы знать, какой именно это текст
+
+  function close(){ closeActiveVocabPopover(); ov.remove(); buildBank(); }
+
   function pool(){
     var c = [];
     if(RQ[ti]) RQ[ti].forEach(function(r, idx){ c.push({ fn: function(){return r}, id: 'rq_'+idx }) });
     if(typeof RGEN !== 'undefined' && RGEN[ti]) RGEN[ti].forEach(function(g, idx){ c.push({ fn: g, id: 'rgen_'+idx }) });
     return c;
   }
-  
-  // 2. Читаем решенные из localStorage (у каждого острова свой ключ)
+
   var solvedKey = 'satpath_rw_solved_island_' + ti;
   var solvedList = [];
   try { solvedList = JSON.parse(spGet(solvedKey)) || []; } catch(e) {}
-  
+
   var fullPool = pool();
-  
-  // 3. Убираем shuffle() и фильтруем только нерешенные вопросы (по порядку)
   var myPool = fullPool.filter(function(item) {
     return solvedList.indexOf(item.id) === -1;
   });
-  
-  // Если все тексты на острове решены — сбрасываем прогресс и начинаем заново
+
   if (myPool.length === 0) {
     toast("Island fully explored! Resetting questions...");
     solvedList = [];
     spSet(solvedKey, JSON.stringify(solvedList));
     myPool = fullPool;
   }
-  
+
   var qIndex = 0;
 
   function draw(){
+    closeActiveVocabPopover();
     if (qIndex >= myPool.length) {
       var pct = myPool.length > 0 ? Math.round(ok / myPool.length * 100) : 0;
       ov.innerHTML = '<div class="qb" style="text-align:center;border-radius:26px"><div>' + IC_ART_LG_HTML + '</div><h2>Island Drill Complete!</h2><div class="big" style="color:var(--sand)">' + pct + '%</div><p>' + ok + ' / ' + myPool.length + ' correct</p><button class="cta-amber" id="rx2" style="margin-top:16px">Back to Atlas</button></div>';
       document.getElementById('rx2').onclick = close;
       return;
     }
-    
+
     var starsNow = getTopicStars('rw_' + ti, true, ti);
     var currentItem = myPool[qIndex];
-    // Берем вопрос, перемешиваем только сами варианты ответов A/B/C/D
     var x = currentItem.fn(), ans = x[1], opts = shuffle(x.slice(1)), done = false;
-    
-    ov.innerHTML='<div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_BOOK_HTML + ' R&amp;W ISLAND DRILL</small><div style="font-weight:800;font-size:16px">'+RTOPS[ti]+'</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+miniHudHtml()+renderStarsHtml(starsNow)+'<button id="rx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">Waypoint '+(qIndex + 1)+' of '+myPool.length+' · ✓ '+ok+' · Earn ★ Mastery Stars for +15 PC</span></div><p style="font-size:18px;line-height:1.55;margin:18px 0 14px">'+x[0]+'</p><div id="ra"></div><div id="rf"></div></div>';
-    
+
+    ov.innerHTML='<div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_BOOK_HTML + ' R&amp;W ISLAND DRILL</small><div style="font-weight:800;font-size:16px">'+RTOPS[ti]+'</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+miniHudHtml()+'<button class="chip" id="rwAddVocBtn" style="font-weight:700;color:var(--sand);border-color:var(--sand-line)">' + spSvg('plus', 13) + ' Add Word</button>'+renderStarsHtml(starsNow)+'<button id="rx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">Waypoint '+(qIndex + 1)+' of '+myPool.length+' · ✓ '+ok+' · Click any word in text to save to Vocabulary</span></div><div id="rwDrillPassage" style="font-size:18px;line-height:1.55;margin:18px 0 14px">'+wrapWordsForVocab(x[0])+'</div><div id="ra"></div><div id="rf"></div></div>';
+
     var a = document.getElementById('ra'), f = document.getElementById('rf');
     document.getElementById('rx').onclick = close;
-    
+    var passEl = document.getElementById('rwDrillPassage');
+    bindVocabClicksOnContainer(passEl);
+    document.getElementById('rwAddVocBtn').onclick = function() {
+      openAddWordModal(passEl.textContent.replace(/\s+/g,' ').trim().slice(0,130));
+    };
+
     function fin(v){
       if(done) return; done = true;
-      
-      // 4. Отмечаем этот текст как пройденный и сохраняем
       if (solvedList.indexOf(currentItem.id) === -1) {
         solvedList.push(currentItem.id);
         spSet(solvedKey, JSON.stringify(solvedList));
@@ -1537,21 +1629,25 @@ function rwBankOpen(ti){
       if(good){
         ok++;
         addCoins(5);
+        removeMistakeByQuestion(x[0]);
+      } else {
+        recordMistake({ q: x[0], ans: ans, opts: opts, isGrid: false, rw: true, top: RTOPS[ti] }, v, 'Atlas R&W · ' + RTOPS[ti]);
       }
       bankSave('rw_' + ti, good);
       lbAdd(good);
       var newStars = getTopicStars('rw_' + ti, true, ti);
       if(newStars > prevStars){confetti();addCoins(15 * (newStars - prevStars), 'Mastery Star ★ unlocked!');}
       a.querySelectorAll('button').forEach(function(b){b.disabled=true;if(b.dataset.v===ans)b.classList.add('good');else if(b.dataset.v===v)b.classList.add('bad')});
-      f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'#e74c3c')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect. Answer: '+ans))+'</p><button class="cta-amber" id="rn">Next Waypoint →</button>';
+      f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'#e74c3c')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect · Saved to Mistakes. Answer: '+ans))+'</p><button class="cta-amber" id="rn">Next Waypoint →</button>';
       document.getElementById('rn').onclick = function(){ qIndex++; draw(); };
     }
     opts.forEach(function(o,k){var b=document.createElement('button');b.className='qo';b.dataset.v=o;b.innerHTML='<b>'+'ABCD'[k]+'</b>&nbsp; '+o;b.onclick=function(){fin(o)};a.appendChild(b)});
   }
   draw();
 }
-/* ===== BLITZ 10 MODE (Fast 10 Questions · Math / R&W / Mixed · Level Selector) ===== */
-var bzCfg = { mode: 'mix', lvl: 'hard' }; // mode: 'mix' | 'math' | 'rw', lvl: 'easy' | 'medium' | 'hard'
+
+/* ===== BLITZ 10 MODE (Minimalist Icons & Full Desmos) ===== */
+var bzCfg = { mode: 'mix', lvl: 'hard' };
 function getBlitzBest() {
   try { return JSON.parse(spGet('satpath_blitz_best')) || { score: 0, streak: 0, runs: 0 }; } catch (e) { return { score: 0, streak: 0, runs: 0 }; }
 }
@@ -1568,34 +1664,34 @@ function buildBlitz() {
     '<h1>Blitz 10 Mode</h1>' +
     '<p class="sub">Test your reflexes across 10 rapid-fire SAT questions! Build answer streaks for bonus multipliers and earn Pathcoins.</p></div>' +
     '<div style="display:flex;gap:14px;flex-wrap:wrap">' +
-    '<div class="atlas-star-tot"><span class="st-ico">⚡</span><div><b>' + best.score.toLocaleString() + ' pts</b><small>High Score · Max Streak ' + best.streak + '🔥</small></div></div>' +
+    '<div class="atlas-star-tot"><span class="st-ico">' + spSvg('zap', 26) + '</span><div><b>' + best.score.toLocaleString() + ' pts</b><small>High Score · Max Streak ' + best.streak + 'x</small></div></div>' +
     '</div></div>' +
     '<div class="blitz-card">' +
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px">' +
     '<div><label style="font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:10px">1. Choose Subject Mix</label>' +
     '<div style="display:grid;gap:10px">' +
     [
-      ['mix', '⚡ Mixed Odyssey (5 Math + 5 R&amp;W)', 'Alternates between SAT Math and Reading &amp; Writing'],
-      ['math', '📐 Pure Math Blitz (10 Math)', 'Graphs, geometry, systems, and algebra'],
-      ['rw', '📖 Pure R&amp;W Blitz (10 R&amp;W)', 'Inferences, evidence, vocabulary, and grammar']
+      ['mix', IC_ENERGY_HTML + ' Mixed Odyssey (5 Math + 5 R&amp;W)', 'Alternates between SAT Math and Reading &amp; Writing'],
+      ['math', IC_MATH_HTML + ' Pure Math Blitz (10 Math)', 'Graphs, geometry, systems, and algebra'],
+      ['rw', IC_BOOK_HTML + ' Pure R&amp;W Blitz (10 R&amp;W)', 'Inferences, evidence, vocabulary, and grammar']
     ].map(function(m) {
       var on = bzCfg.mode === m[0];
       return '<button class="card" data-bzm="' + m[0] + '" style="padding:14px 16px;border-radius:18px;border-color:' + (on ? 'var(--acc)' : 'var(--line)') + ';background:' + (on ? 'rgba(34,163,129,0.12)' : 'var(--panel)') + '">' +
-        '<b style="font-size:14.5px;display:block">' + m[1] + '</b><small style="color:var(--mut);font-size:12px">' + m[2] + '</small></button>';
+        '<b style="font-size:14.5px;display:flex;align-items:center;gap:6px">' + m[1] + '</b><small style="color:var(--mut);font-size:12px;display:block;margin-top:3px">' + m[2] + '</small></button>';
     }).join('') + '</div></div>' +
     '<div><label style="font-size:12px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:10px">2. Select Difficulty Level</label>' +
     '<div style="display:grid;gap:10px">' +
     [
-      ['easy', '🌱 Foundation (Level 1 · Easy)', 'Core concepts &amp; rapid warm-up · 1.0× Score Multiplier'],
-      ['medium', '⚔️ Challenger (Level 2 · Medium)', 'Standard Digital SAT Module 1 difficulty · 1.5× Score Multiplier'],
-      ['hard', '🔥 Bluebook Master (Level 3 · Hard)', 'Multi-step Module 2 hard problems &amp; traps · 2.0× Score Multiplier']
+      ['easy', spSvg('compass', 15) + ' Foundation (Level 1 · Easy)', 'Core concepts &amp; rapid warm-up · 1.0× Score Multiplier'],
+      ['medium', spSvg('shield', 15) + ' Challenger (Level 2 · Medium)', 'Standard Digital SAT Module 1 difficulty · 1.5× Score Multiplier'],
+      ['hard', spSvg('crown', 15) + ' Bluebook Master (Level 3 · Hard)', 'Multi-step Module 2 hard problems &amp; traps · 2.0× Score Multiplier']
     ].map(function(lv) {
       var on = bzCfg.lvl === lv[0];
       return '<button class="card" data-bzl="' + lv[0] + '" style="padding:14px 16px;border-radius:18px;border-color:' + (on ? 'var(--sand)' : 'var(--line)') + ';background:' + (on ? 'var(--sand-bg)' : 'var(--panel)') + '">' +
-        '<b style="font-size:14.5px;display:block">' + lv[1] + '</b><small style="color:var(--mut);font-size:12px">' + lv[2] + '</small></button>';
+        '<b style="font-size:14.5px;display:flex;align-items:center;gap:6px">' + lv[1] + '</b><small style="color:var(--mut);font-size:12px;display:block;margin-top:3px">' + lv[2] + '</small></button>';
     }).join('') + '</div></div></div>' +
     '<div style="margin-top:24px;padding-top:18px;border-top:1.5px dashed var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">' +
-    '<div style="font-size:13px;color:var(--mut)">⏱️ <b>60 seconds</b> per question · Streak combos grant bonus Pathcoins!</div>' +
+    '<div style="font-size:13px;color:var(--mut)">' + spSvg('clock', 14) + ' <b>60 seconds</b> per question · Streak combos grant bonus Pathcoins</div>' +
     '<button class="cta-amber" id="bzStartBtn" style="padding:14px 28px;font-size:15px;border-radius:16px">Launch Blitz 10 →</button>' +
     '</div></div>';
 
@@ -1637,9 +1733,10 @@ function startBlitzRun() {
   document.body.appendChild(ov);
 
   function stopTmr() { if (tmr) { clearInterval(tmr); tmr = null; } }
-  function closeBlitz() { stopTmr(); ov.remove(); buildBlitz(); }
+  function closeBlitz() { closeActiveVocabPopover(); stopTmr(); ov.remove(); buildBlitz(); }
 
   function renderStep() {
+    closeActiveVocabPopover();
     stopTmr();
     if (idx >= qs.length) {
       var best = getBlitzBest();
@@ -1651,12 +1748,12 @@ function startBlitzRun() {
       addCoins(pcEarned, 'Blitz 10 Complete (' + ok + '/10)!');
       if (ok >= 7) confetti();
       ov.innerHTML = '<div class="qb" style="max-width:580px;margin:20px auto;text-align:center;border-radius:28px;border:2px solid var(--sand-line);animation:up .35s ease">' +
-        '<div style="font-size:12px;font-weight:800;color:var(--sand);letter-spacing:.1em;text-transform:uppercase">⚡ BLITZ 10 COMPLETE</div>' +
+        '<div style="font-size:12px;font-weight:800;color:var(--sand);letter-spacing:.1em;text-transform:uppercase">' + spSvg('zap', 14) + ' BLITZ 10 COMPLETE</div>' +
         '<h2 style="font-size:28px;font-weight:800;margin:6px 0">' + (ok >= 9 ? 'Unstoppable Blitz!' : ok >= 7 ? 'Sharp Navigator!' : 'Good Sprint!') + '</h2>' +
         '<div style="font-size:54px;font-weight:800;color:var(--sand);margin:8px 0">' + score.toLocaleString() + ' <small style="font-size:18px;color:var(--mut)">pts</small></div>' +
         '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0">' +
         '<div class="card" style="padding:12px;border-radius:16px"><small style="color:var(--mut);display:block">Accuracy</small><b style="font-size:20px;color:var(--acc)">' + ok + ' / 10</b></div>' +
-        '<div class="card" style="padding:12px;border-radius:16px"><small style="color:var(--mut);display:block">Max Streak</small><b style="font-size:20px;color:var(--sand)">' + maxStreak + ' 🔥</b></div>' +
+        '<div class="card" style="padding:12px;border-radius:16px"><small style="color:var(--mut);display:block">Max Streak</small><b style="font-size:20px;color:var(--sand)">' + maxStreak + 'x</b></div>' +
         '<div class="card" style="padding:12px;border-radius:16px"><small style="color:var(--mut);display:block">Reward</small><b style="font-size:20px;color:var(--acc)">+' + pcEarned + ' PC</b></div>' +
         '</div>' +
         '<div style="display:flex;gap:10px;justify-content:center;margin-top:18px">' +
@@ -1675,22 +1772,23 @@ function startBlitzRun() {
     var wasOpen = ov.dataset.calcOpen === '1' && !q.rw;
     ov.innerHTML = '<div id="bzShell" class="pt-shell' + (wasOpen ? ' calc-open' : '') + '">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);padding:12px 18px;border-radius:18px;border:1.5px solid var(--line);margin-bottom:14px">' +
-      '<div style="display:flex;align-items:center;gap:10px"><span class="tag n" style="margin:0">BLITZ ' + (idx + 1) + '/10</span><b style="color:var(--sand)">' + streak + ' 🔥 Streak</b><small style="color:var(--mut)">Score: <b>' + score + '</b></small></div>' +
-      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + (!q.rw ? '<button id="bzCalcBtn" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Calculator (50/50)')) + '</button>' : '') + '<b id="bzTimer" style="font-size:16px;color:var(--acc);font-variant-numeric:tabular-nums">0:60</b><button class="tbtn" id="bzQuit">✕</button></div>' +
+      '<div style="display:flex;align-items:center;gap:10px"><span class="tag n" style="margin:0">BLITZ ' + (idx + 1) + '/10</span><b style="color:var(--sand)">' + streak + 'x Streak</b><small style="color:var(--mut)">Score: <b>' + score + '</b></small></div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + (!q.rw ? '<button id="bzCalcBtn" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button>' : '') + '<b id="bzTimer" style="font-size:16px;color:var(--acc);font-variant-numeric:tabular-nums">0:60</b><button class="tbtn" id="bzQuit">✕</button></div>' +
       '</div>' +
       '<div class="pt-split-body"><div class="qb" style="max-width:none;border-radius:26px">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="tag" style="margin:0;font-size:10.5px">' + (q.rw ? 'READING &amp; WRITING' : 'MATH') + ' · ' + bzCfg.lvl.toUpperCase() + '</span><small style="color:var(--mut);font-weight:700">' + q.top + '</small></div>' +
-      '<div style="font-size:' + (q.rw ? 17 : 19) + 'px;line-height:1.55;margin:16px 0">' + fx(q.q) + '</div>' +
+      '<div id="bzQText" style="font-size:' + (q.rw ? 17 : 19) + 'px;line-height:1.55;margin:16px 0">' + fx(q.q) + '</div>' +
       '<div id="bzAnsBox"></div><div id="bzFeedBox"></div></div><div id="ptCP" style="display:' + (wasOpen ? 'block' : 'none') + ';border:2px solid var(--line);border-radius:24px;overflow:hidden;background:#fff"></div></div></div>';
 
     ov.querySelector('#bzQuit').onclick = closeBlitz;
+    bindVocabClicksOnContainer(ov.querySelector('#bzQText'));
     var bzCalcBtn = ov.querySelector('#bzCalcBtn');
     var bzShell = ov.querySelector('#bzShell');
     var bzCP = ov.querySelector('#ptCP');
     var bzCalc = null;
     function mountBzCalc() {
       if (!bzCalc && window.Desmos && bzCP) {
-        bzCalc = Desmos.GraphingCalculator(bzCP, { keypad: true, expressions: true, settingsMenu: false, folders: false, images: false });
+        bzCalc = createFullDesmos(bzCP);
       }
       if (bzCalc) setTimeout(function() { bzCalc.resize(); }, 35);
     }
@@ -1709,7 +1807,7 @@ function startBlitzRun() {
           bzCP.style.display = 'none';
           ov.dataset.calcOpen = '0';
           bzCalcBtn.style.background = 'var(--acc2)';
-          bzCalcBtn.innerHTML = IC_MATH_HTML + ' Calculator (50/50)';
+          bzCalcBtn.innerHTML = IC_MATH_HTML + ' Desmos Calculator';
         }
       };
     }
@@ -1727,9 +1825,11 @@ function startBlitzRun() {
         var gained = Math.round((100 + qLeft * 2 + streak * 25) * mult);
         score += gained;
         addCoins(5);
+        removeMistakeByQuestion(q.q);
         lbAdd(true);
       } else {
         streak = 0;
+        recordMistake(q, val, 'Blitz 10 · ' + q.top);
         lbAdd(false);
       }
       ansBox.querySelectorAll('button').forEach(function(b) {
@@ -1740,8 +1840,8 @@ function startBlitzRun() {
       var gi = ov.querySelector('#bzGridInp');
       if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
       feedBox.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)">' +
-        '<b style="color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? '⚡ Correct! +' + Math.round((100 + qLeft * 2 + streak * 25) * mult) + ' pts (+5 ' + IC_COIN_HTML + ')' : '✗ Incorrect. Answer: ' + (q.rw ? q.ans : rHTML(fmtAns(q.ans)))) + '</b>' +
-        '<button class="cta-amber" id="bzNextBtn">' + (idx < 9 ? 'Next Blitz →' : 'See Results 🏆') + '</button></div>';
+        '<b style="color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? 'Correct! +' + Math.round((100 + qLeft * 2 + streak * 25) * mult) + ' pts (+5 ' + IC_COIN_HTML + ')' : 'Incorrect · Saved to Mistakes. Answer: ' + (q.rw ? q.ans : rHTML(fmtAns(q.ans)))) + '</b>' +
+        '<button class="cta-amber" id="bzNextBtn">' + (idx < 9 ? 'Next Blitz →' : 'See Results →') + '</button></div>';
       ov.querySelector('#bzNextBtn').onclick = function() { idx++; renderStep(); };
     }
 
@@ -1774,10 +1874,393 @@ function startBlitzRun() {
   renderStep();
 }
 
+/* ===== DEDICATED VOCABULARY TAB & MISTAKES TAB & SUPPORT MODAL ===== */
+function buildVocabTab() {
+  var el = document.getElementById('vVOC');
+  if (!el) return;
+  var list = getVocabList();
+  var h = '<div class="atlas-hero" style="margin-bottom:22px">' +
+    '<div>' +
+      '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + IC_BOOK_HTML + ' PERSONAL SAT LEXICON</div>' +
+      '<h1>Vocabulary</h1>' +
+      '<p class="sub">Words you highlighted during Mock Exams and R&amp;W passages, complete with definitions and context examples.</p>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+      '<button class="cta-amber" id="vocTabAddBtn" style="padding:12px 20px;font-size:13.5px;border-radius:16px">' + spSvg('plus', 16) + ' Add New Word</button>' +
+      (list.length ? '<button class="chip" id="vocTabClearBtn" style="padding:10px 14px;color:#e74c3c;border-color:#e74c3c;font-weight:700">Clear All (' + list.length + ')</button>' : '') +
+    '</div>' +
+  '</div>';
+
+  if (!list.length) {
+    h += '<div class="card" style="padding:48px 24px;text-align:center;border-radius:26px">' +
+      '<div style="color:var(--sand);margin-bottom:10px">' + spSvg('book', 42) + '</div>' +
+      '<h3 style="font-size:20px;font-weight:800;margin-bottom:6px">Your Vocabulary List is Empty</h3>' +
+      '<p class="sub" style="max-width:460px;margin:0 auto 18px">Click on any unfamiliar word inside a Reading &amp; Writing passage or Mock Exam to see its meaning and save it here, or add words manually.</p>' +
+      '<button class="cta-amber" id="vocEmptyAddBtn">' + spSvg('plus', 15) + ' Add First Word</button>' +
+    '</div>';
+  } else {
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px">';
+    list.forEach(function(item, idx) {
+      h += '<div class="card" style="padding:20px;border-radius:22px;display:flex;flex-direction:column;justify-content:space-between;gap:12px">' +
+        '<div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">' +
+            '<div><b style="font-size:20px;color:var(--sand);letter-spacing:-.01em">' + lbEsc(item.w) + '</b><span class="tag" style="margin-left:8px;font-size:10px">' + lbEsc(item.ru || 'SAT Term') + '</span></div>' +
+            '<button class="tbtn" data-voc-del="' + idx + '" title="Remove word" style="width:30px;height:30px;font-size:12px">✕</button>' +
+          '</div>' +
+          '<div style="font-size:13.5px;color:var(--tx);line-height:1.55;margin-top:10px"><b style="color:var(--acc);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:2px">Meaning</b>' + lbEsc(item.d) + '</div>' +
+        '</div>' +
+        '<div style="background:var(--panel2);border:1px solid var(--line);padding:10px 12px;border-radius:14px;font-size:12.5px;color:var(--mut);line-height:1.45">' +
+          '<b style="color:var(--tx);font-size:11px;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:2px;font-style:normal">Example in Context</b>' +
+          '<i>"' + lbEsc(item.ctx || ('The passage demonstrates how "' + item.w + '" functions in academic analysis.')) + '"</i>' +
+        '</div>' +
+      '</div>';
+    });
+    h += '</div>';
+  }
+  el.innerHTML = h;
+  var addB = el.querySelector('#vocTabAddBtn');
+  if (addB) addB.onclick = function() { openAddWordModal('', buildVocabTab); };
+  var addE = el.querySelector('#vocEmptyAddBtn');
+  if (addE) addE.onclick = function() { openAddWordModal('', buildVocabTab); };
+  var clrB = el.querySelector('#vocTabClearBtn');
+  if (clrB) clrB.onclick = function() {
+    spModalConfirm('Clear all saved words from your Vocabulary?', function() {
+      saveVocabList([]);
+      buildVocabTab();
+    });
+  };
+  el.querySelectorAll('[data-voc-del]').forEach(function(btn) {
+    btn.onclick = function() {
+      var l = getVocabList();
+      l.splice(+btn.dataset.vocDel, 1);
+      saveVocabList(l);
+      buildVocabTab();
+    };
+  });
+}
+
+var mkFilter = 'all'; // 'all' | 'math' | 'rw'
+function buildMistakesTab() {
+  var el = document.getElementById('vMK');
+  if (!el) return;
+  var all = getMistakes();
+  var filtered = all.filter(function(x) {
+    if (mkFilter === 'math') return !x.rw;
+    if (mkFilter === 'rw') return !!x.rw;
+    return true;
+  });
+
+  var h = '<div class="atlas-hero" style="margin-bottom:22px">' +
+    '<div>' +
+      '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + IC_AIM_HTML + ' ERROR CORRECTION HUB · MAX 500</div>' +
+      '<h1>Mistakes Review</h1>' +
+      '<p class="sub">Every question you miss in Mock Exams, Atlas, Path, or Blitz is saved here (' + all.length + ' / 500). Solve a question correctly in a review test and it will automatically disappear from this list!</p>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+      (filtered.length ? '<button class="cta-amber" id="mkStartTestBtn" style="padding:13px 22px;font-size:14px;border-radius:16px">' + spSvg('zap', 16) + ' Start Mistake Drill (' + Math.min(15, filtered.length) + ' Qs) →</button>' : '') +
+    '</div>' +
+  '</div>' +
+  '<div class="atlas-controls">' +
+    '<div class="island-pills">' +
+      '<button class="island-pill' + (mkFilter === 'all' ? ' on' : '') + '" data-mkf="all">All Mistakes (' + all.length + ')</button>' +
+      '<button class="island-pill' + (mkFilter === 'math' ? ' on' : '') + '" data-mkf="math">' + IC_MATH_HTML + ' Math (' + all.filter(function(x){return !x.rw}).length + ')</button>' +
+      '<button class="island-pill' + (mkFilter === 'rw' ? ' on' : '') + '" data-mkf="rw">' + IC_BOOK_HTML + ' R&amp;W (' + all.filter(function(x){return !!x.rw}).length + ')</button>' +
+    '</div>' +
+    (all.length ? '<button class="chip" id="mkClearAllBtn" style="color:#e74c3c;border-color:#e74c3c;font-weight:700">Clear All Mistakes</button>' : '') +
+  '</div>';
+
+  if (!filtered.length) {
+    h += '<div class="card" style="padding:48px 24px;text-align:center;border-radius:26px">' +
+      '<div style="color:var(--acc);margin-bottom:10px">' + spSvg('award', 42) + '</div>' +
+      '<h3 style="font-size:20px;font-weight:800;margin-bottom:6px">Zero Pending Mistakes!</h3>' +
+      '<p class="sub" style="max-width:460px;margin:0 auto">You have cleared all mistakes in this category. Keep practicing in Mock Exams or the Atlas!</p>' +
+    '</div>';
+  } else {
+    h += '<div style="display:grid;gap:14px">';
+    filtered.forEach(function(item, idx) {
+      var fx = function(s) { return item.rw ? String(s) : rHTML(s); };
+      h += '<div class="card" style="padding:20px 22px;border-radius:22px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">' +
+        '<div style="flex:1;min-width:260px">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
+            '<span class="tag n" style="margin:0">' + (item.rw ? 'R&amp;W' : 'MATH') + '</span>' +
+            '<span class="tag" style="margin:0">' + lbEsc(item.top || 'SAT Topic') + '</span>' +
+            '<small style="color:var(--mut);font-size:11.5px">' + lbEsc(item.src || '') + '</small>' +
+          '</div>' +
+          '<div style="font-size:15.5px;line-height:1.55;margin-bottom:10px">' + fx(item.q) + '</div>' +
+          '<div style="font-size:12.5px;color:#e74c3c;font-weight:700">Previous answer: ' + fx(item.wrongAns) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;align-items:center">' +
+          '<button class="cta" data-mk-single="' + idx + '" style="padding:9px 15px;font-size:12.5px;border-radius:12px">Retry Question →</button>' +
+          '<button class="tbtn" data-mk-del="' + item.id + '" title="Remove from mistakes">✕</button>' +
+        '</div>' +
+      '</div>';
+    });
+    h += '</div>';
+  }
+
+  el.innerHTML = h;
+  el.querySelectorAll('[data-mkf]').forEach(function(b) {
+    b.onclick = function() { mkFilter = b.dataset.mkf; buildMistakesTab(); };
+  });
+  var clr = el.querySelector('#mkClearAllBtn');
+  if (clr) clr.onclick = function() {
+    spModalConfirm('Clear all saved questions from your Mistakes list?', function() {
+      saveMistakes([]);
+      buildMistakesTab();
+    });
+  };
+  el.querySelectorAll('[data-mk-del]').forEach(function(b) {
+    b.onclick = function() {
+      var list = getMistakes().filter(function(x) { return x.id !== b.dataset.mkDel; });
+      saveMistakes(list);
+      buildMistakesTab();
+    };
+  });
+  el.querySelectorAll('[data-mk-single]').forEach(function(b) {
+    b.onclick = function() {
+      var target = filtered[+b.dataset.mkSingle];
+      if (target) startMistakesDrill([target]);
+    };
+  });
+  var startBtn = el.querySelector('#mkStartTestBtn');
+  if (startBtn) startBtn.onclick = function() {
+    startMistakesDrill(filtered.slice(0, 15));
+  };
+}
+
+function startMistakesDrill(questionsList) {
+  if (!questionsList || !questionsList.length) return;
+  var idx = 0, clearedCount = 0;
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:95;background:var(--bg);overflow:auto;padding:24px';
+  document.body.appendChild(ov);
+
+  function closeDrill() {
+    closeActiveVocabPopover();
+    ov.remove();
+    buildMistakesTab();
+  }
+
+  function renderQ() {
+    closeActiveVocabPopover();
+    if (idx >= questionsList.length) {
+      if (clearedCount > 0) confetti();
+      ov.innerHTML = '<div class="qb" style="max-width:540px;margin:30px auto;text-align:center;border-radius:28px;border:2px solid var(--sand-line)">' +
+        '<div style="color:var(--sand);margin-bottom:8px">' + spSvg('award', 42) + '</div>' +
+        '<h2 style="font-size:26px;font-weight:800">Mistake Drill Complete!</h2>' +
+        '<div class="big" style="color:var(--acc);margin:12px 0">' + clearedCount + ' / ' + questionsList.length + '</div>' +
+        '<p class="sub" style="margin-bottom:20px">' + clearedCount + ' question(s) solved correctly and permanently removed from your Mistakes list!</p>' +
+        '<button class="cta-amber" id="mkDoneBtn">Back to Mistakes Hub →</button>' +
+      '</div>';
+      ov.querySelector('#mkDoneBtn').onclick = closeDrill;
+      return;
+    }
+
+    var q = questionsList[idx];
+    var done = false;
+    var fx = function(s) { return q.rw ? wrapWordsForVocab(s) : rHTML(s); };
+    var wasOpen = ov.dataset.calcOpen === '1' && !q.rw;
+
+    ov.innerHTML = '<div id="mkSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '">' +
+      '<div class="qb" style="border-radius:26px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">' +
+          '<div style="display:flex;align-items:center;gap:8px"><span class="tag n" style="margin:0">MISTAKE DRILL ' + (idx + 1) + '/' + questionsList.length + '</span><small style="color:var(--mut);font-weight:700">' + lbEsc(q.top || '') + '</small></div>' +
+          '<div style="display:flex;align-items:center;gap:8px">' +
+            (!q.rw ? '<button id="mkCalcBtn" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button>' : '') +
+            '<button class="tbtn" id="mkQuit">✕</button>' +
+          '</div>' +
+        '</div>' +
+        '<div id="mkPassage" style="font-size:19px;line-height:1.6;margin:18px 0">' + fx(q.q) + '</div>' +
+        '<div id="mkAns"></div><div id="mkFeed"></div>' +
+      '</div>' +
+      '<div id="mkCalcPane" class="quiz-calc-pane"></div>' +
+    '</div>';
+
+    ov.querySelector('#mkQuit').onclick = closeDrill;
+    bindVocabClicksOnContainer(ov.querySelector('#mkPassage'));
+
+    var mkCalcBtn = ov.querySelector('#mkCalcBtn');
+    var mkSplitWrap = ov.querySelector('#mkSplitWrap');
+    var mkCalcPane = ov.querySelector('#mkCalcPane');
+    var mkCalc = null;
+    function mountMkCalc() {
+      if (!mkCalc && window.Desmos && mkCalcPane) mkCalc = createFullDesmos(mkCalcPane);
+      if (mkCalc) setTimeout(function() { mkCalc.resize(); }, 35);
+    }
+    if (wasOpen) mountMkCalc();
+    if (mkCalcBtn) {
+      mkCalcBtn.onclick = function() {
+        if (!mkSplitWrap.classList.contains('calc-open')) {
+          mkSplitWrap.classList.add('calc-open');
+          ov.dataset.calcOpen = '1';
+          mkCalcBtn.style.background = '#e74c3c';
+          mkCalcBtn.innerHTML = '✕ Close Calculator';
+          mountMkCalc();
+        } else {
+          mkSplitWrap.classList.remove('calc-open');
+          ov.dataset.calcOpen = '0';
+          mkCalcBtn.style.background = 'var(--acc2)';
+          mkCalcBtn.innerHTML = IC_MATH_HTML + ' Desmos Calculator';
+        }
+      };
+    }
+
+    var a = ov.querySelector('#mkAns'), f = ov.querySelector('#mkFeed');
+    function checkAns(v) {
+      if (done) return; done = true;
+      var good = (q.isGrid ? same(v, q.ans) : String(v) === q.ans);
+      if (good) {
+        clearedCount++;
+        removeMistakeByQuestion(q.q);
+        addCoins(5, 'Mistake resolved!');
+      }
+      a.querySelectorAll('button').forEach(function(b) {
+        b.disabled = true;
+        if (b.dataset.v === q.ans) b.classList.add('good');
+        else if (b.dataset.v === String(v)) b.classList.add('bad');
+      });
+      var gi = ov.querySelector('#mkInp');
+      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
+      f.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)">' +
+        '<b style="color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? '✓ Solved! Removed from Mistakes (+5 PC)' : '✗ Still incorrect. Correct answer: ' + (q.rw ? q.ans : rHTML(fmtAns(q.ans)))) + '</b>' +
+        '<button class="cta-amber" id="mkNextBtn">' + (idx < questionsList.length - 1 ? 'Next Question →' : 'Finish Drill →') + '</button>' +
+      '</div>';
+      ov.querySelector('#mkNextBtn').onclick = function() { idx++; renderQ(); };
+    }
+
+    if (q.isGrid) {
+      a.innerHTML = '<input id="mkInp" class="qin" placeholder="Enter your answer" autocomplete="off"><button class="cta-amber" id="mkSub" style="margin-top:12px">Check Answer</button>';
+      var inp = ov.querySelector('#mkInp');
+      inp.focus();
+      ov.querySelector('#mkSub').onclick = function() { if (inp.value) checkAns(inp.value.trim()); };
+      inp.onkeydown = function(e) { if (e.key === 'Enter' && inp.value) checkAns(inp.value.trim()); };
+    } else {
+      (q.opts || []).forEach(function(o, k) {
+        var b = document.createElement('button');
+        b.className = 'qo';
+        b.dataset.v = o;
+        b.innerHTML = '<b>' + 'ABCD'[k] + '</b>&nbsp; ' + (q.rw ? String(o) : rHTML(o));
+        b.onclick = function() { checkAns(o); };
+        a.appendChild(b);
+      });
+    }
+  }
+  renderQ();
+}
+
+function openSupportModal() {
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:150;background:rgba(6,21,23,0.78);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px';
+  ov.innerHTML = '<div class="qb" style="max-width:500px;width:100%;border-radius:28px;border:2px solid var(--sand-line);animation:up .2s ease">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1.5px dashed var(--line);margin-bottom:16px">' +
+      '<div><small style="color:var(--sand);font-weight:800;letter-spacing:.08em;text-transform:uppercase">ARCHIPELAGO COMMS</small><h2 style="font-size:22px;font-weight:800">Technical Support</h2></div>' +
+      '<button class="tbtn" id="supClose">✕</button>' +
+    '</div>' +
+    '<p class="sub" style="margin-bottom:18px">Need help with your account, found a bug, or have a feature request? Reach out directly to our team:</p>' +
+    '<div style="display:grid;gap:12px">' +
+      '<a href="https://t.me/slayerofprep" target="_blank" rel="noopener" class="card" style="padding:14px 18px;border-radius:18px;display:flex;justify-content:space-between;align-items:center;text-decoration:none;border-color:var(--acc)">' +
+        '<div style="display:flex;align-items:center;gap:12px"><span style="width:38px;height:38px;border-radius:12px;background:rgba(34,163,129,0.15);color:var(--acc);display:grid;place-items:center">' + spSvg('send', 18) + '</span><div><b style="font-size:15px;display:block">Telegram Support 1</b><small style="color:var(--mut)">@slayerofprep</small></div></div>' +
+        '<span class="tag n" style="margin:0">Message →</span>' +
+      '</a>' +
+      '<a href="https://t.me/gOlvzZ" target="_blank" rel="noopener" class="card" style="padding:14px 18px;border-radius:18px;display:flex;justify-content:space-between;align-items:center;text-decoration:none;border-color:var(--acc)">' +
+        '<div style="display:flex;align-items:center;gap:12px"><span style="width:38px;height:38px;border-radius:12px;background:rgba(34,163,129,0.15);color:var(--acc);display:grid;place-items:center">' + spSvg('send', 18) + '</span><div><b style="font-size:15px;display:block">Telegram Support 2</b><small style="color:var(--mut)">@gOlvzZ</small></div></div>' +
+        '<span class="tag n" style="margin:0">Message →</span>' +
+      '</a>' +
+      '<a href="mailto:satpath1600@gmail.com" class="card" style="padding:14px 18px;border-radius:18px;display:flex;justify-content:space-between;align-items:center;text-decoration:none;border-color:var(--sand-line)">' +
+        '<div style="display:flex;align-items:center;gap:12px"><span style="width:38px;height:38px;border-radius:12px;background:var(--sand-bg);color:var(--sand);display:grid;place-items:center">' + spSvg('mail', 18) + '</span><div><b style="font-size:15px;display:block">Email Support</b><small style="color:var(--mut)">satpath1600@gmail.com</small></div></div>' +
+        '<span class="tag" style="margin:0;border-color:var(--sand);color:var(--sand)">Email →</span>' +
+      '</a>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(ov);
+  ov.querySelector('#supClose').onclick = function() { ov.remove(); };
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
+}
+
+/* Автоматическая настройка сайдбара и контейнеров (Удаление Score Calculator, добавление Vocabulary, Mistakes, Support) */
+(function setupNavigationAndContainers() {
+  var scBtn = document.getElementById('nvSC');
+  if (scBtn) scBtn.remove();
+  var scView = document.getElementById('vSC');
+  if (scView) scView.remove();
+
+  var mainEl = document.querySelector('.main');
+  var dashEl = document.getElementById('vDash');
+  if (mainEl && dashEl) {
+    if (!document.getElementById('vVOC')) {
+      var vVoc = document.createElement('div');
+      vVoc.className = 'qbk';
+      vVoc.id = 'vVOC';
+      vVoc.hidden = true;
+      vVoc.style.maxWidth = '1080px';
+      mainEl.insertBefore(vVoc, dashEl);
+    }
+    if (!document.getElementById('vMK')) {
+      var vMk = document.createElement('div');
+      vMk.className = 'qbk';
+      vMk.id = 'vMK';
+      vMk.hidden = true;
+      vMk.style.maxWidth = '1080px';
+      mainEl.insertBefore(vMk, dashEl);
+    }
+  }
+
+  var ptBtn = document.getElementById('nvPT');
+  if (ptBtn && ptBtn.parentNode) {
+    if (!document.getElementById('nvVOC')) {
+      var vocBtn = document.createElement('button');
+      vocBtn.className = 'nav';
+      vocBtn.id = 'nvVOC';
+      vocBtn.innerHTML = '<i data-lucide="book-marked" style="width:20px;height:20px;vertical-align:-4px"></i> Vocabulary <span class="tag" id="navVocabCnt" style="display:none">0</span>';
+      ptBtn.insertAdjacentElement('afterend', vocBtn);
+      vocBtn.onclick = function() { show('voc'); };
+
+      var mkBtn = document.createElement('button');
+      mkBtn.className = 'nav';
+      mkBtn.id = 'nvMK';
+      mkBtn.innerHTML = '<i data-lucide="clipboard-x" style="width:20px;height:20px;vertical-align:-4px"></i> Mistakes <span class="tag n" id="navMistakesCnt" style="display:none">0</span>';
+      vocBtn.insertAdjacentElement('afterend', mkBtn);
+      mkBtn.onclick = function() { show('mk'); };
+
+      var supBtn = document.createElement('button');
+      supBtn.className = 'nav';
+      supBtn.id = 'nvSUP';
+      supBtn.innerHTML = '<i data-lucide="headset" style="width:20px;height:20px;vertical-align:-4px"></i> Support';
+      mkBtn.insertAdjacentElement('afterend', supBtn);
+      supBtn.onclick = openSupportModal;
+    }
+  }
+
+  var footerEl = document.querySelector('.legal-footer');
+  if (footerEl) {
+    footerEl.innerHTML = 'SAT is a registered trademark of College Board, which is not affiliated with SATPath. &nbsp;·&nbsp; <button type="button" onclick="openSupportModal()" style="color:var(--acc);font-weight:700">Support: @slayerofprep · @gOlvzZ · satpath1600@gmail.com</button>';
+  }
+})();
+
 function show(w){
-  var V={d:document.getElementById('vDash'),m:mp,b:qk,r:rw,sc:document.getElementById('vSC'),lb:document.getElementById('vLB'),pt:document.getElementById('vPT'),bz:document.getElementById('vBZ')};
-  var N={d:'nvD',m:'nvMP',b:'nvQB',r:'nvRW',sc:'nvSC',lb:'nvLB',pt:'nvPT',bz:'nvBZ'};
-  var titles={d:'Base Camp · Archipelago',m:'Math Path · Odyssey',b:'Atlas · Training Grounds',r:'R&W Path · Odyssey',sc:'Score Calculator',lb:'Explorer Leaderboard',pt:'Mock Exams · Expeditions',bz:'Blitz 10 · High-Speed Arena'};
+  var V={
+    d:document.getElementById('vDash'),
+    m:mp,
+    b:qk,
+    r:rw,
+    lb:document.getElementById('vLB'),
+    pt:document.getElementById('vPT'),
+    bz:document.getElementById('vBZ'),
+    voc:document.getElementById('vVOC'),
+    mk:document.getElementById('vMK')
+  };
+  var N={d:'nvD',m:'nvMP',b:'nvQB',r:'nvRW',lb:'nvLB',pt:'nvPT',bz:'nvBZ',voc:'nvVOC',mk:'nvMK'};
+  var titles={
+    d:'Base Camp · Archipelago',
+    m:'Math Path · Odyssey',
+    b:'Atlas · Training Grounds',
+    r:'R&W Path · Odyssey',
+    lb:'Explorer Leaderboard',
+    pt:'Mock Exams · Expeditions',
+    bz:'Blitz 10 · High-Speed Arena',
+    voc:'Vocabulary · Personal Lexicon',
+    mk:'Mistakes Review · Error Correction'
+  };
   for(var k in V){
     if(V[k]) V[k].hidden=(k!==w);
     var nb=document.getElementById(N[k]);
@@ -1787,13 +2270,15 @@ function show(w){
   if(locEl && titles[w]) locEl.textContent=titles[w];
   document.getElementById('side').classList.remove('o');
   paintHud();
+  updateNavBadges();
   if(w==='m'){if(!built)build();else paint();var c=mp.querySelector('.cur');if(c)setTimeout(function(){c.scrollIntoView({block:'center'})},50)}
   else if(w==='r'){if(!rbuilt)buildRW();else paintRW();var c=rw.querySelector('.cur');if(c)setTimeout(function(){c.scrollIntoView({block:'center'})},50)}
   else if(w==='b'){buildBank();scrollTo(0,0)}
   else if(w==='lb'){lbOff=0;buildLB();scrollTo(0,0)}
-  else if(w==='sc'){updateSatCalculator();scrollTo(0,0)}
   else if(w==='pt'){buildPT();scrollTo(0,0)}
   else if(w==='bz'){buildBlitz();scrollTo(0,0)}
+  else if(w==='voc'){buildVocabTab();scrollTo(0,0)}
+  else if(w==='mk'){buildMistakesTab();scrollTo(0,0)}
   else {scrollTo(0,0);refreshDash()}
 }
 
@@ -1801,7 +2286,6 @@ document.getElementById('nvD').onclick=function(){show('d')};
 document.getElementById('nvMP').onclick=function(){show('m')};
 document.getElementById('nvQB').onclick=function(){show('b')};
 document.getElementById('nvRW').onclick=function(){show('r')};
-document.getElementById('nvSC').onclick=function(){show('sc')};
 document.getElementById('nvPT').onclick=function(){show('pt')};
 var nvBzEl = document.getElementById('nvBZ'); if(nvBzEl) nvBzEl.onclick=function(){show('bz')};
 var sbUserEl = document.getElementById('sidebarUserBox'); if(sbUserEl) sbUserEl.onclick=openProfileModal;
@@ -1821,8 +2305,8 @@ var FB_CONFIG = {
   messagingSenderId: "766311395755",
   appId: "1:766311395755:web:b0c6314a631ee92da462ee"
 };
-/* ===== LEADERBOARD (Firebase) ===== */
 
+/* ===== LEADERBOARD (Firebase) ===== */
 var FB=null,FBU=null,lbOff=0,lbCache={},lbT;
 function lbEsc(s){return String(s).replace(/[&<>"']/g,function(c){return'&#'+c.charCodeAt(0)+';'})}
 function monthId(o){var d=new Date();d=new Date(d.getFullYear(),d.getMonth()+(o||0),1);return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)}
@@ -1856,7 +2340,7 @@ function lbAdd(good,bonus){var m=monthId(),p=lbGet(m);
  if(good!==null&&good!==undefined){p.q++;if(good){p.c++;p.pts+=10}}
  if(bonus)p.pts+=bonus;lbSet(m,p);clearTimeout(lbT);lbT=setTimeout(lbFlush,60000)}
 function shortName(u){var p=(u.displayName||'Student').split(' ');return p[0]+(p[1]?' '+p[1][0]+'.':'')}
-/* duplicate lbFlush removed */
+
 async function fbInit(){if(!FB_CONFIG||FB)return;
  var B='https://www.gstatic.com/firebasejs/10.12.2/';
  var a=await import(B+'firebase-app.js'),au=await import(B+'firebase-auth.js'),f=await import(B+'firebase-firestore.js');
@@ -1901,6 +2385,7 @@ document.getElementById('nvLB').onclick=function(){show('lb')};
 var _soAll=document.querySelectorAll('.so');var _so=_soAll[_soAll.length-1];if(_so){_so.style.cursor='pointer';_so.onclick=lbSign;}
 document.addEventListener('visibilitychange',function(){if(document.hidden)lbFlush()});
 if(FB_CONFIG)fbInit();
+
 function renderFiveWaypoints(curIdx) {
   var stepInTopic = curIdx % 5;
   var icons = [IC_BOOK_SM_HTML, '1', '2', '3', IC_LORD_SM_HTML];
@@ -1914,6 +2399,7 @@ function renderFiveWaypoints(curIdx) {
 
 function refreshDash(){
   paintHud();
+  updateNavBadges();
   var md=getDone(), rd=getRDone(), st=bankStats();
   var mCur=0; for(var i=0;i<100;i++)if(md.indexOf(i)<0){mCur=i;break}
   document.getElementById('dMathPct').textContent=md.length+'/100 islands';
@@ -1956,6 +2442,7 @@ function refreshDash(){
     b.onclick=function(){show('b');bankOpen(+b.dataset.dti)};
   });
 }
+
 function initDailyChallenges() {
   var todayStr = new Date().toISOString().slice(0, 10);
   document.getElementById('dMathDate').textContent = todayStr;
@@ -2039,6 +2526,7 @@ function renderDailyWidget(type, data, storageKey) {
         b.classList.add('bad');
         msgBox.style.color = '#e74c3c';
         msgBox.innerHTML = '✗ Answer: ' + (type === 'Rw' ? item.ans : rHTML(item.ans));
+        recordMistake({ q: item.q, ans: item.ans, opts: item.opts, isGrid: false, rw: type === 'Rw', top: item.top }, o, 'Daily Challenge');
       }
       data.idx++;
       if (data.idx >= data.list.length) {
@@ -2062,6 +2550,7 @@ var btnMath = document.getElementById('dGoMath');
 if(btnMath) btnMath.onclick = function(){ show('m'); };
 var btnRw = document.getElementById('dGoRw');
 if(btnRw) btnRw.onclick = function(){ show('r'); };
+
 /* ===== AUTO-OPEN AUTH MODAL IN SATPATH ORGANIC STYLE ===== */
 (function initSatPathAuthUI() {
   var st = document.createElement('style');
@@ -2072,21 +2561,59 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     .sp-auth-form { max-width:400px; width:100%; margin:0 auto; text-align:left; }
     .sp-auth-title { font-size:26px; font-weight:800; letter-spacing:-.03em; color:var(--tx); margin-bottom:4px; }
     .sp-auth-sub { font-size:12.5px; color:var(--mut); line-height:1.45; margin-bottom:18px; }
-    .sp-gbtn { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 16px; border-radius:16px; border:1.5px solid var(--line); background:var(--panel2); color:var(--tx); font-weight:700; font-size:13.5px; transition:.2s; box-shadow:0 2px 0 var(--line); cursor:pointer; }
+    .sp-gbtn { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 16px; border-radius:16px; border:1.5px solid var(--line); background:var(--panel2); color:var(--tx); font-weight:700; font-size:13.5px; transition:.2s; box-shadow:0 2px 0 var(--line); cursor:
+    pointer; }
     .sp-gbtn:hover { border-color:var(--acc); transform:translateY(-1px); }
     .sp-or { display:flex; align-items:center; gap:12px; color:var(--mut); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin:14px 0; }
     .sp-or::before, .sp-or::after { content:""; flex:1; height:1px; background:var(--line); }
     .sp-inp-wrap { position:relative; margin-bottom:10px; }
     .sp-inp { width:100%; padding:12px 16px 12px 42px; border-radius:14px; border:1.5px solid var(--line); background:var(--panel2); color:var(--tx); font-size:13.5px; outline:none; transition:.2s; font-family:inherit; }
     .sp-inp:focus { border-color:var(--acc); background:var(--panel); }
-    .sp-inp-ico { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:14px; opacity:.7; pointer-events:none; }
+    .sp-inp-ico { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--mut); opacity:.8; pointer-events:none; display:flex; align-items:center; }
     .sp-submit { width:100%; padding:12px 18px; border-radius:16px; background:linear-gradient(180deg, var(--sand-bright) 0%, var(--sand) 100%); color:var(--sand-tx); font-weight:800; font-size:14px; text-align:center; box-shadow:0 4px 0 var(--sand-deep); transition:.18s; margin-top:4px; cursor:pointer; }
     .sp-submit:hover { transform:translateY(-2px); box-shadow:0 6px 0 var(--sand-deep); filter:brightness(1.04); }
     .sp-auth-err { color:#e74c3c; font-size:12px; font-weight:600; margin:6px 0; min-height:16px; }
-    
+
     /* Правая карточка в стиле островов SATPath */
     .sp-auth-art { border-radius:24px; background:linear-gradient(155deg, var(--acc2) 0%, var(--acc) 100%); position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; padding:28px; color:#fff; box-shadow:0 10px 30px rgba(0,0,0,0.18); border:1.5px solid rgba(255,255,255,0.22); min-height:440px; }
     .sp-stat-pill { background:rgba(255,255,255,0.15); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.25); padding:6px 14px; border-radius:99px; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:6px; width:fit-content; }
+
+    /* Расширенные стили новых скинов для всего сайта */
+    :root[data-skin="lagoon"] {
+      --acc: #d97706;
+      --acc2: #92400e;
+      --sand: #f59e0b;
+      --sand-bright: #fde68a;
+      --sand-deep: #78350f;
+    }
+    :root[data-skin="trench"] {
+      --acc: #0284c7;
+      --acc2: #075985;
+      --sand: #38bdf8;
+      --sand-bright: #bae6fd;
+      --sand-deep: #0c4a6e;
+    }
+    :root[data-skin="volcanic"] {
+      --acc: #e11d48;
+      --acc2: #9f1239;
+      --sand: #fb7185;
+      --sand-bright: #fecdd3;
+      --sand-deep: #881337;
+    }
+    :root[data-skin="biolum"] {
+      --acc: #0d9488;
+      --acc2: #115e59;
+      --sand: #2dd4bf;
+      --sand-bright: #99f6e4;
+      --sand-deep: #134e4a;
+    }
+    :root[data-skin="sovereign"] {
+      --acc: #7c3aed;
+      --acc2: #5b21b6;
+      --sand: #a78bfa;
+      --sand-bright: #ddd6fe;
+      --sand-deep: #4c1d95;
+    }
   `;
   document.head.appendChild(st);
 
@@ -2117,9 +2644,9 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 
             '<div class="sp-or">OR</div>' +
 
-            (isSign ? '<div class="sp-inp-wrap"><span class="sp-inp-ico">👤</span><input id="spAuthName" class="sp-inp" type="text" placeholder="Explorer Name"></div>' : '') +
-            '<div class="sp-inp-wrap"><span class="sp-inp-ico">✉️</span><input id="spAuthEmail" class="sp-inp" type="email" placeholder="Email address" autocomplete="email"></div>' +
-            '<div class="sp-inp-wrap"><span class="sp-inp-ico">🔒</span><input id="spAuthPass" class="sp-inp" type="password" placeholder="Password (6+ chars)" autocomplete="current-password"></div>' +
+            (isSign ? '<div class="sp-inp-wrap"><span class="sp-inp-ico">' + spSvg('user', 15) + '</span><input id="spAuthName" class="sp-inp" type="text" placeholder="Explorer Name"></div>' : '') +
+            '<div class="sp-inp-wrap"><span class="sp-inp-ico">' + spSvg('mail', 15) + '</span><input id="spAuthEmail" class="sp-inp" type="email" placeholder="Email address" autocomplete="email"></div>' +
+            '<div class="sp-inp-wrap"><span class="sp-inp-ico">' + spSvg('lock', 15) + '</span><input id="spAuthPass" class="sp-inp" type="password" placeholder="Password (6+ chars)" autocomplete="current-password"></div>' +
 
             (!isSign ? '<div style="text-align:right;margin-bottom:2px"><button type="button" id="spForgotBtn" style="font-size:11.5px;color:var(--mut);font-weight:700;cursor:pointer">Forgot password?</button></div>' : '') +
 
@@ -2138,8 +2665,8 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 
           '<div class="sp-auth-art">' +
             '<div style="display:flex;justify-content:space-between;align-items:center">' +
-              '<span class="sp-stat-pill">ARCHIPELAGO OUTPOST</span>' +
-              '<span style="font-size:22px"></span>' +
+              '<span class="sp-stat-pill">' + spSvg('compass', 14) + ' ARCHIPELAGO OUTPOST</span>' +
+              '<span style="opacity:.85">' + spSvg('award', 20) + '</span>' +
             '</div>' +
             '<div style="margin:20px 0">' +
               '<div style="font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,0.8);margin-bottom:6px">Know your SAT score</div>' +
@@ -2147,8 +2674,8 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
               '<p style="font-size:13px;opacity:0.9;line-height:1.5">Sorted by domain and difficulty to match the adaptive Digital SAT experience.</p>' +
             '</div>' +
             '<div style="background:rgba(0,0,0,0.18);padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,0.15);display:flex;justify-content:space-between;align-items:center">' +
-              '<div style="font-size:12px;font-weight:700">Adaptive Track &amp; Desmos included</div>' +
-              '<span style="font-size:18px"></span>' +
+              '<div style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px">' + spSvg('target', 15) + ' Adaptive Track &amp; Full Desmos included</div>' +
+              '<span style="opacity:.9">' + spSvg('zap', 16) + '</span>' +
             '</div>' +
           '</div>' +
         '</div>';
@@ -2173,7 +2700,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
           ov.remove();
           toast('✓ Signed in with Google!');
         } catch (e) {
-          setErr(e.message || 'Google sign-in failed');
+          setErr('Google sign-in was cancelled or failed.');
         }
       };
 
@@ -2182,12 +2709,11 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         fgBtn.onclick = async function() {
           var em = ov.querySelector('#spAuthEmail').value.trim();
           if (!em) return setErr('Please enter your email address above first.');
-          
+
           setErr('');
           toast('Sending reset link...');
 
           try {
-            // Гарантированно дожидаемся инициализации Firebase и модуля auth
             await fbInit();
             if (!FB || !FB.auth) {
               throw new Error('Authentication service is not initialized.');
@@ -2198,7 +2724,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
             setErr('');
             toast('✓ Password reset link sent to ' + em);
           } catch (e) {
-            var msg = e.message || 'Could not send reset email.';
+            var msg = 'Could not send reset email. Check the address and try again.';
             if (e.code === 'auth/user-not-found') {
               msg = 'No account found with this email.';
             } else if (e.code === 'auth/invalid-email') {
@@ -2231,16 +2757,19 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
           }
           ov.remove();
         } catch (e) {
-          // Красивая и понятная заменяемая ошибка вместо технической auth/invalid-credential
           var friendlyMsg = 'Incorrect email or password. Please try again.';
           if (e.code === 'auth/user-not-found') {
             friendlyMsg = 'No account found with this email. Please sign up.';
           } else if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-            friendlyMsg = 'Incorrect password. Please check and try again.';
+            friendlyMsg = 'Incorrect email or password. Please check and try again.';
           } else if (e.code === 'auth/invalid-email') {
             friendlyMsg = 'Please enter a valid email address format.';
+          } else if (e.code === 'auth/email-already-in-use') {
+            friendlyMsg = 'This email is already registered. Try signing in instead.';
+          } else if (e.code === 'auth/weak-password') {
+            friendlyMsg = 'Password should be at least 6 characters long.';
           } else if (e.code === 'auth/too-many-requests') {
-            friendlyMsg = 'Access temporarily blocked due to too many failed attempts. Try later.';
+            friendlyMsg = 'Too many failed attempts. Please try again later or reset your password.';
           }
           setErr(friendlyMsg);
         }
@@ -2274,28 +2803,19 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     };
   }
 })();
+
 /* ============================================================================
- * SATPATH BLUEBOOK MOCK EXAM UPGRADE (v3.0):
+ * SATPATH BLUEBOOK MOCK EXAM UPGRADE (v4.0):
  * 1. 8 STATIC MOCK EXAMS (100% IDENTICAL FOR ALL USERS ON ANY DEVICE)
- * 2. FULLSCREEN COUNTDOWN GATE BEFORE TEST START
- * 3. SPLIT-SCREEN "STUDENT-PRODUCED RESPONSE DIRECTIONS" FOR GRID-IN MATH
+ * 2. ORGANIC SATPATH FULLSCREEN GATE & PERSISTENT FULLSCREEN ACROSS MODULES
+ * 3. WIDER MOCK EXAM CONTAINER & WORKING VOCABULARY HIGHLIGHTER + "+ ADD WORD"
+ * 4. 10-MINUTE BREAK TIMER BETWEEN R&W AND MATH
+ * 5. SAVE & RESUME PROGRESS IF USER EXITS MOCK EXAM
+ * 6. AUTOMATIC MISTAKES RECORDING INTO MISTAKES TAB (MAX 500)
  * ============================================================================ */
-
 (function upgradeSatPathMocksToBluebook() {
-  // 1. Расширяем каталог до 8 моков (I - VIII)
   window.PT_N = 8;
-  window.MOCK_EXPEDITIONS = [
-    { t: 1, roman: 'I',    code: 'Mock 01 · Coral Reef',       sub: 'Shallow Atoll Expedition · Static Form A',   reward: 120, accent: '#22a381' },
-    { t: 2, roman: 'II',   code: 'Mock 02 · Emerald Atoll',    sub: 'Lagoon Current Expedition · Static Form B',  reward: 120, accent: '#1f9d8a' },
-    { t: 3, roman: 'III',  code: 'Mock 03 · Amber Lagoon',     sub: 'Sunlit Shoals Expedition · Static Form C',   reward: 120, accent: '#e59a16' },
-    { t: 4, roman: 'IV',   code: 'Mock 04 · Basalt Ridge',     sub: 'Volcanic Cliffs Expedition · Static Form D', reward: 150, accent: '#2b7f9c' },
-    { t: 5, roman: 'V',    code: 'Mock 05 · Sunken Caldera',   sub: 'Deep Trench Expedition · Static Form E',     reward: 150, accent: '#2fa59f' },
-    { t: 6, roman: 'VI',   code: 'Mock 06 · Obsidian Peak',    sub: 'Summit Spire Expedition · Static Form F',    reward: 180, accent: '#3f8f7a' },
-    { t: 7, roman: 'VII',  code: 'Mock 07 · Celestial Spire',  sub: 'November Predictions · Static Form G',       reward: 200, accent: '#6366f1' },
-    { t: 8, roman: 'VIII', code: 'Mock 08 · Astral Sanctum',   sub: 'December Master Finale · Static Form H',     reward: 220, accent: '#ec4899' }
-  ];
 
-  // Изолированный генератор псевдослучайных чисел (Mulberry32) — гарантирует 100% совпадение у всех юзеров
   function makeDeterministicRng(seed) {
     var s = seed | 0;
     return function () {
@@ -2317,41 +2837,58 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     return a;
   }
 
-  // 2. Стили для Fullscreen-экрана и левой панели инструкций Bluebook (Student-Produced Response)
+  // Стили: органичное окно Fullscreen под дизайн сайта + широкие поля в Mock Exams
   var bbStyle = document.createElement('style');
   bbStyle.textContent = `
     .bb-fs-ov {
-      position: fixed; inset: 0; z-index: 260; background: #141517; color: #f1f5f9;
+      position: fixed; inset: 0; z-index: 260;
+      background: var(--bg);
+      background-image: radial-gradient(circle at 18% 15%, rgba(34, 163, 129, 0.14), transparent 40%), radial-gradient(circle at 82% 20%, rgba(245, 184, 46, 0.12), transparent 38%), var(--topo-svg);
+      background-attachment: fixed;
+      color: var(--tx);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: 24px; text-align: center; font-family: Inter, system-ui, -apple-system, sans-serif;
       animation: fade .2s ease;
     }
+    .bb-fs-card {
+      background: linear-gradient(155deg, var(--panel) 0%, var(--panel2) 100%);
+      border: 2px solid var(--sand-line);
+      border-radius: 30px;
+      max-width: 500px;
+      width: 100%;
+      padding: 36px 32px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.3), 0 4px 0 var(--line);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
     .bb-fs-timer {
-      width: 66px; height: 66px; border-radius: 16px; background: #232529;
-      border: 1px solid #34383e; display: grid; place-items: center;
-      font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 24px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4); font-variant-numeric: tabular-nums;
+      width: 72px; height: 72px; border-radius: 20px;
+      background: var(--sand-bg);
+      border: 2px solid var(--sand-line); display: grid; place-items: center;
+      font-size: 30px; font-weight: 800; color: var(--sand); margin-bottom: 18px;
+      box-shadow: 0 4px 0 var(--line); font-variant-numeric: tabular-nums;
     }
-    .bb-fs-title { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 10px; letter-spacing: -0.02em; }
-    .bb-fs-sub { font-size: 13.5px; color: #9ca3af; max-width: 440px; line-height: 1.55; margin-bottom: 28px; }
-    .bb-fs-btn-pri {
-      width: 100%; max-width: 340px; padding: 14px 20px; border-radius: 99px;
-      background: #2563eb; color: #fff; font-weight: 700; font-size: 14px;
-      text-align: center; margin-bottom: 12px; transition: background .15s, transform .15s;
-    }
-    .bb-fs-btn-pri:hover { background: #1d4ed8; transform: translateY(-1px); }
-    .bb-fs-btn-sec {
-      width: 100%; max-width: 340px; padding: 14px 20px; border-radius: 99px;
-      background: #2a2d32; color: #e2e8f0; font-weight: 600; font-size: 14px;
-      text-align: center; border: 1px solid #3f434a; transition: background .15s;
-    }
-    .bb-fs-btn-sec:hover { background: #34383e; }
+    .bb-fs-title { font-size: 26px; font-weight: 800; color: var(--tx); margin-bottom: 8px; letter-spacing: -0.02em; }
+    .bb-fs-sub { font-size: 13.5px; color: var(--mut); max-width: 420px; line-height: 1.55; margin-bottom: 24px; }
 
-    /* Двухколоночная сетка для вопросов с левой инструкцией (как в Bluebook) */
+    /* Увеличиваем ширину рабочей области в Mock Exams */
+    .pt-shell {
+      max-width: 1360px !important;
+      width: 96vw !important;
+      margin: 0 auto;
+      transition: max-width .22s ease;
+    }
+    .pt-shell.calc-open {
+      max-width: 1820px !important;
+      width: 98vw !important;
+    }
+
+    /* Двухколоночная сетка для вопросов с левой инструкцией (Student-Produced Response) */
     .bb-spr-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+      display: grid; grid-template-columns: 1fr 1.15fr; gap: 0;
       border: 1.5px solid var(--line); border-radius: 22px; overflow: hidden;
-      background: var(--panel); min-height: 540px; position: relative;
+      background: var(--panel); min-height: 520px; position: relative;
     }
     .bb-spr-left {
       padding: 26px 28px; border-right: 2px solid var(--line);
@@ -2392,7 +2929,6 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
   `;
   document.head.appendChild(bbStyle);
 
-  // HTML-шаблон левой колонки "Student-Produced Response Directions" один-в-один как на скрине
   var SPR_DIRECTIONS_HTML = `
     <h3>Student-Produced Response Directions</h3>
     <ul>
@@ -2432,16 +2968,14 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     </table>
   `;
 
-  // 3. 100% СТАТИЧНЫЙ КОНСТРУКТОР МОКОВ (Одинаковые вопросы и числа у всех пользователей)
+  // Статичный генератор вопросов для 8 моков
   window.ptBuild = function (t, sec, m, lvl, used) {
-    // Фиксированный мастер-сид для конкретного номера мока (1..8), секции ('r'/'m') и модуля (1..2)
     var masterSeed = (t * 10007) + (sec === 'm' ? 5003 : 2003) + (m * 997) + (lvl === 'hard' ? 313 : lvl === 'easy' ? 101 : 0);
     var out = [];
 
     if (sec === 'm') {
       var plan = ptMathPlan(t, m);
       plan.forEach(function (ti, k) {
-        // Изолированный сид конкретно для вопроса #k в Моке #t
         var qSeed = masterSeed + (k * 7919) + (ti * 353);
         var qRng = makeDeterministicRng(qSeed);
         var origRandom = Math.random;
@@ -2449,7 +2983,6 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         var q = null;
         try {
           var tier = lvl === 'mix' ? (k % 2 === 0 ? 'hard' : 'medium') : (lvl === 'hard' ? 'hard' : (k % 3 ? 'easy' : 'medium'));
-          // Если есть прямой массив генераторов MATH_GENS / GENERATORS — вызываем по фиксированному индексу без глобального анти-повтора
           var gensList = (typeof MATH_GENS !== 'undefined' && MATH_GENS[ti]) ? MATH_GENS[ti] : ((typeof GENERATORS !== 'undefined' && GENERATORS[ti]) ? GENERATORS[ti] : null);
           if (gensList && gensList.length) {
             var gIdx = ((t - 1) * 3 + (m - 1) * 2 + k) % gensList.length;
@@ -2459,7 +2992,6 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
           if (!q) {
             q = getMathQ(ti, tier, (t * 23) + (m * 11) + k);
           }
-          // Делаем каждый 4-й вопрос (например №2, №6, №10, №14, №18, №22) вопросом с вводом ответа (Student-Produced Response), как в реальном SAT!
           if (q && (k % 4 === 1) && /^[-+]?\d+(\.\d+|\/\d+)?$/.test(String(q.ans).trim())) {
             q.isGrid = true;
           }
@@ -2471,18 +3003,18 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         }
         if (q) {
           q.top = TOPS[ti];
+          q.rw = false;
           out.push(q);
         }
       });
     } else {
-      // Статичная сборка Reading & Writing: каждый мок t (1..8) берет строго свою фиксированную выборку из RQ
       PT_RW.forEach(function (x, blockIdx) {
         var ti = x[0], countNeeded = x[1];
         var list = RQ[ti] || [];
         var L = list.length;
         if (!L) return;
         var u = used[ti] || (used[ti] = {});
-        var step = 3; // Взаимно простой шаг для равномерного распределения по базе
+        var step = 3;
         var startOffset = ((t - 1) * countNeeded * 2 + (m - 1) * countNeeded + (lvl === 'hard' ? Math.floor(L / 3) : 0)) % L;
 
         var picked = [];
@@ -2493,7 +3025,6 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
             picked.push(candIdx);
           }
         }
-        // Если вдруг в категории мало вопросов и не хватило уникальных — добираем по порядку
         for (var fallback = 0; fallback < L && picked.length < countNeeded; fallback++) {
           if (picked.indexOf(fallback) < 0) picked.push(fallback);
         }
@@ -2515,17 +3046,20 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     return out;
   };
 
-  // 4. Экран "Enter fullscreen mode" с обратным отсчетом (как на твоем 1-м скриншоте)
+  // Красивое окно входа в Fullscreen в фирменном стиле SATPath
   function showFullscreenCountdownGate(onProceed, onCancel) {
     var gate = document.createElement('div');
     gate.className = 'bb-fs-ov';
     var secLeft = 10;
     gate.innerHTML =
-      '<div class="bb-fs-timer" id="bbFsCount">10</div>' +
-      '<div class="bb-fs-title">Enter fullscreen mode</div>' +
-      '<div class="bb-fs-sub">This test runs in fullscreen, just like the Digital SAT. If you do not choose before the timer ends, the test will not start.</div>' +
-      '<button type="button" class="bb-fs-btn-pri" id="bbBtnEnterFs">Enter fullscreen</button>' +
-      '<button type="button" class="bb-fs-btn-sec" id="bbBtnSkipFs">Continue without fullscreen</button>';
+      '<div class="bb-fs-card">' +
+        '<div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--sand);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">' + IC_COMPAS_HTML + ' BLUEBOOK EXPEDITION PROTOCOL</div>' +
+        '<div class="bb-fs-timer" id="bbFsCount">10</div>' +
+        '<div class="bb-fs-title">Enter Fullscreen Mode</div>' +
+        '<div class="bb-fs-sub">Mock Exams run in distraction-free fullscreen mode just like the official Digital SAT. Choose an option below before the countdown ends.</div>' +
+        '<button type="button" class="cta-amber" id="bbBtnEnterFs" style="width:100%;max-width:320px;margin-bottom:10px;padding:13px 20px;font-size:14px">Enter Fullscreen &amp; Start →</button>' +
+        '<button type="button" class="chip" id="bbBtnSkipFs" style="width:100%;max-width:320px;padding:11px 20px;font-size:13px;font-weight:700;text-align:center">Continue Without Fullscreen</button>' +
+      '</div>';
     document.body.appendChild(gate);
 
     var countEl = gate.querySelector('#bbFsCount');
@@ -2542,6 +3076,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 
     gate.querySelector('#bbBtnEnterFs').onclick = function () {
       clearInterval(iv);
+      sessionStorage.setItem('bb_fullscreen_active', '1');
       var docEl = document.documentElement;
       try {
         if (docEl.requestFullscreen) docEl.requestFullscreen();
@@ -2553,89 +3088,125 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 
     gate.querySelector('#bbBtnSkipFs').onclick = function () {
       clearInterval(iv);
+      sessionStorage.setItem('bb_fullscreen_active', '0');
       gate.remove();
       onProceed();
     };
   }
 
-  // Переопределяем ptStart, чтобы сначала появлялся Fullscreen-экран с таймером
-  var origPtStart = window.ptStart;
-  window.ptStart = function (t, secs) {
-    showFullscreenCountdownGate(
-      function () {
-        origPtStart(t, secs);
-      },
-      function () {
-        buildPT();
-      }
-    );
-  };
-
-  // 5. Обновляем ptModule, чтобы для задач с вводом ответа (isGrid) слева показывалась панель Student-Produced Response Directions
+  // Модуль тестирования с автосохранением, работающим хайлайтером, кнопкой "+ Add Word", полным Desmos и без текста "Filled = answered"
   window.ptModule = function (cfg, done) {
-    var qs = cfg.qs, ans = [], flag = [], cur = 0, left = cfg.min * 60, ended = false, calc = null, tmr, popEl = null,
-      ov = document.createElement('div');
-    ov.style.cssText = 'position:fixed;inset:0;z-index:90;background:var(--bg);overflow:auto;padding:16px';
-    ov.innerHTML = '<div id="ptShell" class="pt-shell"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);padding:12px 18px;border-radius:18px;border:1.5px solid var(--line)">'
-      + '<div><b style="font-size:15px">' + cfg.title + '</b><small style="display:block;color:var(--mut);font-size:11px">Standardized Static Mock · Identical Questions for All Students</small></div>'
-      + '<b id="ptT" style="font-size:18px;font-variant-numeric:tabular-nums;color:var(--sand);background:var(--sand-bg);padding:4px 12px;border-radius:99px;border:1px solid var(--sand-line)"></b>'
-      + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-      + '<button id="ptVocBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--sand);border-color:var(--sand-line)">📖 Vocab (<span id="ptVocCnt">' + getVocabList().length + '</span>)</button>'
-      + (cfg.calc ? '<button id="ptCB" style="background:var(--acc2);color:#fff;padding:6px 14px;border-radius:99px;font-weight:700;font-size:12px"><img class="ui-ic" src="math.png" alt=""> Calculator (50/50)</button>' : '')
+    var qs = cfg.qs;
+    var state = cfg.savedState || {};
+    var ans = Array.isArray(state.ans) ? state.ans : [];
+    var flag = Array.isArray(state.flag) ? state.flag : [];
+    var cur = typeof state.cur === 'number' ? state.cur : 0;
+    var left = typeof state.left === 'number' ? state.left : cfg.min * 60;
+    var ended = false, calc = null, tmr;
+
+    function persistProgress() {
+      if (cfg.onSaveProgress && !ended) {
+        cfg.onSaveProgress({ ans: ans, flag: flag, cur: cur, left: left });
+      }
+    }
+
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:90;background:var(--bg);overflow:auto;padding:16px 20px';
+    ov.innerHTML = '<div id="ptShell" class="pt-shell"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);padding:12px 20px;border-radius:20px;border:1.5px solid var(--line)">'
+      + '<div><b style="font-size:15.5px">' + cfg.title + '</b><small style="display:block;color:var(--mut);font-size:11.5px">Click any word in the passage to highlight &amp; save to your Vocabulary</small></div>'
+      + '<b id="ptT" style="font-size:18px;font-variant-numeric:tabular-nums;color:var(--sand);background:var(--sand-bg);padding:5px 14px;border-radius:99px;border:1px solid var(--sand-line)"></b>'
+      + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      + '<button id="ptAddWordBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--acc);border-color:var(--acc)">' + spSvg('plus', 13) + ' Add Word</button>'
+      + '<button id="ptVocBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--sand);border-color:var(--sand-line)">' + spSvg('book', 13) + ' Vocab (<span id="ptVocCnt">' + getVocabList().length + '</span>)</button>'
+      + (cfg.calc ? '<button id="ptCB" style="background:var(--acc2);color:#fff;padding:6px 14px;border-radius:99px;font-weight:700;font-size:12px">' + IC_MATH_HTML + ' Desmos Calculator</button>' : '')
       + '<button id="ptEnd" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700">Question Map</button>'
-      + '<button id="ptEx" class="chip" style="padding:6px 12px;text-transform:none">Exit</button></div></div>'
-      + '<div class="pt-split-body"><div class="qb" style="max-width:none;border-radius:24px;padding:22px"><div id="ptQ"></div><div id="ptG" hidden></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)"><button class="cta" id="ptP" style="border-radius:14px">← Back</button><button class="chip" id="ptMidMap" style="font-weight:800;font-size:13px;padding:8px 16px">Question 1 of ' + qs.length + ' ▾</button><button class="cta-amber" id="ptN" style="border-radius:14px">Next →</button></div></div>'
+      + '<button id="ptEx" class="chip" style="padding:6px 12px;text-transform:none">Save &amp; Exit</button></div></div>'
+      + '<div class="pt-split-body"><div class="qb" style="max-width:none;border-radius:24px;padding:26px 32px"><div id="ptQ"></div><div id="ptG" hidden></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:14px;border-top:1px solid var(--line)"><button class="cta" id="ptP" style="border-radius:14px">← Back</button><button class="chip" id="ptMidMap" style="font-weight:800;font-size:13px;padding:8px 16px">Question 1 of ' + qs.length + ' ▾</button><button class="cta-amber" id="ptN" style="border-radius:14px">Next →</button></div></div>'
       + '<div id="ptCP" style="display:none;border:2px solid var(--line);border-radius:24px;overflow:hidden;background:#fff"></div></div></div>';
     document.body.appendChild(ov);
     var $ = function (i) { return ov.querySelector('#' + i); }, Q = $('ptQ'), G = $('ptG');
 
-    function closePop() { if (popEl) { popEl.remove(); popEl = null; } }
-    function stop() {
-      closePop(); ended = true; clearInterval(tmr);
-      if (document.fullscreenElement && document.exitFullscreen) {
+    // Подключаем интерактивный хайлайтер слов внутри модуля Mock Exam
+    bindVocabClicksOnContainer(Q, function(newLen) {
+      var cntEl = $('ptVocCnt');
+      if (cntEl) cntEl.textContent = newLen;
+    });
+
+    $('ptAddWordBtn').onclick = function() {
+      var plainCtx = Q.textContent.replace(/\s+/g, ' ').trim().slice(0, 140);
+      openAddWordModal(plainCtx, function() {
+        var cntEl = $('ptVocCnt');
+        if (cntEl) cntEl.textContent = getVocabList().length;
+        draw();
+      });
+    };
+
+    function stop(keepFullscreen) {
+      closeActiveVocabPopover();
+      ended = true;
+      clearInterval(tmr);
+      if (!keepFullscreen && document.fullscreenElement && document.exitFullscreen) {
         try { document.exitFullscreen(); } catch (e) {}
       }
       ov.remove();
     }
+
     function fin() {
       var un = 0; qs.forEach(function (q, i) { if (ans[i] == null || ans[i] === '') un++; });
       spModalConfirm(un ? 'You have <b>' + un + ' unanswered question(s)</b>. Submit this module now?' : 'Submit this module and proceed to the next stage?', function () { submit(); });
     }
+
     function submit() {
-      if (ended) return; stop(); var ok = 0;
-      qs.forEach(function (q, i) { if (ptRight(q, ans[i])) ok++; });
+      if (ended) return;
+      // Не сбрасываем Fullscreen при переходе к следующему модулю!
+      stop(true);
+      var ok = 0;
+      qs.forEach(function (q, i) {
+        if (ptRight(q, ans[i])) {
+          ok++;
+          removeMistakeByQuestion(q.q);
+        } else {
+          recordMistake(q, ans[i], cfg.title);
+        }
+      });
       done({ ok: ok, n: qs.length, qs: qs, ans: ans });
     }
+
     tmr = setInterval(function () {
-      left--; $('ptT').textContent = ptFmt(left);
+      left--;
+      $('ptT').textContent = ptFmt(left);
+      if (left % 5 === 0) persistProgress();
       if (left <= 0) { toast('Time is up for this module!'); submit(); }
     }, 1000);
     $('ptT').textContent = ptFmt(left);
     $('ptVocBtn').onclick = function () { openVocabDrawer(); };
 
     function map() {
-      closePop();
-      var h = '<b>Question Map · ' + cfg.title + '</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0">';
+      closeActiveVocabPopover();
+      var h = '<b>Question Map · ' + cfg.title + '</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:16px 0">';
       qs.forEach(function (q, i) {
         var a = ans[i] != null && ans[i] !== '';
-        h += '<button data-i="' + i + '" style="width:46px;height:42px;border-radius:10px;text-align:center;font-weight:700;border:2px solid ' + (a ? 'var(--acc)' : 'var(--line)') + ';background:' + (a ? 'rgba(34,163,129,.25)' : 'transparent') + '">' + (i + 1) + (flag[i] ? '🚩' : '') + '</button>';
+        h += '<button data-i="' + i + '" style="width:46px;height:42px;border-radius:10px;text-align:center;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:3px;border:2px solid ' + (a ? 'var(--acc)' : 'var(--line)') + ';background:' + (a ? 'rgba(34,163,129,.25)' : 'transparent') + '">' + (i + 1) + (flag[i] ? spSvg('flag', 11) : '') + '</button>';
       });
-      G.innerHTML = h + '</div><small style="color:var(--mut)">Filled = answered · 🚩 = flagged</small><div style="margin-top:14px"><button class="cta-amber" id="ptS">Submit Module →</button></div>';
+      G.innerHTML = h + '</div><div style="margin-top:16px"><button class="cta-amber" id="ptS">Submit Module →</button></div>';
       Q.hidden = true; G.hidden = false;
     }
+
     G.onclick = function (e) {
       var b = e.target.closest('[data-i]');
-      if (b) { cur = +b.dataset.i; draw(); }
+      if (b) { cur = +b.dataset.i; persistProgress(); draw(); }
       if (e.target.id === 'ptS') fin();
     };
 
     function draw() {
-      closePop(); G.hidden = true; Q.hidden = false;
+      closeActiveVocabPopover();
+      G.hidden = true; Q.hidden = false;
       var q = qs[cur], fx = function (s) { return q.rw ? wrapWordsForVocab(s) : rHTML(s); };
       var midBtn = $('ptMidMap');
       if (midBtn) midBtn.textContent = 'Question ' + (cur + 1) + ' of ' + qs.length + ' ▾';
 
-      // Если вопрос с вводом ответа (Student-Produced Response) — рисуем двухколоночный экран Bluebook с таблицей инструкций слева!
+      var flagLabel = flag[cur] ? (spSvg('flag', 13) + ' Marked for Review') : (spSvg('flag', 13) + ' Mark for Review');
+
       if (q.isGrid) {
         var curVal = ans[cur] != null ? String(ans[cur]).replace(/"/g, '&quot;') : '';
         Q.innerHTML =
@@ -2644,7 +3215,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
             '<div class="bb-spr-right">' +
               '<div>' +
                 '<div class="bb-q-bar">' +
-                  '<div style="display:flex;align-items:center;gap:10px"><span class="bb-q-num">' + (cur + 1) + '</span><button id="ptF" class="chip" style="font-size:12px;text-transform:none;border:0">' + (flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review') + '</button></div>' +
+                  '<div style="display:flex;align-items:center;gap:10px"><span class="bb-q-num">' + (cur + 1) + '</span><button id="ptF" class="chip" style="font-size:12px;text-transform:none;border:0;color:' + (flag[cur] ? 'var(--sand)' : 'var(--mut)') + '">' + flagLabel + '</button></div>' +
                   '<small style="color:var(--acc);font-weight:700">' + (q.top || '') + '</small>' +
                 '</div>' +
                 '<div style="font-size:19px;line-height:1.6;margin:18px 0 22px">' + fx(q.q) + '</div>' +
@@ -2655,17 +3226,19 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
             '</div>' +
           '</div>';
       } else {
-        var h = '<div class="bb-q-bar"><div style="display:flex;align-items:center;gap:10px"><span class="bb-q-num">' + (cur + 1) + '</span><button id="ptF" class="chip" style="font-size:12px;text-transform:none;border:0">' + (flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review') + '</button></div><small style="color:var(--acc);font-weight:700">' + (q.top || '') + '</small></div>' +
-          '<div style="font-size:' + (q.rw ? 17 : 19) + 'px;line-height:1.6;margin:18px 0">' + fx(q.q) + '</div>';
+        var h = '<div class="bb-q-bar"><div style="display:flex;align-items:center;gap:10px"><span class="bb-q-num">' + (cur + 1) + '</span><button id="ptF" class="chip" style="font-size:12px;text-transform:none;border:0;color:' + (flag[cur] ? 'var(--sand)' : 'var(--mut)') + '">' + flagLabel + '</button></div><small style="color:var(--acc);font-weight:700">' + (q.top || '') + '</small></div>' +
+          '<div style="font-size:' + (q.rw ? 17.5 : 19) + 'px;line-height:1.65;margin:18px 0">' + fx(q.q) + '</div>';
         q.opts.forEach(function (o, k) {
-          h += '<button class="qo" data-k="' + k + '"' + (ans[cur] === o ? ' style="border-color:var(--acc);background:rgba(34,163,129,.2)"' : '') + '><b>' + 'ABCD'[k] + '</b>&nbsp; ' + (q.rw ? String(o) : rHTML(o)) + '</button>';
+          h += '<button class="qo" data-k="' + k + '"' + (ans[cur] === o ? ' style="border-color:var(--acc);background:rgba(34,163,129,.2)"' : '') + '><b>' + 'ABCD'[k] + '</b>&nbsp; ' + (q.rw ? wrapWordsForVocab(o) : rHTML(o)) + '</button>';
         });
         Q.innerHTML = h;
       }
 
       Q.querySelectorAll('.qo').forEach(function (b) {
-        b.onclick = function () {
+        b.onclick = function (ev) {
+          if (ev.target.closest('.rw-word')) return;
           ans[cur] = q.opts[+b.dataset.k];
+          persistProgress();
           Q.querySelectorAll('.qo').forEach(function (x) {
             x.style.cssText = x === b ? 'border-color:var(--acc);background:rgba(34,163,129,.2)' : '';
           });
@@ -2675,24 +3248,32 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
       if (inp) {
         inp.oninput = function () {
           ans[cur] = inp.value.trim();
+          persistProgress();
           var prev = $('bbAnsPrev');
           if (prev) prev.innerHTML = ans[cur] ? rHTML(ans[cur]) : '—';
         };
       }
       $('ptF').onclick = function () {
         flag[cur] = !flag[cur];
-        this.textContent = flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review';
+        persistProgress();
+        this.style.color = flag[cur] ? 'var(--sand)' : 'var(--mut)';
+        this.innerHTML = flag[cur] ? (spSvg('flag', 13) + ' Marked for Review') : (spSvg('flag', 13) + ' Mark for Review');
       };
       $('ptP').style.opacity = cur ? 1 : 0.35;
       $('ptN').textContent = cur < qs.length - 1 ? 'Next →' : 'Review →';
     }
 
-    $('ptP').onclick = function () { if (cur > 0) { cur--; draw(); } };
-    $('ptN').onclick = function () { if (cur < qs.length - 1) { cur++; draw(); } else map(); };
+    $('ptP').onclick = function () { if (cur > 0) { cur--; persistProgress(); draw(); } };
+    $('ptN').onclick = function () { if (cur < qs.length - 1) { cur++; persistProgress(); draw(); } else map(); };
     $('ptEnd').onclick = map;
     $('ptMidMap').onclick = map;
     $('ptEx').onclick = function () {
-      spModalConfirm('Exit this mock exam? Progress in the current module will be lost.', function () { stop(); done(null); });
+      persistProgress();
+      spModalConfirm('Save your current progress and exit to Mock Exams? You can resume right where you left off anytime.', function () {
+        stop(false);
+        toast('Progress saved! Click "Resume Expedition" anytime to continue.');
+        done(null);
+      });
     };
     var cb = $('ptCB'), shell = $('ptShell');
     if (cb) {
@@ -2700,50 +3281,118 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         var p = $('ptCP');
         if (!shell.classList.contains('calc-open')) {
           shell.classList.add('calc-open'); p.style.display = 'block'; cb.style.background = '#e74c3c'; cb.textContent = '✕ Close Calculator';
-          if (!calc && window.Desmos) calc = Desmos.GraphingCalculator(p, { keypad: true, expressions: true, settingsMenu: false, folders: false, images: false });
+          if (!calc && window.Desmos) calc = createFullDesmos(p);
           if (calc) setTimeout(function () { calc.resize(); }, 35);
         } else {
-          shell.classList.remove('calc-open'); p.style.display = 'none'; cb.style.background = 'var(--acc2)'; cb.innerHTML = IC_MATH_HTML + ' Calculator (50/50)';
+          shell.classList.remove('calc-open'); p.style.display = 'none'; cb.style.background = 'var(--acc2)'; cb.innerHTML = IC_MATH_HTML + ' Desmos Calculator';
         }
       };
     }
     draw();
   };
 
-  // Если вкладка Mock Exams уже открыта — перерисовываем каталог с 8 моками
+  // Полный цикл прохождения Mock Exam с поддержкой паузы/продолжения и 10-минутным перерывом
+  window.ptStart = function (t, secs, isResume) {
+    showFullscreenCountdownGate(
+      function () {
+        var saved = isResume ? getMockSession(t) : null;
+        var res = (saved && saved.res) ? saved.res : {};
+        var used = (saved && saved.used) ? saved.used : {};
+        var si = (saved && typeof saved.si === 'number') ? saved.si : 0;
+        var activeSecs = (saved && Array.isArray(saved.secs)) ? saved.secs : secs;
+
+        function runSection() {
+          if (si >= activeSecs.length) return ptResult(t, res);
+          var sec = activeSecs[si];
+          var isR = sec === 'r', name = isR ? 'Reading and Writing' : 'Math', nq = isR ? 27 : 22, mins = isR ? 32 : 35;
+          var curStep = (saved && saved.si === si && saved.modStep) ? saved.modStep : 1;
+
+          function startMod1() {
+            var qs1 = ptBuild(t, sec, 1, 'mix', used);
+            var savedModState = (saved && saved.si === si && saved.modStep === 1) ? saved.modState : null;
+
+            function launchM1() {
+              ptModule({
+                title: name + ' · Module 1',
+                qs: qs1,
+                min: mins,
+                calc: !isR,
+                savedState: savedModState,
+                onSaveProgress: function (mState) {
+                  saveMockSession(t, { secs: activeSecs, si: si, modStep: 1, res: res, used: used, modState: mState });
+                }
+              }, function (o1) {
+                if (!o1) return buildPT();
+                var hard = o1.ok >= (isR ? 18 : 15);
+                saveMockSession(t, { secs: activeSecs, si: si, modStep: 2, o1: o1, hard: hard, res: res, used: used, modState: null });
+                saved = getMockSession(t);
+                startMod2(o1, hard, false);
+              });
+            }
+
+            if (savedModState) {
+              launchM1();
+            } else {
+              ptInfo('<div style="font-size:11px;font-weight:800;color:var(--sand);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">DIGITAL SAT ADAPTIVE MODULE</div><h2 style="font-size:24px;font-weight:800">' + name + ' · Module 1</h2><p style="margin:10px 0;font-weight:600;color:var(--acc)">' + nq + ' Questions · ' + mins + ' Minutes</p><p class="sub">' + (isR ? 'Click any unfamiliar word in a passage to highlight it, see its definition, and save it to your Vocabulary list!' : 'A full Desmos graphing calculator is built in. Includes multi-step geometry, data tables, and coordinate graphs.') + '</p>', 'Start Module 1 →', launchM1);
+            }
+          }
+
+          function startMod2(o1Data, isHardTrack, resumingM2) {
+            var qs2 = ptBuild(t, sec, 2, isHardTrack ? 'hard' : 'easy', used);
+            var savedMod2State = resumingM2 && saved ? saved.modState : null;
+
+            function launchM2() {
+              ptModule({
+                title: name + ' · Module 2',
+                qs: qs2,
+                min: mins,
+                calc: !isR,
+                savedState: savedMod2State,
+                onSaveProgress: function (mState) {
+                  saveMockSession(t, { secs: activeSecs, si: si, modStep: 2, o1: o1Data, hard: isHardTrack, res: res, used: used, modState: mState });
+                }
+              }, function (o2) {
+                if (!o2) return buildPT();
+                res[sec] = { o1: o1Data, o2: o2, hard: isHardTrack, score: ptScore(sec, o1Data.ok, o2.ok, isHardTrack) };
+                si++;
+                saveMockSession(t, { secs: activeSecs, si: si, modStep: 1, res: res, used: used, modState: null });
+                saved = getMockSession(t);
+                if (si < activeSecs.length) {
+                  showTenMinuteBreak(runSection);
+                } else {
+                  runSection();
+                }
+              });
+            }
+
+            if (savedMod2State) {
+              launchM2();
+            } else {
+              ptInfo('<div style="font-size:11px;font-weight:800;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">MODULE 1 COMPLETE (' + o1Data.ok + '/' + o1Data.n + ' CORRECT)</div><h2 style="font-size:24px;font-weight:800">' + name + ' · Module 2 (' + (isHardTrack ? 'Adaptive Harder Track' : 'Standard Track') + ')</h2><p style="margin:10px 0" class="sub">Your Module 2 difficulty has been calibrated based on your Module 1 accuracy.</p>', 'Start Module 2 →', launchM2);
+            }
+          }
+
+          if (curStep === 2 && saved && saved.o1) {
+            ptBuild(t, sec, 1, 'mix', used);
+            startMod2(saved.o1, saved.hard, true);
+          } else {
+            startMod1();
+          }
+        }
+
+        runSection();
+      },
+      function () {
+        buildPT();
+      }
+    );
+  };
+
   if (typeof buildPT === 'function') buildPT();
 })();
-/* ============================================================================
- * SATPATH FULLSCREEN PERSISTENCE FIX FOR MODULE TRANSITIONS
- * ============================================================================ */
-(function fixFullscreenTransitions() {
-  // Перехватываем функцию завершения модуля и переключения на следующий
-  var originalPtModule = window.ptModule;
-  if (typeof originalPtModule === 'function') {
-    window.ptModule = function(cfg, done) {
-      originalPtModule(cfg, function(result) {
-        // Проверяем, был ли включен Fullscreen, и если пользователь его разрешил, удерживаем/возвращаем его
-        var docEl = document.documentElement;
-        if (!document.fullscreenElement && docEl.requestFullscreen && sessionStorage.getItem('bb_fullscreen_active') === '1') {
-          docEl.requestFullscreen().catch(function() {});
-        }
-        if (typeof done === 'function') {
-          done(result);
-        }
-      });
-    };
-  }
 
-  // Запоминаем выбор пользователя на стартовом Fullscreen-экране
-  document.addEventListener('click', function(e) {
-    if (e.target && e.target.id === 'bbBtnEnterFs') {
-      sessionStorage.setItem('bb_fullscreen_active', '1');
-    } else if (e.target && e.target.id === 'bbBtnSkipFs') {
-      sessionStorage.setItem('bb_fullscreen_active', '0');
-    }
-  });
-})();
 applyProfileUI();
 refreshDash();
 initDailyChallenges();
-lucide.createIcons();
+updateNavBadges();
+if (window.lucide) lucide.createIcons();
