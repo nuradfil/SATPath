@@ -9,6 +9,61 @@ function spSet(k, v) {
   try { window.localStorage.setItem(k, String(v)); } catch(e) {}
 }
 
+
+/* ===== MOCK EXAM CORE HELPERS (fallbacks) =====
+ * ptLoad / ptSave / getMockSession / saveMockSession / ptRight / ptFmt / ptScore / ptMathPlan
+ * вызываются в buildPT, ptResult, ptStart, но не были определены ни в app.js, ни в index.html.
+ * Блоки ниже подключаются только если такие функции ещё не определены в других файлах. */
+(function mockCoreFallbacks() {
+  function jget(k, def) { try { var v = JSON.parse(spGet(k)); return (v && typeof v === 'object') ? v : def; } catch (e) { return def; } }
+  function jset(k, v) { try { spSet(k, JSON.stringify(v)); } catch (e) {} }
+  var PT_KEY = 'satpath_pt_results_v1', SESS_KEY = 'satpath_mock_sessions_v1';
+
+  if (typeof window.ptLoad !== 'function') window.ptLoad = function () { return jget(PT_KEY, {}); };
+  if (typeof window.ptSave !== 'function') window.ptSave = function (S) { jset(PT_KEY, S || {}); };
+  if (typeof window.getMockSession !== 'function') window.getMockSession = function (t) {
+    var all = jget(SESS_KEY, {});
+    return all[t] || null;
+  };
+  if (typeof window.saveMockSession !== 'function') window.saveMockSession = function (t, sess) {
+    var all = jget(SESS_KEY, {});
+    if (sess) all[t] = sess; else delete all[t];
+    jset(SESS_KEY, all);
+  };
+  if (typeof window.ptFmt !== 'function') window.ptFmt = function (sec) {
+    sec = Math.max(0, Math.floor(+sec || 0));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  };
+  if (typeof window.ptRight !== 'function') window.ptRight = function (q, a) {
+    if (!q || a == null || a === '') return false;
+    if (q.isGrid) {
+      if (typeof same === 'function') return !!same(a, q.ans);
+      return String(a).trim() === String(q.ans).trim();
+    }
+    return String(a) === String(q.ans);
+  };
+  /* Приблизительная шкала 200–800: R&W 2×27 вопросов, Math 2×22. Лёгкий второй модуль ограничивает потолок. */
+  if (typeof window.ptScore !== 'function') window.ptScore = function (sec, ok1, ok2, hard) {
+    var max = sec === 'r' ? 54 : 44;
+    var pct = Math.max(0, Math.min(1, ((+ok1 || 0) + (+ok2 || 0)) / max));
+    var raw = hard ? 300 + 500 * pct : 200 + 440 * pct;
+    return Math.max(200, Math.min(800, Math.round(raw / 10) * 10));
+  };
+  /* 22 тем для Math-модуля: детерминированный план (одинаковый для всех пользователей) */
+  if (typeof window.ptMathPlan !== 'function') window.ptMathPlan = function (t, m) {
+    var n = (typeof TOPS !== 'undefined' && TOPS && TOPS.length) ? TOPS.length : 20;
+    var seed = ((t || 1) * 131 + (m || 1) * 17) | 0;
+    function rnd() { seed = (seed * 1664525 + 1013904223) | 0; return ((seed >>> 0) / 4294967296); }
+    var order = [], i;
+    for (i = 0; i < n; i++) order.push(i);
+    for (i = n - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)); var tmp = order[i]; order[i] = order[j]; order[j] = tmp; }
+    var plan = [];
+    for (i = 0; i < 22; i++) plan.push(order[i % n]);
+    return plan;
+  };
+})();
+
 /* Минималистичные SVG-иконки вместо эмодзи */
 function spSvg(name, size) {
   var sz = size || 16;
@@ -3601,11 +3656,13 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     );
   };
 
-  if (typeof buildPT === 'function') buildPT();
+  try { if (typeof buildPT === 'function') buildPT(); } catch (e) { console.error('buildPT failed:', e); }
 })();
 
 applyProfileUI();
 refreshDash();
 initDailyChallenges();
 updateNavBadges();
-if (window.lucide) lucide.createIcons();
+function spRenderIcons() { try { if (window.lucide) lucide.createIcons(); } catch (e) {} }
+spRenderIcons();
+window.addEventListener('load', spRenderIcons);
