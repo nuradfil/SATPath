@@ -623,19 +623,37 @@ function showTenMinuteBreak(onContinue) {
 /* ===== SATPATH ECONOMY: PATHCOIN, ENERGY & SUPPLY SHOP ===== */
 var ECON_KEY = 'satpath_econ_v2';
 var ENERGY_REGEN_MS = 3 * 3600 * 1000;
-var IC_MAP_HTML    = '<img class="ui-ic" src="map.png" alt="">';
-var IC_COMPAS_HTML = '<img class="ui-ic" src="compas.png" alt="">';
-var IC_COIN_HTML   = '<img class="ui-ic" src="logo.png" alt="">';
-var IC_CAMP_HTML   = '<img class="ui-ic" src="camp.png" alt="">';
-var IC_ENERGY_HTML = '<img class="ui-ic" src="energy.png" alt="">';
-var IC_ART_HTML    = '<img class="ui-ic" src="art.png" alt="">';
-var IC_ART_LG_HTML = '<img class="ui-ic-lg" src="art.png" alt="">';
-var IC_LORD_HTML   = '<img class="ui-ic" src="lord.png" alt="">';
-var IC_LORD_SM_HTML= '<img class="ui-ic-sm" src="lord.png" alt="">';
-var IC_AIM_HTML    = '<img class="ui-ic" src="aim.png" alt="">';
-var IC_BOOK_HTML   = '<img class="ui-ic" src="book.png" alt="">';
-var IC_BOOK_SM_HTML= '<img class="ui-ic-sm" src="book.png" alt="">';
-var IC_MATH_HTML   = '<img class="ui-ic" src="math.png" alt="">';
+/* ===== MINIMAL SVG ICON SET (inline, uses currentColor — works in light & dark theme) ===== */
+var SP_ICO = {
+  logo: '<path d="M16.6 7.2c-.5-1.7-2.4-2.7-4.6-2.7-2.6 0-4.5 1.2-4.5 3 0 4.6 9 2.4 9 7 0 1.9-1.9 3-4.5 3-2.3 0-4.2-1-4.7-2.8"/>',
+  coin: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/>',
+  camp: '<path d="M3 20 12 4l9 16H3z"/><path d="M9.8 20 12 15.5l2.2 4.5"/>',
+  map: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="m15.6 8.4-1.9 5.3-5.3 1.9 1.9-5.3z"/>',
+  bolt: '<path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5v1.5A3 3 0 0 0 8 10.5M16 6h3v1.5a3 3 0 0 1-3 3M12 13v4M9 20h6M10 17h4"/>',
+  crown: '<path d="M4.5 8 8.3 11.5 12 5l3.7 6.5L19.5 8 18 18H6z"/><path d="M6 21h12"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  book: '<path d="M12 6.5C10.5 5 8 4.5 4 4.5v13c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-13c-4 0-6.5.5-8 2z"/><path d="M12 6.5v13"/>',
+  math: '<path d="M5 7h6M8 4v6M14 7h6M5.5 14.5l5 5M10.5 14.5l-5 5M14 15.5h6M14 18.5h6"/>',
+  pen: '<path d="m4 20 1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z"/><path d="m14.5 6.5 3 3"/>'
+};
+function spIco(name, cls, style, sw) {
+  return '<svg class="' + (cls == null ? 'ui-ic' : cls) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (sw || '1.9') + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' + (style ? ' style="' + style + '"' : '') + '>' + (SP_ICO[name] || '') + '</svg>';
+}
+var IC_MAP_HTML    = spIco('map');
+var IC_COMPAS_HTML = spIco('compass');
+var IC_COIN_HTML   = spIco('coin');
+var IC_CAMP_HTML   = spIco('camp');
+var IC_ENERGY_HTML = spIco('bolt');
+var IC_ART_HTML    = spIco('trophy');
+var IC_ART_LG_HTML = spIco('trophy','ui-ic-lg');
+var IC_LORD_HTML   = spIco('crown');
+var IC_LORD_SM_HTML= spIco('crown','ui-ic-sm');
+var IC_AIM_HTML    = spIco('target');
+var IC_BOOK_HTML   = spIco('book');
+var IC_BOOK_SM_HTML= spIco('book','ui-ic-sm');
+var IC_MATH_HTML   = spIco('math');
 
 function getRawEcon() {
   try {
@@ -1408,10 +1426,10 @@ function decor(ti,c){
   o+='<div class="dc '+(side?'r':'l')+'" style="--c:'+c[0]+';--d:'+c[1]+';--w:'+d[2]+';--dl:-'+((ti*7+k*3+side)%9)+'s;top:'+d[1]+'%">'+SV[t]+'</div>'})});
  for(var i=0;i<5;i++)o+='<div class="lf" style="--c:'+c[0]+';--d:'+c[1]+';--dl:-'+(i*2.3)+'s;left:'+(8+(i*19+ti*7)%84)+'%;animation-duration:'+(9+i*2)+'s">'+SV.leaf+'</div>';
  return o}
-function build(){var h='<div class="mph"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:22px"><img class="ic" style="width:32px;height:32px;vertical-align:-7px" src="art.png" alt=""> Math Path</b><small id="mpc" style="color:var(--mut)"></small></div><div class="bar" style="margin:10px 0 0"><div id="mpb"></div></div></div>',g=0,ti=0;
+function build(){var h='<div class="mph"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:22px">' + spIco('math','ic','width:32px;height:32px;vertical-align:-7px;color:var(--acc)') + ' Math Path</b><small id="mpc" style="color:var(--mut)"></small></div><div class="bar" style="margin:10px 0 0"><div id="mpb"></div></div></div>',g=0,ti=0;
  CUR.forEach(function(d){d[1].forEach(function(tn){var c=DOM[d[0]];
   h+='<div class="tp" style="background:'+c[0]+'"><small>'+d[0]+' · Topic '+(ti+1)+'/20</small><b>'+tn+'</b></div><div class="pth">';
-  TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px"><img class="lg" src="logo.png" alt=""><em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
+  TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px">' + spIco('logo','lg','color:var(--c)','2.2') + '<em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
   h+=decor(ti,c)+'</div>';ti++})});
  mp.innerHTML=h+'<div class="tp" style="background:var(--acc2)">' + IC_BOOK_HTML + ' SAT Math complete!</div>';built=true;paint()}
 function paint(){if(!built)return;var d=getDone(),cur=-1;
@@ -1606,7 +1624,7 @@ function buildBank() {
   }
 
   if (!regionsHtml) {
-    regionsHtml = '<div class="card" style="padding:36px;text-align:center"><div><img class="ui-ic-lg" src="compas.png" alt=""></div><b>No islands match this star filter yet</b><p class="sub">Switch back to "All ★" to view the full archipelago map.</p></div>';
+    regionsHtml = '<div class="card" style="padding:36px;text-align:center"><div>' + spIco('compass','ui-ic-lg','color:var(--sand)') + '</div><b>No islands match this star filter yet</b><p class="sub">Switch back to "All ★" to view the full archipelago map.</p></div>';
   }
 
   qk.innerHTML = h + regionsHtml;
@@ -1732,10 +1750,10 @@ function scaleSectionScore(correct, maxScored, isHard) {
 }
 
 function buildRW(){
-  var h='<div class="mph"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:22px"><img class="ic" style="width:32px;height:32px;vertical-align:-7px" src="six.png" alt=""> R&amp;W Path</b><small id="rwc" style="color:var(--mut)"></small></div><div class="bar" style="margin:10px 0 0"><div id="rwb"></div></div></div>',g=0,ti=0;
+  var h='<div class="mph"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:22px">' + spIco('pen','ic','width:32px;height:32px;vertical-align:-7px;color:var(--acc2)') + ' R&amp;W Path</b><small id="rwc" style="color:var(--mut)"></small></div><div class="bar" style="margin:10px 0 0"><div id="rwb"></div></div></div>',g=0,ti=0;
   RCUR.forEach(function(d){d[1].forEach(function(tn){var c=RDOM[d[0]];
     h+='<div class="tp" style="background:'+c[0]+'"><small>'+d[0]+' · Topic '+(ti+1)+'/10</small><b>'+tn+'</b></div><div class="pth">';
-    TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px"><img class="lg" src="logo.png" alt=""><em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
+    TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px">' + spIco('logo','lg','color:var(--c)','2.2') + '<em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
     h+=decor(ti,c)+'</div>';ti++})});
   rw.innerHTML=h+'<div class="tp" style="background:var(--acc2)">' + IC_BOOK_HTML + ' SAT Reading &amp; Writing complete!</div>';rbuilt=true;paintRW();
 }
@@ -2762,7 +2780,7 @@ function renderDailyWidget(type, data, storageKey) {
     badge.textContent = '3/3 ✓';
     stat.textContent = 'Score today: ' + data.ok + '/3';
     if (topElem) topElem.textContent = '';
-    qElem.innerHTML = '<div style="text-align:center;padding:15px 0"><div><img class="ui-ic-lg" src="art.png" alt=""></div><b style="font-size:15px">Daily set finished!</b><p style="color:var(--mut);font-size:12px;margin-top:2px">You got ' + data.ok + ' of 3 right (+15 ' + IC_COIN_HTML + ' bonus). Come back tomorrow!</p></div>';
+    qElem.innerHTML = '<div style="text-align:center;padding:15px 0"><div>' + spIco('trophy','ui-ic-lg','color:var(--sand)') + '</div><b style="font-size:15px">Daily set finished!</b><p style="color:var(--mut);font-size:12px;margin-top:2px">You got ' + data.ok + ' of 3 right (+15 ' + IC_COIN_HTML + ' bonus). Come back tomorrow!</p></div>';
     optsBox.innerHTML = '';
     msgBox.textContent = '';
     return;
@@ -2899,7 +2917,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         '<div class="sp-auth-box">' +
           '<div class="sp-auth-form">' +
             '<div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:10px">' +
-              '<img src="logo.png" alt="" style="width:28px;height:28px;object-fit:contain">' +
+              spIco('logo','','width:28px;height:28px;color:var(--acc)','2.3') +
               '<span style="font-size:19px;font-weight:800">SAT<b style="color:var(--acc)">Path</b></span>' +
             '</div>' +
             '<h2 class="sp-auth-title">' + (isSign ? 'Create Account' : 'Welcome Back') + '</h2>' +
@@ -2949,7 +2967,8 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         '</div>';
 
       var errEl = ov.querySelector('#spAuthErr');
-      function setErr(msg) { errEl.textContent = msg || ''; }
+      function setErr(msg) { errEl.style.color = ''; errEl.textContent = msg || ''; }
+      function setOk(msg) { errEl.style.color = 'var(--acc)'; errEl.textContent = msg || ''; }
 
       ov.querySelector('#spGuestClose').onclick = function() {
         sessionStorage.setItem('satpath_guest', '1');
@@ -2974,31 +2993,52 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 
       var fgBtn = ov.querySelector('#spForgotBtn');
       if (fgBtn) {
+        var fgBusy = false, fgTimer = null;
         fgBtn.onclick = async function() {
-          var em = ov.querySelector('#spAuthEmail').value.trim();
-          if (!em) return setErr('Please enter your email address above first.');
+          if (fgBusy) return;
+          var emEl = ov.querySelector('#spAuthEmail');
+          var em = emEl.value.trim();
+          if (!em) { setErr('Enter your email above, then press "Forgot password?" again.'); emEl.focus(); return; }
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setErr('Please enter a valid email address.'); emEl.focus(); return; }
 
+          fgBusy = true;
+          fgBtn.disabled = true;
+          fgBtn.textContent = 'Sending…';
           setErr('');
-          toast('Sending reset link...');
-
+          var sent = false;
           try {
             await fbInit();
-            if (!FB || !FB.auth) {
-              throw new Error('Authentication service is not initialized.');
-            }
-            var authModule = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-            await authModule.sendPasswordResetEmail(FB.auth, em);
-
-            setErr('');
-            toast('✓ Password reset link sent to ' + em);
+            if (!FB || !FB.au || !FB.auth) throw { code: 'sp/not-ready' };
+            await FB.au.sendPasswordResetEmail(FB.auth, em);
+            sent = true;
+            setOk('Reset link sent to ' + em + '. Check Inbox and Spam / Promotions.');
           } catch (e) {
-            var msg = 'Could not send reset email. Check the address and try again.';
-            if (e.code === 'auth/user-not-found') {
-              msg = 'No account found with this email.';
-            } else if (e.code === 'auth/invalid-email') {
-              msg = 'Please enter a valid email address.';
-            }
+            console.error('Password reset failed:', e);
+            var code = e && e.code;
+            var msg = 'Could not send reset email' + (code ? ' (' + code + ')' : '') + '. Please try again.';
+            if (code === 'auth/user-not-found') msg = 'No account found with this email. If you signed up with Google, use "Continue with Google".';
+            else if (code === 'auth/invalid-email') msg = 'Please enter a valid email address.';
+            else if (code === 'auth/too-many-requests') msg = 'Too many requests. Please wait a few minutes and try again.';
+            else if (code === 'auth/network-request-failed') msg = 'Network error. Check your connection and try again.';
+            else if (code === 'auth/unauthorized-continue-uri' || code === 'auth/operation-not-allowed') msg = 'Password reset is not enabled for this site yet (' + code + '). Please contact support.';
+            else if (code === 'sp/not-ready') msg = 'Authentication service is still loading. Please try again in a moment.';
             setErr(msg);
+          }
+          if (sent) {
+            var left = 30;
+            fgBtn.textContent = 'Resend in ' + left + 's';
+            fgTimer = setInterval(function() {
+              left--;
+              if (!document.body.contains(fgBtn)) { clearInterval(fgTimer); return; }
+              if (left <= 0) {
+                clearInterval(fgTimer);
+                fgBusy = false; fgBtn.disabled = false; fgBtn.textContent = 'Forgot password?';
+              } else {
+                fgBtn.textContent = 'Resend in ' + left + 's';
+              }
+            }, 1000);
+          } else {
+            fgBusy = false; fgBtn.disabled = false; fgBtn.textContent = 'Forgot password?';
           }
         };
       }
