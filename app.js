@@ -2674,6 +2674,246 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
   // Если вкладка Mock Exams уже открыта — перерисовываем каталог с 8 моками
   if (typeof buildPT === 'function') buildPT();
 })();
+/* ============================================================================
+ * SATPATH FULLSCREEN PERSISTENCE FIX FOR MODULE TRANSITIONS
+ * ============================================================================ */
+(function fixFullscreenTransitions() {
+  // Перехватываем функцию завершения модуля и переключения на следующий
+  var originalPtModule = window.ptModule;
+  if (typeof originalPtModule === 'function') {
+    window.ptModule = function(cfg, done) {
+      originalPtModule(cfg, function(result) {
+        // Проверяем, был ли включен Fullscreen, и если пользователь его разрешил, удерживаем/возвращаем его
+        var docEl = document.documentElement;
+        if (!document.fullscreenElement && docEl.requestFullscreen && sessionStorage.getItem('bb_fullscreen_active') === '1') {
+          docEl.requestFullscreen().catch(function() {});
+        }
+        if (typeof done === 'function') {
+          done(result);
+        }
+      });
+    };
+  }
+
+  // Запоминаем выбор пользователя на стартовом Fullscreen-экране
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'bbBtnEnterFs') {
+      sessionStorage.setItem('bb_fullscreen_active', '1');
+    } else if (e.target && e.target.id === 'bbBtnSkipFs') {
+      sessionStorage.setItem('bb_fullscreen_active', '0');
+    }
+  });
+})();
+/* ============================================================================
+ * SATPATH BLUEBOOK UI & LAYOUT OVERHAUL (v4.0):
+ * 1. FULL-WIDTH RESPONSIVE LAYOUT (Removes dead space on edges)
+ * 2. FIXED PERSISTENT LEFT PANE (Always shows SPR Directions)
+ * 3. DESMOS CALCULATOR TOGGLE BUILT DIRECTLY INTO THE LEFT PANE TABS
+ * ============================================================================ */
+
+(function upgradeBluebookLayoutAndCalculator() {
+  // 1. Широкие стили для экрана экзамена и переключателя панелей слева
+  var wideStyle = document.createElement('style');
+  wideStyle.textContent = `
+    .pt-shell { max-width: 98vw !important; width: 100% !important; padding: 0 12px; }
+    .pt-split-body {
+      display: grid !important;
+      grid-template-columns: 440px 1fr !important;
+      gap: 20px !important;
+      align-items: stretch !important;
+      margin-top: 14px !important;
+    }
+    .pt-split-body > .qb {
+      max-width: none !important; margin: 0 !important;
+      height: calc(100vh - 160px) !important; min-height: 580px !important;
+      overflow-y: auto !important; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .bb-left-pane {
+      border: 2px solid var(--line); border-radius: 24px; overflow: hidden;
+      background: var(--panel); display: flex; flex-direction: column;
+      height: calc(100vh - 160px) !important; min-height: 580px !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    }
+    .bb-pane-tabs {
+      display: flex; background: var(--panel2); border-bottom: 2px solid var(--line); padding: 6px; gap: 6px; flex: none;
+    }
+    .bb-pane-tab {
+      flex: 1; padding: 8px 12px; text-align: center; font-weight: 700; font-size: 12.5px;
+      border-radius: 12px; color: var(--mut); transition: .15s; background: transparent; border: 0;
+    }
+    .bb-pane-tab.active {
+      background: var(--panel); color: var(--tx); box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .bb-pane-body { flex: 1; overflow-y: auto; padding: 20px; font-size: 13px; line-height: 1.55; }
+    .bb-calc-container { width: 100%; height: 100%; display: none; }
+    .bb-calc-container.active { display: block; }
+    
+    @media(max-width: 1024px) {
+      .pt-split-body { grid-template-columns: 1fr !important; }
+      .bb-left-pane { height: 420px !important; min-height: 400px !important; }
+      .pt-split-body > .qb { height: auto !important; min-height: 0 !important; }
+    }
+  `;
+  document.head.appendChild(wideStyle);
+
+  // 2. Переопределяем движок модуля ptModule с учетом постоянной левой панели и переключения на калькулятор
+  window.ptModule = function (cfg, done) {
+    var qs = cfg.qs, ans = [], flag = [], cur = 0, left = cfg.min * 60, ended = false, desmosCalc = null, tmr, popEl = null,
+      ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:90;background:var(--bg);overflow:auto;padding:12px';
+    
+    ov.innerHTML = '<div id="ptShell" class="pt-shell">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);padding:12px 20px;border-radius:18px;border:1.5px solid var(--line);box-shadow:0 4px 16px rgba(0,0,0,0.06)">' +
+      '<div><b style="font-size:15px">' + cfg.title + '</b><small style="display:block;color:var(--mut);font-size:11px">Standardized Bluebook Simulation · Identical Form</small></div>' +
+      '<b id="ptT" style="font-size:18px;font-variant-numeric:tabular-nums;color:var(--sand);background:var(--sand-bg);padding:4px 14px;border-radius:99px;border:1px solid var(--sand-line)"></b>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+      '<button id="ptVocBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--sand);border-color:var(--sand-line)">📖 Vocab (<span id="ptVocCnt">' + getVocabList().length + '</span>)</button>' +
+      '<button id="ptEnd" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700">Question Map</button>' +
+      '<button id="ptEx" class="chip" style="padding:6px 12px;text-transform:none">Exit</button></div></div>' +
+      '<div class="pt-split-body">' +
+        // Левая панель (Инструкции + Калькулятор)
+        '<div class="bb-left-pane">' +
+          '<div class="bb-pane-tabs">' +
+            '<button type="button" class="bb-pane-tab active" id="tabBtnDir">📋 SPR Directions</button>' +
+            (cfg.calc ? '<button type="button" class="bb-pane-tab" id="tabBtnCalc">📐 Desmos Calculator</button>' : '') +
+          '</div>' +
+          '<div class="bb-pane-body" id="paneDirContent">' +
+            '<h3>Student-Produced Response Directions</h3>' +
+            '<ul style="padding-left:16px;display:grid;gap:6px;margin-bottom:14px">' +
+              '<li>If you find <b>more than one correct answer</b>, enter only one.</li>' +
+              '<li>Up to 5 characters for positive, 6 for negative answers.</li>' +
+              '<li>Use decimals or improper fractions (e.g., 7/2 or 3.5).</li>' +
+            '</ul>' +
+            '<table class="bb-spr-table">' +
+              '<thead><tr><th>Answer</th><th>Acceptable</th><th>Unacceptable</th></tr></thead>' +
+              '<tbody>' +
+                '<tr><td><b>3.5</b></td><td>3.5, 3.50, 7/2</td><td>3 1/2, 31/2</td></tr>' +
+                '<tr><td><b>2/3</b></td><td>2/3, .6666, 0.667</td><td>0.66, .66, 0.67</td></tr>' +
+                '<tr><td><b>&minus;1/3</b></td><td>&minus;1/3, &minus;.3333</td><td>&minus;.33, &minus;0.33</td></tr>' +
+              '</tbody>' +
+            '</table>' +
+          '</div>' +
+          '<div class="bb-calc-container" id="paneCalcContent"></div>' +
+        '</div>' +
+        // Правая панель (Сам вопрос и варианты)
+        '<div class="qb"><div id="ptQ"></div><div id="ptG" hidden></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)"><button class="cta" id="ptP" style="border-radius:14px">← Back</button><button class="chip" id="ptMidMap" style="font-weight:800;font-size:13px;padding:8px 16px">Question 1 of ' + qs.length + ' ▾</button><button class="cta-amber" id="ptN" style="border-radius:14px">Next →</button></div></div>' +
+      '</div></div>';
+
+    document.body.appendChild(ov);
+    var $ = function (i) { return ov.querySelector('#' + i); }, Q = $('ptQ'), G = $('ptG');
+
+    // Логика переключения табов слева (Инструкции <-> Калькулятор)
+    var btnDir = $('tabBtnDir'), btnCalc = $('tabBtnCalc'), divDir = $('paneDirContent'), divCalc = $('paneCalcContent');
+    if (btnDir && btnCalc) {
+      btnDir.onclick = function() {
+        btnDir.classList.add('active'); btnCalc.classList.remove('active');
+        divDir.style.display = 'block'; divCalc.classList.remove('active');
+      };
+      btnCalc.onclick = function() {
+        btnCalc.classList.add('active'); btnDir.classList.remove('active');
+        divCalc.classList.add('active'); divDir.style.display = 'none';
+        if (!desmosCalc && window.Desmos) {
+          desmosCalc = Desmos.GraphingCalculator(divCalc, { keypad: true, expressions: true, settingsMenu: false, folders: false, images: false });
+        }
+        if (desmosCalc) setTimeout(function() { desmosCalc.resize(); }, 35);
+      };
+    }
+
+    function closePop() { if (popEl) { popEl.remove(); popEl = null; } }
+    function stop() {
+      closePop(); ended = true; clearInterval(tmr);
+      if (document.fullscreenElement && document.exitFullscreen) {
+        try { document.exitFullscreen(); } catch (e) {}
+      }
+      ov.remove();
+    }
+    function fin() {
+      var un = 0; qs.forEach(function (q, i) { if (ans[i] == null || ans[i] === '') un++; });
+      spModalConfirm(un ? 'You have <b>' + un + ' unanswered question(s)</b>. Submit this module now?' : 'Submit this module and proceed to the next stage?', function () { submit(); });
+    }
+    function submit() {
+      if (ended) return; stop(); var ok = 0;
+      qs.forEach(function (q, i) { if (ptRight(q, ans[i])) ok++; });
+      done({ ok: ok, n: qs.length, qs: qs, ans: ans });
+    }
+    tmr = setInterval(function () {
+      left--; $('ptT').textContent = ptFmt(left);
+      if (left <= 0) { toast('Time is up for this module!'); submit(); }
+    }, 1000);
+    $('ptT').textContent = ptFmt(left);
+    $('ptVocBtn').onclick = function () { openVocabDrawer(); };
+
+    function map() {
+      closePop();
+      var h = '<b>Question Map · ' + cfg.title + '</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0">';
+      qs.forEach(function (q, i) {
+        var a = ans[i] != null && ans[i] !== '';
+        h += '<button data-i="' + i + '" style="width:46px;height:42px;border-radius:10px;text-align:center;font-weight:700;border:2px solid ' + (a ? 'var(--acc)' : 'var(--line)') + ';background:' + (a ? 'rgba(34,163,129,.25)' : 'transparent') + '">' + (i + 1) + (flag[i] ? '🚩' : '') + '</button>';
+      });
+      G.innerHTML = h + '</div><small style="color:var(--mut)">Filled = answered · 🚩 = flagged</small><div style="margin-top:14px"><button class="cta-amber" id="ptS">Submit Module →</button></div>';
+      Q.hidden = true; G.hidden = false;
+    }
+    G.onclick = function (e) {
+      var b = e.target.closest('[data-i]');
+      if (b) { cur = +b.dataset.i; draw(); }
+      if (e.target.id === 'ptS') fin();
+    };
+
+    function draw() {
+      closePop(); G.hidden = true; Q.hidden = false;
+      var q = qs[cur], fx = function (s) { return q.rw ? wrapWordsForVocab(s) : rHTML(s); };
+      var midBtn = $('ptMidMap');
+      if (midBtn) midBtn.textContent = 'Question ' + (cur + 1) + ' of ' + qs.length + ' ▾';
+
+      var h = '<div class="bb-q-bar"><div style="display:flex;align-items:center;gap:10px"><span class="bb-q-num">' + (cur + 1) + '</span><button id="ptF" class="chip" style="font-size:12px;text-transform:none;border:0">' + (flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review') + '</button></div><small style="color:var(--acc);font-weight:700">' + (q.top || '') + '</small></div>' +
+        '<div style="font-size:' + (q.rw ? 17 : 19) + 'px;line-height:1.6;margin:18px 0">' + fx(q.q) + '</div>';
+
+      if (q.isGrid) {
+        var curVal = ans[cur] != null ? String(ans[cur]).replace(/"/g, '&quot;') : '';
+        h += '<div style="margin-top:20px"><label style="display:block;font-size:12.5px;font-weight:700;color:var(--mut);margin-bottom:8px">Enter your answer</label>' +
+             '<input id="ptI" class="qin" style="max-width:240px;text-align:left;padding:12px 16px;font-size:20px" maxlength="6" autocomplete="off" value="' + curVal + '">' +
+             '<div style="margin-top:12px;font-size:13px;color:var(--mut)">Answer Preview: <b id="bbAnsPrev" style="color:var(--tx);font-size:15px;margin-left:6px">' + (curVal || '—') + '</b></div></div>';
+      } else {
+        q.opts.forEach(function (o, k) {
+          h += '<button class="qo" data-k="' + k + '"' + (ans[cur] === o ? ' style="border-color:var(--acc);background:rgba(34,163,129,.2)"' : '') + '><b>' + 'ABCD'[k] + '</b>&nbsp; ' + (q.rw ? String(o) : rHTML(o)) + '</button>';
+        });
+      }
+      Q.innerHTML = h;
+
+      Q.querySelectorAll('.qo').forEach(function (b) {
+        b.onclick = function () {
+          ans[cur] = q.opts[+b.dataset.k];
+          Q.querySelectorAll('.qo').forEach(function (x) {
+            x.style.cssText = x === b ? 'border-color:var(--acc);background:rgba(34,163,129,.2)' : '';
+          });
+        };
+      });
+      var inp = $('ptI');
+      if (inp) {
+        inp.oninput = function () {
+          ans[cur] = inp.value.trim();
+          var prev = $('bbAnsPrev');
+          if (prev) prev.innerHTML = ans[cur] ? rHTML(ans[cur]) : '—';
+        };
+      }
+      $('ptF').onclick = function () {
+        flag[cur] = !flag[cur];
+        this.textContent = flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review';
+      };
+      $('ptP').style.opacity = cur ? 1 : 0.35;
+      $('ptN').textContent = cur < qs.length - 1 ? 'Next →' : 'Review →';
+    }
+
+    $('ptP').onclick = function () { if (cur > 0) { cur--; draw(); } };
+    $('ptN').onclick = function () { if (cur < qs.length - 1) { cur++; draw(); } else map(); };
+    $('ptEnd').onclick = map;
+    $('ptMidMap').onclick = map;
+    $('ptEx').onclick = function () {
+      spModalConfirm('Exit this mock exam? Progress in the current module will be lost.', function () { stop(); done(null); });
+    };
+    draw();
+  };
+})();
 applyProfileUI();
 refreshDash();
 initDailyChallenges();
