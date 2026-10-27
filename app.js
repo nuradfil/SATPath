@@ -2067,23 +2067,26 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
   var st = document.createElement('style');
   st.textContent = `
     .sp-auth-ov { position:fixed; inset:0; z-index:250; background:var(--bg); background-image: radial-gradient(circle at 15% 12%, rgba(34, 163, 129, 0.12), transparent 38%), radial-gradient(circle at 86% 22%, rgba(245, 184, 46, 0.10), transparent 36%), var(--topo-svg); background-attachment: fixed; display:flex; align-items:center; justify-content:center; padding:24px; overflow-y:auto; animation:fade .25s ease; }
-    .sp-auth-box { background:var(--panel); border:1.5px solid var(--line); border-radius:28px; max-width:920px; width:100%; display:grid; grid-template-columns:1.1fr 0.9fr; gap:28px; padding:32px; box-shadow:0 20px 50px rgba(0,0,0,0.25), 0 4px 0 var(--line); align-items:center; position:relative; overflow:hidden; }
-    @media(max-width:820px){ .sp-auth-box { grid-template-columns:1fr; padding:24px 18px; } .sp-auth-art { display:none !important; } }
-    .sp-auth-form { max-width:380px; width:100%; margin:0 auto; text-align:center; }
-    .sp-auth-title { font-size:28px; font-weight:800; letter-spacing:-.03em; color:var(--tx); margin-bottom:6px; }
-    .sp-auth-sub { font-size:13px; color:var(--mut); line-height:1.5; margin-bottom:20px; }
-    .sp-gbtn { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 16px; border-radius:16px; border:1.5px solid var(--line); background:var(--panel2); color:var(--tx); font-weight:700; font-size:13.5px; transition:.2s; box-shadow:0 2px 0 var(--line); }
+    .sp-auth-box { background:var(--panel); border:1.5px solid var(--line); border-radius:32px; max-width:980px; width:100%; display:grid; grid-template-columns:1.05fr 0.95fr; gap:32px; padding:36px; box-shadow:0 24px 60px rgba(0,0,0,0.28), 0 4px 0 var(--line); align-items:center; position:relative; overflow:hidden; }
+    @media(max-width:860px){ .sp-auth-box { grid-template-columns:1fr; padding:24px 18px; } .sp-auth-art { display:none !important; } }
+    .sp-auth-form { max-width:400px; width:100%; margin:0 auto; text-align:left; }
+    .sp-auth-title { font-size:26px; font-weight:800; letter-spacing:-.03em; color:var(--tx); margin-bottom:4px; }
+    .sp-auth-sub { font-size:12.5px; color:var(--mut); line-height:1.45; margin-bottom:18px; }
+    .sp-gbtn { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 16px; border-radius:16px; border:1.5px solid var(--line); background:var(--panel2); color:var(--tx); font-weight:700; font-size:13.5px; transition:.2s; box-shadow:0 2px 0 var(--line); cursor:pointer; }
     .sp-gbtn:hover { border-color:var(--acc); transform:translateY(-1px); }
-    .sp-or { display:flex; align-items:center; gap:12px; color:var(--mut); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin:16px 0; }
+    .sp-or { display:flex; align-items:center; gap:12px; color:var(--mut); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin:14px 0; }
     .sp-or::before, .sp-or::after { content:""; flex:1; height:1px; background:var(--line); }
     .sp-inp-wrap { position:relative; margin-bottom:10px; }
-    .sp-inp { width:100%; padding:12px 16px 12px 40px; border-radius:14px; border:1.5px solid var(--line); background:var(--panel2); color:var(--tx); font-size:13.5px; outline:none; transition:.2s; font-family:inherit; }
+    .sp-inp { width:100%; padding:12px 16px 12px 42px; border-radius:14px; border:1.5px solid var(--line); background:var(--panel2); color:var(--tx); font-size:13.5px; outline:none; transition:.2s; font-family:inherit; }
     .sp-inp:focus { border-color:var(--acc); background:var(--panel); }
-    .sp-inp-ico { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:13px; opacity:.6; pointer-events:none; }
-    .sp-submit { width:100%; padding:12px 18px; border-radius:16px; background:linear-gradient(180deg, var(--sand-bright) 0%, var(--sand) 100%); color:var(--sand-tx); font-weight:800; font-size:14px; text-align:center; box-shadow:0 4px 0 var(--sand-deep); transition:.18s; margin-top:4px; }
+    .sp-inp-ico { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:14px; opacity:.7; pointer-events:none; }
+    .sp-submit { width:100%; padding:12px 18px; border-radius:16px; background:linear-gradient(180deg, var(--sand-bright) 0%, var(--sand) 100%); color:var(--sand-tx); font-weight:800; font-size:14px; text-align:center; box-shadow:0 4px 0 var(--sand-deep); transition:.18s; margin-top:4px; cursor:pointer; }
     .sp-submit:hover { transform:translateY(-2px); box-shadow:0 6px 0 var(--sand-deep); filter:brightness(1.04); }
     .sp-auth-err { color:#e74c3c; font-size:12px; font-weight:600; margin:6px 0; min-height:16px; }
-    .sp-auth-art { height:420px; border-radius:22px; background:linear-gradient(155deg, var(--acc2) 0%, var(--acc) 100%); position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; padding:28px; color:#fff; box-shadow:0 8px 24px rgba(0,0,0,0.15); border:1.5px solid rgba(255,255,255,0.2); }
+    
+    /* Правая карточка в стиле островов SATPath */
+    .sp-auth-art { border-radius:24px; background:linear-gradient(155deg, var(--acc2) 0%, var(--acc) 100%); position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; padding:28px; color:#fff; box-shadow:0 10px 30px rgba(0,0,0,0.18); border:1.5px solid rgba(255,255,255,0.22); min-height:440px; }
+    .sp-stat-pill { background:rgba(255,255,255,0.15); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.25); padding:6px 14px; border-radius:99px; font-size:11.5px; font-weight:800; display:inline-flex; align-items:center; gap:6px; width:fit-content; }
   `;
   document.head.appendChild(st);
 
@@ -2100,7 +2103,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
       ov.innerHTML =
         '<div class="sp-auth-box">' +
           '<div class="sp-auth-form">' +
-            '<div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:12px">' +
+            '<div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:10px">' +
               '<img src="logo.png" alt="" style="width:28px;height:28px;object-fit:contain">' +
               '<span style="font-size:19px;font-weight:800">SAT<b style="color:var(--acc)">Path</b></span>' +
             '</div>' +
@@ -2114,30 +2117,39 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 
             '<div class="sp-or">OR</div>' +
 
-            (isSign ? '<div class="sp-inp-wrap"><span class="sp-inp-ico"></span><input id="spAuthName" class="sp-inp" type="text" placeholder="Explorer Name"></div>' : '') +
-            '<div class="sp-inp-wrap"><span class="sp-inp-ico"></span><input id="spAuthEmail" class="sp-inp" type="email" placeholder="Email address" autocomplete="email"></div>' +
-            '<div class="sp-inp-wrap"><span class="sp-inp-ico"></span><input id="spAuthPass" class="sp-inp" type="password" placeholder="Password (6+ chars)" autocomplete="current-password"></div>' +
+            (isSign ? '<div class="sp-inp-wrap"><span class="sp-inp-ico">👤</span><input id="spAuthName" class="sp-inp" type="text" placeholder="Explorer Name"></div>' : '') +
+            '<div class="sp-inp-wrap"><span class="sp-inp-ico">✉️</span><input id="spAuthEmail" class="sp-inp" type="email" placeholder="Email address" autocomplete="email"></div>' +
+            '<div class="sp-inp-wrap"><span class="sp-inp-ico">🔒</span><input id="spAuthPass" class="sp-inp" type="password" placeholder="Password (6+ chars)" autocomplete="current-password"></div>' +
 
-            (!isSign ? '<div style="text-align:right;margin-bottom:4px"><button type="button" id="spForgotBtn" style="font-size:11.5px;color:var(--mut);font-weight:700">Forgot password?</button></div>' : '') +
+            (!isSign ? '<div style="text-align:right;margin-bottom:2px"><button type="button" id="spForgotBtn" style="font-size:11.5px;color:var(--mut);font-weight:700;cursor:pointer">Forgot password?</button></div>' : '') +
 
             '<div class="sp-auth-err" id="spAuthErr"></div>' +
 
             '<button type="button" class="sp-submit" id="spBtnEmailSubmit">' + (isSign ? 'Register Explorer →' : 'Sign In →') + '</button>' +
 
-            '<div style="margin-top:14px;font-size:12.5px;color:var(--mut)">' +
-              (isSign ? 'Already exploring? <button type="button" id="spToggleMode" style="color:var(--acc);font-weight:800">Sign in</button>' : 'New explorer? <button type="button" id="spToggleMode" style="color:var(--acc);font-weight:800">Create an account</button>') +
+            '<div style="margin-top:12px;font-size:12.5px;color:var(--mut)">' +
+              (isSign ? 'Already exploring? <button type="button" id="spToggleMode" style="color:var(--acc);font-weight:800;cursor:pointer">Sign in</button>' : 'New explorer? <button type="button" id="spToggleMode" style="color:var(--acc);font-weight:800;cursor:pointer">Create an account</button>') +
             '</div>' +
 
-            '<div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)">' +
-              '<button type="button" id="spGuestClose" style="font-size:12px;color:var(--mut);font-weight:700">Continue as Guest (No sync) →</button>' +
+            '<div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)">' +
+              '<button type="button" id="spGuestClose" style="font-size:12px;color:var(--mut);font-weight:700;cursor:pointer">Continue as Guest (No sync) →</button>' +
             '</div>' +
           '</div>' +
 
           '<div class="sp-auth-art">' +
-            '<div style="position:absolute;top:20px;right:20px;background:rgba(255,255,255,0.18);backdrop-filter:blur(8px);padding:5px 12px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.06em">ARCHIPELAGO OUTPOST</div>' +
-            '<div style="font-size:42px;margin-bottom:8px"></div>' +
-            '<h3 style="font-size:22px;font-weight:800;line-height:1.25;margin-bottom:6px">Conquer the SAT Islands</h3>' +
-            '<p style="font-size:13px;opacity:.9;line-height:1.45">Track your mastery stars, compete on the live leaderboard, and follow your customized AI study roadmap.</p>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center">' +
+              '<span class="sp-stat-pill">🧭 ARCHIPELAGO OUTPOST</span>' +
+              '<span style="font-size:22px">⭐</span>' +
+            '</div>' +
+            '<div style="margin:20px 0">' +
+              '<div style="font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,0.8);margin-bottom:6px">Know your SAT score</div>' +
+              '<h3 style="font-size:26px;font-weight:800;line-height:1.2;margin-bottom:10px">9,000+ questions &amp; 77+ full practice tests</h3>' +
+              '<p style="font-size:13px;opacity:0.9;line-height:1.5">Sorted by domain and difficulty to match the adaptive Digital SAT experience.</p>' +
+            '</div>' +
+            '<div style="background:rgba(0,0,0,0.18);padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,0.15);display:flex;justify-content:space-between;align-items:center">' +
+              '<div style="font-size:12px;font-weight:700">🎯 Adaptive Track &amp; Desmos included</div>' +
+              '<span style="font-size:18px">🚀</span>' +
+            '</div>' +
           '</div>' +
         '</div>';
 
@@ -2211,7 +2223,6 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     render();
   };
 
-  // Автоматический показ при входе, если не авторизован и не нажал гостя
   window.addEventListener('load', function() {
     setTimeout(function() {
       if (!sessionStorage.getItem('satpath_guest')) {
