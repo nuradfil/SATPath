@@ -643,7 +643,7 @@ function spIco(name, cls, style, sw) {
 }
 var IC_MAP_HTML    = spIco('map');
 var IC_COMPAS_HTML = spIco('compass');
-var IC_COIN_HTML   = spIco('coin');
+var IC_COIN_HTML = '<img class="ui-ic" src="logo.png" alt="">';
 var IC_CAMP_HTML   = spIco('camp');
 var IC_ENERGY_HTML = spIco('bolt');
 var IC_ART_HTML    = spIco('trophy');
@@ -1429,7 +1429,7 @@ function decor(ti,c){
 function build(){var h='<div class="mph"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:22px">' + spIco('math','ic','width:32px;height:32px;vertical-align:-7px;color:var(--acc)') + ' Math Path</b><small id="mpc" style="color:var(--mut)"></small></div><div class="bar" style="margin:10px 0 0"><div id="mpb"></div></div></div>',g=0,ti=0;
  CUR.forEach(function(d){d[1].forEach(function(tn){var c=DOM[d[0]];
   h+='<div class="tp" style="background:'+c[0]+'"><small>'+d[0]+' · Topic '+(ti+1)+'/20</small><b>'+tn+'</b></div><div class="pth">';
-  TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px">' + spIco('logo','lg','color:var(--c)','2.2') + '<em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
+  TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px">' + '<img class="lg" src="logo.png" alt="">' + '<em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
   h+=decor(ti,c)+'</div>';ti++})});
  mp.innerHTML=h+'<div class="tp" style="background:var(--acc2)">' + IC_BOOK_HTML + ' SAT Math complete!</div>';built=true;paint()}
 function paint(){if(!built)return;var d=getDone(),cur=-1;
@@ -1753,7 +1753,7 @@ function buildRW(){
   var h='<div class="mph"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:22px">' + spIco('pen','ic','width:32px;height:32px;vertical-align:-7px;color:var(--acc2)') + ' R&amp;W Path</b><small id="rwc" style="color:var(--mut)"></small></div><div class="bar" style="margin:10px 0 0"><div id="rwb"></div></div></div>',g=0,ti=0;
   RCUR.forEach(function(d){d[1].forEach(function(tn){var c=RDOM[d[0]];
     h+='<div class="tp" style="background:'+c[0]+'"><small>'+d[0]+' · Topic '+(ti+1)+'/10</small><b>'+tn+'</b></div><div class="pth">';
-    TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px">' + spIco('logo','lg','color:var(--c)','2.2') + '<em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
+    TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px">' + '<img class="lg" src="logo.png" alt="">' + '<em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
     h+=decor(ti,c)+'</div>';ti++})});
   rw.innerHTML=h+'<div class="tp" style="background:var(--acc2)">' + IC_BOOK_HTML + ' SAT Reading &amp; Writing complete!</div>';rbuilt=true;paintRW();
 }
@@ -2917,7 +2917,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         '<div class="sp-auth-box">' +
           '<div class="sp-auth-form">' +
             '<div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:10px">' +
-              spIco('logo','','width:28px;height:28px;color:var(--acc)','2.3') +
+              '<img src="logo.png" alt="" style="width:28px;height:28px;object-fit:contain">' +
               '<span style="font-size:19px;font-weight:800">SAT<b style="color:var(--acc)">Path</b></span>' +
             '</div>' +
             '<h2 class="sp-auth-title">' + (isSign ? 'Create Account' : 'Welcome Back') + '</h2>' +
