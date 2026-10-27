@@ -2914,6 +2914,428 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     draw();
   };
 })();
+/* ============================================================================
+ * SATPATH BLUEBOOK ULTIMATE LAYOUT ENGINE (v5.0):
+ * 1. RESIZABLE SPLIT-SCREEN (Drag separator for R&W and Math)
+ * 2. MATH REFERENCE SHEET MODAL (Geometry formulas matching Bluebook spec)
+ * 3. 10-SECOND BRANDED FULLSCREEN GATE
+ * 4. 10-MINUTE BREAK SCREEN BETWEEN R&W AND MATH WITH TIPS & SKIP
+ * ============================================================================ */
+
+(function upgradeUltimateBluebookEngine() {
+  // 1. Стили для сплиттера, ресайза, модалки Reference и экрана отдыха
+  var uStyle = document.createElement('style');
+  uStyle.textContent = `
+    /* Полноэкранный стартовый гейт в стиле SATPath */
+    .sp-bb-gate {
+      position: fixed; inset: 0; z-index: 280; background: var(--bg);
+      background-image: radial-gradient(circle at 15% 12%, rgba(34, 163, 129, 0.14), transparent 38%), radial-gradient(circle at 86% 22%, rgba(245, 184, 46, 0.12), transparent 36%), var(--topo-svg);
+      display: flex; align-items: center; justify-content: center; padding: 24px; animation: fade .2s ease;
+    }
+    .sp-bb-gate-box {
+      background: var(--panel); border: 2px solid var(--sand-line); border-radius: 28px;
+      max-width: 480px; width: 100%; padding: 36px 30px; text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25), 0 4px 0 var(--line);
+    }
+    .sp-bb-timer-badge {
+      width: 72px; height: 72px; border-radius: 20px; background: var(--sand-bg);
+      border: 2px solid var(--sand-line); display: grid; place-items: center;
+      font-size: 30px; font-weight: 800; color: var(--sand); margin: 0 auto 20px;
+      font-variant-numeric: tabular-nums; box-shadow: 0 8px 20px rgba(245,184,46,0.2);
+    }
+
+    /* Ресайзимый двухколоночный макет для R&W и Math (без левой инструкции) */
+    .sp-split-layout {
+      display: grid; grid-template-columns: 1fr 6px 1fr; gap: 0; align-items: stretch;
+      height: calc(100vh - 155px) !important; min-height: 560px; max-width: 98vw; margin: 0 auto;
+    }
+    .sp-pane-left, .sp-pane-right {
+      background: var(--panel); border: 1.5px solid var(--line); border-radius: 22px;
+      padding: 24px 28px; overflow-y: auto; height: 100%; box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .sp-splitter {
+      background: var(--line); cursor: col-resize; width: 6px; border-radius: 99px;
+      transition: background .2s; margin: 0 4px;
+    }
+    .sp-splitter:hover, .sp-splitter.dragging { background: var(--acc); }
+
+    /* Модальное окно Reference Sheet (Справочник формул) */
+    .ref-modal-ov {
+      position: fixed; inset: 0; z-index: 290; background: rgba(6,21,23,0.8);
+      backdrop-filter: blur(6px); display: grid; place-items: center; padding: 20px; animation: fade .2s ease;
+    }
+    .ref-modal-box {
+      background: var(--panel); border: 2px solid var(--sand-line); border-radius: 28px;
+      max-width: 760px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 28px 32px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    }
+    .ref-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0;
+    }
+    .ref-card {
+      background: var(--panel2); border: 1px solid var(--line); border-radius: 16px; padding: 14px; text-align: center;
+    }
+    .ref-card img, .ref-card svg { max-width: 100%; height: auto; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+
+    /* Экран 10-минутного отдыха (Break) между секциями */
+    .break-screen-ov {
+      position: fixed; inset: 0; z-index: 270; background: var(--bg);
+      background-image: radial-gradient(circle at 15% 12%, rgba(34, 163, 129, 0.14), transparent 38%), radial-gradient(circle at 86% 22%, rgba(245, 184, 46, 0.12), transparent 36%), var(--topo-svg);
+      display: grid; place-items: center; padding: 24px; animation: fade .3s ease;
+    }
+    .break-box {
+      background: var(--panel); border: 2px solid var(--sand-line); border-radius: 30px;
+      max-width: 600px; width: 100%; padding: 40px; text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    }
+    @media(max-width: 860px) {
+      .sp-split-layout { grid-template-columns: 1fr; height: auto !important; gap: 16px; }
+      .sp-splitter { display: none; }
+      .sp-pane-left, .sp-pane-right { height: auto !important; min-height: 380px; }
+      .ref-grid { grid-template-columns: 1fr; }
+    }
+  `;
+  document.head.appendChild(uStyle);
+
+  // 2. Брендированный 10-секундный Fullscreen Гейт
+  function showBrandedFullscreenGate(onProceed, onCancel) {
+    var gate = document.createElement('div');
+    gate.className = 'sp-bb-gate';
+    var secLeft = 10;
+    gate.innerHTML =
+      '<div class="sp-bb-gate-box">' +
+        '<div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:14px">' +
+          '<img src="logo.png" alt="" style="width:30px;height:30px;object-fit:contain">' +
+          '<span style="font-size:20px;font-weight:800">SAT<b style="color:var(--acc)">Path</b></span>' +
+        '</div>' +
+        '<div class="sp-bb-timer-badge" id="spFsCount">10</div>' +
+        '<h2 style="font-size:24px;font-weight:800;margin-bottom:8px">Enter Fullscreen Mode</h2>' +
+        '<p class="sub" style="margin-bottom:24px">This test runs in fullscreen, mimicking the official Digital SAT experience. Make your choice before the timer expires.</p>' +
+        '<button type="button" class="cta-amber" id="spBtnEnterFs" style="width:100%;justify-content:center;margin-bottom:10px;padding:13px">Enter Fullscreen</button>' +
+        '<button type="button" class="chip" id="spBtnSkipFs" style="width:100%;padding:11px;font-weight:700">Continue Without Fullscreen</button>' +
+      '</div>';
+    document.body.appendChild(gate);
+
+    var countEl = gate.querySelector('#spFsCount');
+    var iv = setInterval(function () {
+      secLeft--;
+      if (countEl) countEl.textContent = Math.max(0, secLeft);
+      if (secLeft <= 0) {
+        clearInterval(iv);
+        gate.remove();
+        onProceed();
+      }
+    }, 1000);
+
+    gate.querySelector('#spBtnEnterFs').onclick = function () {
+      clearInterval(iv);
+      var docEl = document.documentElement;
+      try {
+        if (docEl.requestFullscreen) docEl.requestFullscreen();
+        else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+      } catch (e) {}
+      gate.remove();
+      onProceed();
+    };
+
+    gate.querySelector('#spBtnSkipFs').onclick = function () {
+      clearInterval(iv);
+      gate.remove();
+      onProceed();
+    };
+  }
+
+  window.ptStart = function (t, secs) {
+    showBrandedFullscreenGate(function () {
+      runMockSequence(t, secs);
+    });
+  };
+
+  // 3. Экран 10-минутного отдыха (Break) с таймером и советами
+  function showSectionBreakScreen(onContinue) {
+    var ov = document.createElement('div');
+    ov.className = 'break-screen-ov';
+    var totalSecs = 10 * 60; // 10 минут
+    
+    function renderBreak() {
+      var m = Math.floor(totalSecs / 60);
+      var s = totalSecs % 60;
+      var timeStr = m + ':' + (s < 10 ? '0' : '') + s;
+
+      ov.innerHTML = '<div class="break-box">' +
+        '<div style="font-size:11px;font-weight:800;color:var(--sand);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">OFFICIAL SAT BREAK</div>' +
+        '<h2 style="font-size:26px;font-weight:800;margin-bottom:12px">Take a 10-Minute Break</h2>' +
+        '<div style="font-size:52px;font-weight:800;color:var(--acc);margin:14px 0;font-variant-numeric:tabular-nums">' + timeStr + '</div>' +
+        '<div class="card" style="padding:16px;text-align:left;margin:18px 0;border-radius:18px;background:var(--panel2)">' +
+          '<b style="font-size:13px;display:block;margin-bottom:6px;color:var(--tx)">💡 Explorer Exam Tips for Math Section:</b>' +
+          '<ul style="padding-left:16px;font-size:12.5px;color:var(--mut);display:grid;gap:4px">' +
+            '<li>Keep your Desmos graphing calculator ready in a split tab.</li>' +
+            '<li>Double-check student-produced responses for fraction and decimal formatting.</li>' +
+            '<li>Use the Reference Sheet button if you forget circle or triangle formulas.</li>' +
+          '</ul>' +
+        '</div>' +
+        '<button class="cta-amber" id="skipBreakBtn" style="width:100%;justify-content:center;padding:13px">Skip Break &amp; Start Math Section →</button>' +
+      '</div>';
+      ov.querySelector('#skipBreakBtn').onclick = function() {
+        clearInterval(breakTmr);
+        ov.remove();
+        onContinue();
+      };
+    }
+
+    renderBreak();
+    document.body.appendChild(ov);
+
+    var breakTmr = setInterval(function() {
+      totalSecs--;
+      if (totalSecs <= 0) {
+        clearInterval(breakTmr);
+        ov.remove();
+        onContinue();
+      } else {
+        renderBreak();
+      }
+    }, 1000);
+  }
+
+  function runMockSequence(t, secs) {
+    var res = {}, used = {}, si = 0;
+    function section() {
+      if (si >= secs.length) return ptResult(t, res);
+      var sec = secs[si++], isR = (sec === 'r'), name = isR ? 'Reading and Writing' : 'Math', nq = isR ? 27 : 22, mins = isR ? 32 : 35;
+      
+      ptInfo('<div style="font-size:11px;font-weight:800;color:var(--sand);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">DIGITAL SAT ADAPTIVE MODULE</div><h2 style="font-size:24px;font-weight:800">' + name + ' · Module 1</h2><p style="margin:10px 0;font-weight:600;color:var(--acc)">' + nq + ' Questions · ' + mins + ' Minutes</p><p class="sub">' + (isR ? 'Tip: Drag the center splitter to resize the passage and question panes.' : 'Includes Desmos graphing calculator and geometry Reference Sheet.') + '</p>', 'Start Module 1 →', function () {
+        ptModule({ title: name + ' · Module 1', qs: ptBuild(t, sec, 1, 'mix', used), min: mins, calc: !isR, isMath: !isR }, function (o1) {
+          if (!o1) return buildPT();
+          var hard = o1.ok >= (isR ? 18 : 15);
+          ptInfo('<div style="font-size:11px;font-weight:800;color:var(--acc);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px">MODULE 1 COMPLETE (' + o1.ok + '/' + o1.n + ' CORRECT)</div><h2 style="font-size:24px;font-weight:800">' + name + ' · Module 2 (' + (hard ? 'Adaptive Harder Track' : 'Standard Track') + ')</h2><p style="margin:10px 0" class="sub">Your Module 2 difficulty has been calibrated based on your Module 1 accuracy.</p>', 'Start Module 2 →', function () {
+            ptModule({ title: name + ' · Module 2', qs: ptBuild(t, sec, 2, hard ? 'hard' : 'easy', used), min: mins, calc: !isR, isMath: !isR }, function (o2) {
+              if (!o2) return buildPT();
+              res[sec] = { o1: o1, o2: o2, hard: hard, score: ptScore(sec, o1.ok, o2.ok, hard) };
+              
+              if (si < secs.length) {
+                // Если только что закончился R&W, а впереди Math — показываем 10-минутный экран отдыха!
+                showSectionBreakScreen(section);
+              } else {
+                section();
+              }
+            });
+          });
+        });
+      });
+    }
+    section();
+  }
+
+  // 4. Модальное окно Reference Sheet для математики
+  function openReferenceModal() {
+    var ov = document.createElement('div');
+    ov.className = 'ref-modal-ov';
+    ov.innerHTML = '<div class="ref-modal-box">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:14px">' +
+        '<b style="font-size:18px;color:var(--tx)">Math Reference Sheet</b>' +
+        '<button class="tbtn" id="refClose">✕</button>' +
+      '</div>' +
+      '<div class="ref-grid">' +
+        '<div class="ref-card"><div style="font-size:24px">⊙</div><small><b>Circle</b><br><i>A = &pi;r²</i><br><i>C = 2&pi;r</i></small></div>' +
+        '<div class="ref-card"><div style="font-size:24px">▭</div><small><b>Rectangle</b><br><i>A = &ell;w</i></small></div>' +
+        '<div class="ref-card"><div style="font-size:24px">△</div><small><b>Triangle</b><br><i>A = &frac12;bh</i></small></div>' +
+        '<div class="ref-card"><div style="font-size:24px">📐</div><small><b>Pythagorean</b><br><i>a² + b² = c²</i></small></div>' +
+        '<div class="ref-card"><div style="font-size:24px">📦</div><small><b>Rect. Prism</b><br><i>V = &ell;wh</i></small></div>' +
+        '<div class="ref-card"><div style="font-size:24px">🥫</div><small><b>Cylinder</b><br><i>V = &pi;r²h</i></small></div>' +
+        '<div class="ref-card"><div style="font-size:24px">⚾</div><small><b>Sphere</b><br><i>V = &frac43;&pi;r³</i></small></div>' +
+        '<div class="ref-card"><div style="font-size:24px">🍦</div><small><b>Cone</b><br><i>V = &frac13;&pi;r²h</i></small></div>' +
+        '<div class="ref-card"><div style="font-size:24px">⛺</div><small><b>Pyramid</b><br><i>V = &frac13;&ell;wh</i></small></div>' +
+      '</div>' +
+      '<div style="background:var(--panel2);padding:14px;border-radius:14px;font-size:12.5px;color:var(--mut);line-height:1.6">' +
+        '&bull; The number of degrees of arc in a circle is 360.<br>' +
+        '&bull; The number of radians of arc in a circle is 2&pi;.<br>' +
+        '&bull; The sum of the measures in degrees of the angles of a triangle is 180.' +
+      '</div>' +
+    '</div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#refClose').onclick = function() { ov.remove(); };
+    ov.onclick = function(e) { if (e.target === ov) ov.remove(); };
+  }
+
+  // 5. Переопределенный движок модулей с разделением на две равные колонки и сплиттером
+  window.ptModule = function (cfg, done) {
+    var qs = cfg.qs, ans = [], flag = [], cur = 0, left = cfg.min * 60, ended = false, calc = null, tmr, popEl = null,
+      ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:90;background:var(--bg);overflow:auto;padding:12px';
+    
+    ov.innerHTML = '<div id="ptShell" class="pt-shell">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);padding:12px 20px;border-radius:18px;border:1.5px solid var(--line);box-shadow:0 4px 16px rgba(0,0,0,0.06);margin-bottom:12px">' +
+        '<div><b style="font-size:15px">' + cfg.title + '</b><small style="display:block;color:var(--mut);font-size:11px">Bluebook Simulation · Resizable Split-Screen</small></div>' +
+        '<b id="ptT" style="font-size:18px;font-variant-numeric:tabular-nums;color:var(--sand);background:var(--sand-bg);padding:4px 14px;border-radius:99px;border:1px solid var(--sand-line)"></b>' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+          '<button id="ptVocBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--sand);border-color:var(--sand-line)">📖 Vocab (<span id="ptVocCnt">' + getVocabList().length + '</span>)</button>' +
+          (cfg.calc ? '<button id="ptRefBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--acc);border-color:var(--acc)">📐 Reference</button>' : '') +
+          (cfg.calc ? '<button id="ptCB" style="background:var(--acc2);color:#fff;padding:6px 14px;border-radius:99px;font-weight:700;font-size:12px"><img class="ui-ic" src="math.png" alt=""> Calculator</button>' : '') +
+          '<button id="ptEnd" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700">Question Map</button>' +
+          '<button id="ptEx" class="chip" style="padding:6px 12px;text-transform:none">Exit</button>' +
+        '</div>' +
+      '</div>' +
+      // Двухколоночный макет со сплиттером в центре
+      '<div class="sp-split-layout" id="spSplitGrid">' +
+        '<div class="sp-pane-left" id="spPaneLeft">' +
+          '<div id="ptQ"></div>' +
+          '<div id="ptG" hidden></div>' +
+        '</div>' +
+        '<div class="sp-splitter" id="spSplitter"></div>' +
+        '<div class="sp-pane-right" id="spPaneRight">' +
+          '<div>' +
+            '<div class="bb-q-bar">' +
+              '<div style="display:flex;align-items:center;gap:10px"><span class="bb-q-num" id="spQNumBadge">1</span><button id="ptF" class="chip" style="font-size:12px;text-transform:none;border:0">⚑ Mark for Review</button></div>' +
+              '<small id="spTopBadge" style="color:var(--acc);font-weight:700"></small>' +
+            '</div>' +
+            '<div id="spAnsArea"></div>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)">' +
+            '<button class="cta" id="ptP" style="border-radius:14px">← Back</button>' +
+            '<button class="chip" id="ptMidMap" style="font-weight:800;font-size:13px;padding:8px 16px">Question 1 of ' + qs.length + ' ▾</button>' +
+            '<button class="cta-amber" id="ptN" style="border-radius:14px">Next →</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div id="ptCP" style="display:none;border:2px solid var(--line);border-radius:24px;overflow:hidden;background:#fff;margin-top:12px;height:460px"></div>' +
+    '</div>';
+
+    document.body.appendChild(ov);
+    var $ = function (i) { return ov.querySelector('#' + i); }, Q = $('ptQ'), G = $('ptG'), ansArea = $('spAnsArea'), topBadge = $('spTopBadge'), qNumBadge = $('spQNumBadge');
+
+    // Логика перетаскивания сплиттера мышкой / пальцем
+    var grid = $('spSplitGrid'), splitter = $('spSplitter'), isDragging = false;
+    splitter.onmousedown = function() { isDragging = true; splitter.classList.add('dragging'); };
+    document.onmousemove = function(e) {
+      if (!isDragging) return;
+      var rect = grid.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var pct = Math.max(25, Math.min(75, (x / rect.width) * 100));
+      grid.style.gridTemplateColumns = pct + 'fr 6px ' + (100 - pct) + 'fr';
+    };
+    document.onmouseup = function() { isDragging = false; splitter.classList.remove('dragging'); };
+
+    function closePop() { if (popEl) { popEl.remove(); popEl = null; } }
+    function stop() {
+      closePop(); ended = true; clearInterval(tmr);
+      if (document.fullscreenElement && document.exitFullscreen) {
+        try { document.exitFullscreen(); } catch (e) {}
+      }
+      ov.remove();
+    }
+    function fin() {
+      var un = 0; qs.forEach(function (q, i) { if (ans[i] == null || ans[i] === '') un++; });
+      spModalConfirm(un ? 'You have <b>' + un + ' unanswered question(s)</b>. Submit this module now?' : 'Submit this module and proceed to the next stage?', function () { submit(); });
+    }
+    function submit() {
+      if (ended) return; stop(); var ok = 0;
+      qs.forEach(function (q, i) { if (ptRight(q, ans[i])) ok++; });
+      done({ ok: ok, n: qs.length, qs: qs, ans: ans });
+    }
+    tmr = setInterval(function () {
+      left--; $('ptT').textContent = ptFmt(left);
+      if (left <= 0) { toast('Time is up for this module!'); submit(); }
+    }, 1000);
+    $('ptT').textContent = ptFmt(left);
+    $('ptVocBtn').onclick = function () { openVocabDrawer(); };
+    var refBtn = $('ptRefBtn'); if (refBtn) refBtn.onclick = openReferenceModal;
+
+    function map() {
+      closePop();
+      var h = '<b>Question Map · ' + cfg.title + '</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0">';
+      qs.forEach(function (q, i) {
+        var a = ans[i] != null && ans[i] !== '';
+        h += '<button data-i="' + i + '" style="width:46px;height:42px;border-radius:10px;text-align:center;font-weight:700;border:2.5px solid ' + (a ? 'var(--acc)' : 'var(--line)') + ';background:' + (a ? 'rgba(34,163,129,.25)' : 'transparent') + '">' + (i + 1) + (flag[i] ? '🚩' : '') + '</button>';
+      });
+      G.innerHTML = h + '</div><small style="color:var(--mut)">Filled = answered · 🚩 = flagged</small><div style="margin-top:14px"><button class="cta-amber" id="ptS">Submit Module →</button></div>';
+      Q.hidden = true; ansArea.hidden = true; G.hidden = false;
+    }
+    G.onclick = function (e) {
+      var b = e.target.closest('[data-i]');
+      if (b) { cur = +b.dataset.i; draw(); }
+      if (e.target.id === 'ptS') fin();
+    };
+
+    function draw() {
+      closePop(); G.hidden = false; Q.hidden = false; ansArea.hidden = false;
+      var q = qs[cur], fx = function (s) { return q.rw ? wrapWordsForVocab(s) : rHTML(s); };
+      
+      qNumBadge.textContent = (cur + 1);
+      topBadge.textContent = q.top || '';
+      var midBtn = $('ptMidMap');
+      if (midBtn) midBtn.textContent = 'Question ' + (cur + 1) + ' of ' + qs.length + ' ▾';
+
+      // Слева — текст пассажа или условие задачи
+      Q.innerHTML = '<div style="font-size:' + (q.rw ? 17 : 19) + 'px;line-height:1.6;margin-bottom:10px">' + fx(q.q) + '</div>';
+
+      // Справа — варианты ответов или поле ввода
+      var h = '';
+      if (q.isGrid) {
+        var curVal = ans[cur] != null ? String(ans[cur]).replace(/"/g, '&quot;') : '';
+        h += '<div style="margin-top:10px"><label style="display:block;font-size:12.5px;font-weight:700;color:var(--mut);margin-bottom:8px">Enter your answer</label>' +
+             '<input id="ptI" class="qin" style="max-width:240px;text-align:left;padding:12px 16px;font-size:20px" maxlength="6" autocomplete="off" value="' + curVal + '">' +
+             '<div style="margin-top:12px;font-size:13px;color:var(--mut)">Answer Preview: <b id="bbAnsPrev" style="color:var(--tx);font-size:15px;margin-left:6px">' + (curVal || '—') + '</b></div></div>';
+      } else {
+        q.opts.forEach(function (o, k) {
+          h += '<button class="qo" data-k="' + k + '"' + (ans[cur] === o ? ' style="border-color:var(--acc);background:rgba(34,163,129,.2)"' : '') + '><b>' + 'ABCD'[k] + '</b>&nbsp; ' + (q.rw ? String(o) : rHTML(o)) + '</button>';
+        });
+      }
+      ansArea.innerHTML = h;
+
+      ansArea.querySelectorAll('.qo').forEach(function (b) {
+        b.onclick = function () {
+          ans[cur] = q.opts[+b.dataset.k];
+          ansArea.querySelectorAll('.qo').forEach(function (x) {
+            x.style.cssText = x === b ? 'border-color:var(--acc);background:rgba(34,163,129,.2)' : '';
+          });
+        };
+      });
+      var inp = $('ptI');
+      if (inp) {
+        inp.oninput = function () {
+          ans[cur] = inp.value.trim();
+          var prev = $('bbAnsPrev');
+          if (prev) prev.innerHTML = ans[cur] ? rHTML(ans[cur]) : '—';
+        };
+      }
+      var flagBtn = $('ptF');
+      if (flagBtn) {
+        flagBtn.textContent = flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review';
+        flagBtn.onclick = function () {
+          flag[cur] = !flag[cur];
+          this.textContent = flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review';
+        };
+      }
+      $('ptP').style.opacity = cur ? 1 : 0.35;
+      $('ptN').textContent = cur < qs.length - 1 ? 'Next →' : 'Review →';
+    }
+
+    $('ptP').onclick = function () { if (cur > 0) { cur--; draw(); } };
+    $('ptN').onclick = function () { if (cur < qs.length - 1) { cur++; draw(); } else map(); };
+    $('ptEnd').onclick = map;
+    $('ptMidMap').onclick = map;
+    $('ptEx').onclick = function () {
+      spModalConfirm('Exit this mock exam? Progress in the current module will be lost.', function () { stop(); done(null); });
+    };
+    
+    var cb = $('ptCB');
+    if (cb) {
+      cb.onclick = function () {
+        var p = $('ptCP');
+        if (p.style.display === 'none') {
+          p.style.display = 'block'; cb.style.background = '#e74c3c'; cb.textContent = '✕ Close Calculator';
+          if (!calc && window.Desmos) calc = Desmos.GraphingCalculator(p, { keypad: true, expressions: true, settingsMenu: false, folders: false, images: false });
+          if (calc) setTimeout(function () { calc.resize(); }, 35);
+        } else {
+          p.style.display = 'none'; cb.style.background = 'var(--acc2)'; cb.innerHTML = '<img class="ui-ic" src="math.png" alt=""> Calculator';
+        }
+      };
+    }
+    draw();
+  };
+})();
 applyProfileUI();
 refreshDash();
 initDailyChallenges();
