@@ -2235,6 +2235,445 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     };
   }
 })();
+/* ============================================================================
+ * SATPATH BLUEBOOK MOCK EXAM UPGRADE (v3.0):
+ * 1. 8 STATIC MOCK EXAMS (100% IDENTICAL FOR ALL USERS ON ANY DEVICE)
+ * 2. FULLSCREEN COUNTDOWN GATE BEFORE TEST START
+ * 3. SPLIT-SCREEN "STUDENT-PRODUCED RESPONSE DIRECTIONS" FOR GRID-IN MATH
+ * ============================================================================ */
+
+(function upgradeSatPathMocksToBluebook() {
+  // 1. Расширяем каталог до 8 моков (I - VIII)
+  window.PT_N = 8;
+  window.MOCK_EXPEDITIONS = [
+    { t: 1, roman: 'I',    code: 'Mock 01 · Coral Reef',       sub: 'Shallow Atoll Expedition · Static Form A',   reward: 120, accent: '#22a381' },
+    { t: 2, roman: 'II',   code: 'Mock 02 · Emerald Atoll',    sub: 'Lagoon Current Expedition · Static Form B',  reward: 120, accent: '#1f9d8a' },
+    { t: 3, roman: 'III',  code: 'Mock 03 · Amber Lagoon',     sub: 'Sunlit Shoals Expedition · Static Form C',   reward: 120, accent: '#e59a16' },
+    { t: 4, roman: 'IV',   code: 'Mock 04 · Basalt Ridge',     sub: 'Volcanic Cliffs Expedition · Static Form D', reward: 150, accent: '#2b7f9c' },
+    { t: 5, roman: 'V',    code: 'Mock 05 · Sunken Caldera',   sub: 'Deep Trench Expedition · Static Form E',     reward: 150, accent: '#2fa59f' },
+    { t: 6, roman: 'VI',   code: 'Mock 06 · Obsidian Peak',    sub: 'Summit Spire Expedition · Static Form F',    reward: 180, accent: '#3f8f7a' },
+    { t: 7, roman: 'VII',  code: 'Mock 07 · Celestial Spire',  sub: 'November Predictions · Static Form G',       reward: 200, accent: '#6366f1' },
+    { t: 8, roman: 'VIII', code: 'Mock 08 · Astral Sanctum',   sub: 'December Master Finale · Static Form H',     reward: 220, accent: '#ec4899' }
+  ];
+
+  // Изолированный генератор псевдослучайных чисел (Mulberry32) — гарантирует 100% совпадение у всех юзеров
+  function makeDeterministicRng(seed) {
+    var s = seed | 0;
+    return function () {
+      s = (s + 0x6D2B79F5) | 0;
+      var t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function deterministicShuffle(arr, rng) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var tmp = a[i];
+      a[i] = a[j];
+      a[j] = tmp;
+    }
+    return a;
+  }
+
+  // 2. Стили для Fullscreen-экрана и левой панели инструкций Bluebook (Student-Produced Response)
+  var bbStyle = document.createElement('style');
+  bbStyle.textContent = `
+    .bb-fs-ov {
+      position: fixed; inset: 0; z-index: 260; background: #141517; color: #f1f5f9;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px; text-align: center; font-family: Inter, system-ui, -apple-system, sans-serif;
+      animation: fade .2s ease;
+    }
+    .bb-fs-timer {
+      width: 66px; height: 66px; border-radius: 16px; background: #232529;
+      border: 1px solid #34383e; display: grid; place-items: center;
+      font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4); font-variant-numeric: tabular-nums;
+    }
+    .bb-fs-title { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 10px; letter-spacing: -0.02em; }
+    .bb-fs-sub { font-size: 13.5px; color: #9ca3af; max-width: 440px; line-height: 1.55; margin-bottom: 28px; }
+    .bb-fs-btn-pri {
+      width: 100%; max-width: 340px; padding: 14px 20px; border-radius: 99px;
+      background: #2563eb; color: #fff; font-weight: 700; font-size: 14px;
+      text-align: center; margin-bottom: 12px; transition: background .15s, transform .15s;
+    }
+    .bb-fs-btn-pri:hover { background: #1d4ed8; transform: translateY(-1px); }
+    .bb-fs-btn-sec {
+      width: 100%; max-width: 340px; padding: 14px 20px; border-radius: 99px;
+      background: #2a2d32; color: #e2e8f0; font-weight: 600; font-size: 14px;
+      text-align: center; border: 1px solid #3f434a; transition: background .15s;
+    }
+    .bb-fs-btn-sec:hover { background: #34383e; }
+
+    /* Двухколоночная сетка для вопросов с левой инструкцией (как в Bluebook) */
+    .bb-spr-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+      border: 1.5px solid var(--line); border-radius: 22px; overflow: hidden;
+      background: var(--panel); min-height: 540px; position: relative;
+    }
+    .bb-spr-left {
+      padding: 26px 28px; border-right: 2px solid var(--line);
+      background: var(--panel2); overflow-y: auto; max-height: 74vh;
+      font-size: 13.5px; line-height: 1.55; color: var(--tx);
+    }
+    .bb-spr-left h3 { font-size: 16.5px; font-weight: 800; margin-bottom: 12px; color: var(--tx); }
+    .bb-spr-left ul { list-style: disc; padding-left: 18px; display: grid; gap: 8px; margin-bottom: 18px; }
+    .bb-spr-table {
+      width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: center;
+      border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+    }
+    .bb-spr-table th {
+      background: var(--panel); padding: 9px 10px; font-weight: 700;
+      border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); color: var(--mut);
+    }
+    .bb-spr-table td {
+      padding: 10px 8px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line);
+      line-height: 1.65; font-variant-numeric: tabular-nums;
+    }
+    .bb-spr-right {
+      padding: 26px 30px; display: flex; flex-direction: column; justify-content: space-between;
+      background: var(--panel);
+    }
+    .bb-q-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--panel2); border-bottom: 2px dashed var(--line);
+      padding: 8px 14px; border-radius: 12px; margin-bottom: 18px;
+    }
+    .bb-q-num {
+      background: var(--tx); color: var(--panel); font-weight: 800; font-size: 13px;
+      padding: 3px 10px; border-radius: 6px;
+    }
+    @media (max-width: 860px) {
+      .bb-spr-grid { grid-template-columns: 1fr; }
+      .bb-spr-left { border-right: 0; border-bottom: 2px solid var(--line); max-height: 320px; }
+    }
+  `;
+  document.head.appendChild(bbStyle);
+
+  // HTML-шаблон левой колонки "Student-Produced Response Directions" один-в-один как на скрине
+  var SPR_DIRECTIONS_HTML = `
+    <h3>Student-Produced Response Directions</h3>
+    <ul>
+      <li>If you find <b>more than one correct answer</b>, enter only one answer.</li>
+      <li>You can enter up to 5 characters for a <b>positive</b> answer and up to 6 characters (including the negative sign) for a <b>negative</b> answer.</li>
+      <li>If your answer is a <b>fraction</b> that doesn't fit in the provided space, enter the decimal equivalent.</li>
+      <li>If your answer is a <b>decimal</b> that doesn't fit, enter it by truncating or rounding at the fourth digit.</li>
+      <li>If your answer is a <b>mixed number</b> (such as 3&frac12;), enter it as an improper fraction (7/2) or its decimal equivalent (3.5).</li>
+      <li>Don't enter symbols such as a percent sign, comma, or dollar sign.</li>
+    </ul>
+    <div style="font-weight:700;font-size:12.5px;margin-bottom:8px">Examples</div>
+    <table class="bb-spr-table">
+      <thead>
+        <tr>
+          <th>Answer</th>
+          <th>Acceptable ways to enter answer</th>
+          <th>Unacceptable: will not receive credit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>3.5</b></td>
+          <td>3.5<br>3.50<br>7/2</td>
+          <td>3 1/2<br>31/2</td>
+        </tr>
+        <tr>
+          <td><b>2/3</b></td>
+          <td>2/3<br>.6666<br>.6667<br>0.666<br>0.667</td>
+          <td>0.66<br>.66<br>0.67<br>.67</td>
+        </tr>
+        <tr>
+          <td><b>&minus;1/3</b></td>
+          <td>&minus;1/3<br>&minus;.3333<br>&minus;0.333</td>
+          <td>&minus;.33<br>&minus;0.33</td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+
+  // 3. 100% СТАТИЧНЫЙ КОНСТРУКТОР МОКОВ (Одинаковые вопросы и числа у всех пользователей)
+  window.ptBuild = function (t, sec, m, lvl, used) {
+    // Фиксированный мастер-сид для конкретного номера мока (1..8), секции ('r'/'m') и модуля (1..2)
+    var masterSeed = (t * 10007) + (sec === 'm' ? 5003 : 2003) + (m * 997) + (lvl === 'hard' ? 313 : lvl === 'easy' ? 101 : 0);
+    var out = [];
+
+    if (sec === 'm') {
+      var plan = ptMathPlan(t, m);
+      plan.forEach(function (ti, k) {
+        // Изолированный сид конкретно для вопроса #k в Моке #t
+        var qSeed = masterSeed + (k * 7919) + (ti * 353);
+        var qRng = makeDeterministicRng(qSeed);
+        var origRandom = Math.random;
+        Math.random = qRng;
+        var q = null;
+        try {
+          var tier = lvl === 'mix' ? (k % 2 === 0 ? 'hard' : 'medium') : (lvl === 'hard' ? 'hard' : (k % 3 ? 'easy' : 'medium'));
+          // Если есть прямой массив генераторов MATH_GENS / GENERATORS — вызываем по фиксированному индексу без глобального анти-повтора
+          var gensList = (typeof MATH_GENS !== 'undefined' && MATH_GENS[ti]) ? MATH_GENS[ti] : ((typeof GENERATORS !== 'undefined' && GENERATORS[ti]) ? GENERATORS[ti] : null);
+          if (gensList && gensList.length) {
+            var gIdx = ((t - 1) * 3 + (m - 1) * 2 + k) % gensList.length;
+            var raw = gensList[gIdx](tier);
+            if (raw && raw.q) q = raw;
+          }
+          if (!q) {
+            q = getMathQ(ti, tier, (t * 23) + (m * 11) + k);
+          }
+          // Делаем каждый 4-й вопрос (например №2, №6, №10, №14, №18, №22) вопросом с вводом ответа (Student-Produced Response), как в реальном SAT!
+          if (q && (k % 4 === 1) && /^[-+]?\d+(\.\d+|\/\d+)?$/.test(String(q.ans).trim())) {
+            q.isGrid = true;
+          }
+          if (q && Array.isArray(q.opts)) {
+            q.opts = deterministicShuffle(q.opts, qRng);
+          }
+        } catch (e) {} finally {
+          Math.random = origRandom;
+        }
+        if (q) {
+          q.top = TOPS[ti];
+          out.push(q);
+        }
+      });
+    } else {
+      // Статичная сборка Reading & Writing: каждый мок t (1..8) берет строго свою фиксированную выборку из RQ
+      PT_RW.forEach(function (x, blockIdx) {
+        var ti = x[0], countNeeded = x[1];
+        var list = RQ[ti] || [];
+        var L = list.length;
+        if (!L) return;
+        var u = used[ti] || (used[ti] = {});
+        var step = 3; // Взаимно простой шаг для равномерного распределения по базе
+        var startOffset = ((t - 1) * countNeeded * 2 + (m - 1) * countNeeded + (lvl === 'hard' ? Math.floor(L / 3) : 0)) % L;
+
+        var picked = [];
+        for (var probe = 0; probe < L * 2 && picked.length < countNeeded; probe++) {
+          var candIdx = (startOffset + probe * step) % L;
+          if (!u[candIdx]) {
+            u[candIdx] = 1;
+            picked.push(candIdx);
+          }
+        }
+        // Если вдруг в категории мало вопросов и не хватило уникальных — добираем по порядку
+        for (var fallback = 0; fallback < L && picked.length < countNeeded; fallback++) {
+          if (picked.indexOf(fallback) < 0) picked.push(fallback);
+        }
+
+        picked.forEach(function (qIdx, localK) {
+          var r = list[qIdx];
+          var optRng = makeDeterministicRng(masterSeed + blockIdx * 1013 + qIdx * 97 + localK);
+          out.push({
+            q: r[0],
+            ans: r[1],
+            opts: deterministicShuffle(r.slice(1), optRng),
+            isGrid: false,
+            rw: true,
+            top: RTOPS[ti]
+          });
+        });
+      });
+    }
+    return out;
+  };
+
+  // 4. Экран "Enter fullscreen mode" с обратным отсчетом (как на твоем 1-м скриншоте)
+  function showFullscreenCountdownGate(onProceed, onCancel) {
+    var gate = document.createElement('div');
+    gate.className = 'bb-fs-ov';
+    var secLeft = 10;
+    gate.innerHTML =
+      '<div class="bb-fs-timer" id="bbFsCount">10</div>' +
+      '<div class="bb-fs-title">Enter fullscreen mode</div>' +
+      '<div class="bb-fs-sub">This test runs in fullscreen, just like the Digital SAT. If you do not choose before the timer ends, the test will not start.</div>' +
+      '<button type="button" class="bb-fs-btn-pri" id="bbBtnEnterFs">Enter fullscreen</button>' +
+      '<button type="button" class="bb-fs-btn-sec" id="bbBtnSkipFs">Continue without fullscreen</button>';
+    document.body.appendChild(gate);
+
+    var countEl = gate.querySelector('#bbFsCount');
+    var iv = setInterval(function () {
+      secLeft--;
+      if (countEl) countEl.textContent = Math.max(0, secLeft);
+      if (secLeft <= 0) {
+        clearInterval(iv);
+        gate.remove();
+        toast('Fullscreen timer expired. Click Start to launch your Mock Exam.');
+        if (onCancel) onCancel();
+      }
+    }, 1000);
+
+    gate.querySelector('#bbBtnEnterFs').onclick = function () {
+      clearInterval(iv);
+      var docEl = document.documentElement;
+      try {
+        if (docEl.requestFullscreen) docEl.requestFullscreen();
+        else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+      } catch (e) {}
+      gate.remove();
+      onProceed();
+    };
+
+    gate.querySelector('#bbBtnSkipFs').onclick = function () {
+      clearInterval(iv);
+      gate.remove();
+      onProceed();
+    };
+  }
+
+  // Переопределяем ptStart, чтобы сначала появлялся Fullscreen-экран с таймером
+  var origPtStart = window.ptStart;
+  window.ptStart = function (t, secs) {
+    showFullscreenCountdownGate(
+      function () {
+        origPtStart(t, secs);
+      },
+      function () {
+        buildPT();
+      }
+    );
+  };
+
+  // 5. Обновляем ptModule, чтобы для задач с вводом ответа (isGrid) слева показывалась панель Student-Produced Response Directions
+  window.ptModule = function (cfg, done) {
+    var qs = cfg.qs, ans = [], flag = [], cur = 0, left = cfg.min * 60, ended = false, calc = null, tmr, popEl = null,
+      ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:90;background:var(--bg);overflow:auto;padding:16px';
+    ov.innerHTML = '<div id="ptShell" class="pt-shell"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);padding:12px 18px;border-radius:18px;border:1.5px solid var(--line)">'
+      + '<div><b style="font-size:15px">' + cfg.title + '</b><small style="display:block;color:var(--mut);font-size:11px">Standardized Static Mock · Identical Questions for All Students</small></div>'
+      + '<b id="ptT" style="font-size:18px;font-variant-numeric:tabular-nums;color:var(--sand);background:var(--sand-bg);padding:4px 12px;border-radius:99px;border:1px solid var(--sand-line)"></b>'
+      + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+      + '<button id="ptVocBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--sand);border-color:var(--sand-line)">📖 Vocab (<span id="ptVocCnt">' + getVocabList().length + '</span>)</button>'
+      + (cfg.calc ? '<button id="ptCB" style="background:var(--acc2);color:#fff;padding:6px 14px;border-radius:99px;font-weight:700;font-size:12px"><img class="ui-ic" src="math.png" alt=""> Calculator (50/50)</button>' : '')
+      + '<button id="ptEnd" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700">Question Map</button>'
+      + '<button id="ptEx" class="chip" style="padding:6px 12px;text-transform:none">Exit</button></div></div>'
+      + '<div class="pt-split-body"><div class="qb" style="max-width:none;border-radius:24px;padding:22px"><div id="ptQ"></div><div id="ptG" hidden></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--line)"><button class="cta" id="ptP" style="border-radius:14px">← Back</button><button class="chip" id="ptMidMap" style="font-weight:800;font-size:13px;padding:8px 16px">Question 1 of ' + qs.length + ' ▾</button><button class="cta-amber" id="ptN" style="border-radius:14px">Next →</button></div></div>'
+      + '<div id="ptCP" style="display:none;border:2px solid var(--line);border-radius:24px;overflow:hidden;background:#fff"></div></div></div>';
+    document.body.appendChild(ov);
+    var $ = function (i) { return ov.querySelector('#' + i); }, Q = $('ptQ'), G = $('ptG');
+
+    function closePop() { if (popEl) { popEl.remove(); popEl = null; } }
+    function stop() {
+      closePop(); ended = true; clearInterval(tmr);
+      if (document.fullscreenElement && document.exitFullscreen) {
+        try { document.exitFullscreen(); } catch (e) {}
+      }
+      ov.remove();
+    }
+    function fin() {
+      var un = 0; qs.forEach(function (q, i) { if (ans[i] == null || ans[i] === '') un++; });
+      spModalConfirm(un ? 'You have <b>' + un + ' unanswered question(s)</b>. Submit this module now?' : 'Submit this module and proceed to the next stage?', function () { submit(); });
+    }
+    function submit() {
+      if (ended) return; stop(); var ok = 0;
+      qs.forEach(function (q, i) { if (ptRight(q, ans[i])) ok++; });
+      done({ ok: ok, n: qs.length, qs: qs, ans: ans });
+    }
+    tmr = setInterval(function () {
+      left--; $('ptT').textContent = ptFmt(left);
+      if (left <= 0) { toast('Time is up for this module!'); submit(); }
+    }, 1000);
+    $('ptT').textContent = ptFmt(left);
+    $('ptVocBtn').onclick = function () { openVocabDrawer(); };
+
+    function map() {
+      closePop();
+      var h = '<b>Question Map · ' + cfg.title + '</b><div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0">';
+      qs.forEach(function (q, i) {
+        var a = ans[i] != null && ans[i] !== '';
+        h += '<button data-i="' + i + '" style="width:46px;height:42px;border-radius:10px;text-align:center;font-weight:700;border:2px solid ' + (a ? 'var(--acc)' : 'var(--line)') + ';background:' + (a ? 'rgba(34,163,129,.25)' : 'transparent') + '">' + (i + 1) + (flag[i] ? '🚩' : '') + '</button>';
+      });
+      G.innerHTML = h + '</div><small style="color:var(--mut)">Filled = answered · 🚩 = flagged</small><div style="margin-top:14px"><button class="cta-amber" id="ptS">Submit Module →</button></div>';
+      Q.hidden = true; G.hidden = false;
+    }
+    G.onclick = function (e) {
+      var b = e.target.closest('[data-i]');
+      if (b) { cur = +b.dataset.i; draw(); }
+      if (e.target.id === 'ptS') fin();
+    };
+
+    function draw() {
+      closePop(); G.hidden = true; Q.hidden = false;
+      var q = qs[cur], fx = function (s) { return q.rw ? wrapWordsForVocab(s) : rHTML(s); };
+      var midBtn = $('ptMidMap');
+      if (midBtn) midBtn.textContent = 'Question ' + (cur + 1) + ' of ' + qs.length + ' ▾';
+
+      // Если вопрос с вводом ответа (Student-Produced Response) — рисуем двухколоночный экран Bluebook с таблицей инструкций слева!
+      if (q.isGrid) {
+        var curVal = ans[cur] != null ? String(ans[cur]).replace(/"/g, '&quot;') : '';
+        Q.innerHTML =
+          '<div class="bb-spr-grid">' +
+            '<div class="bb-spr-left">' + SPR_DIRECTIONS_HTML + '</div>' +
+            '<div class="bb-spr-right">' +
+              '<div>' +
+                '<div class="bb-q-bar">' +
+                  '<div style="display:flex;align-items:center;gap:10px"><span class="bb-q-num">' + (cur + 1) + '</span><button id="ptF" class="chip" style="font-size:12px;text-transform:none;border:0">' + (flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review') + '</button></div>' +
+                  '<small style="color:var(--acc);font-weight:700">' + (q.top || '') + '</small>' +
+                '</div>' +
+                '<div style="font-size:19px;line-height:1.6;margin:18px 0 22px">' + fx(q.q) + '</div>' +
+                '<label style="display:block;font-size:12.5px;font-weight:700;color:var(--mut);margin-bottom:8px">Enter your answer</label>' +
+                '<input id="ptI" class="qin" style="max-width:240px;text-align:left;padding:12px 16px;font-size:20px" maxlength="6" autocomplete="off" value="' + curVal + '">' +
+                '<div style="margin-top:12px;font-size:13px;color:var(--mut)">Answer Preview: <b id="bbAnsPrev" style="color:var(--tx);font-size:15px;margin-left:6px">' + (curVal || '—') + '</b></div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+      } else {
+        var h = '<div class="bb-q-bar"><div style="display:flex;align-items:center;gap:10px"><span class="bb-q-num">' + (cur + 1) + '</span><button id="ptF" class="chip" style="font-size:12px;text-transform:none;border:0">' + (flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review') + '</button></div><small style="color:var(--acc);font-weight:700">' + (q.top || '') + '</small></div>' +
+          '<div style="font-size:' + (q.rw ? 17 : 19) + 'px;line-height:1.6;margin:18px 0">' + fx(q.q) + '</div>';
+        q.opts.forEach(function (o, k) {
+          h += '<button class="qo" data-k="' + k + '"' + (ans[cur] === o ? ' style="border-color:var(--acc);background:rgba(34,163,129,.2)"' : '') + '><b>' + 'ABCD'[k] + '</b>&nbsp; ' + (q.rw ? String(o) : rHTML(o)) + '</button>';
+        });
+        Q.innerHTML = h;
+      }
+
+      Q.querySelectorAll('.qo').forEach(function (b) {
+        b.onclick = function () {
+          ans[cur] = q.opts[+b.dataset.k];
+          Q.querySelectorAll('.qo').forEach(function (x) {
+            x.style.cssText = x === b ? 'border-color:var(--acc);background:rgba(34,163,129,.2)' : '';
+          });
+        };
+      });
+      var inp = $('ptI');
+      if (inp) {
+        inp.oninput = function () {
+          ans[cur] = inp.value.trim();
+          var prev = $('bbAnsPrev');
+          if (prev) prev.innerHTML = ans[cur] ? rHTML(ans[cur]) : '—';
+        };
+      }
+      $('ptF').onclick = function () {
+        flag[cur] = !flag[cur];
+        this.textContent = flag[cur] ? '🚩 Marked for Review' : '⚑ Mark for Review';
+      };
+      $('ptP').style.opacity = cur ? 1 : 0.35;
+      $('ptN').textContent = cur < qs.length - 1 ? 'Next →' : 'Review →';
+    }
+
+    $('ptP').onclick = function () { if (cur > 0) { cur--; draw(); } };
+    $('ptN').onclick = function () { if (cur < qs.length - 1) { cur++; draw(); } else map(); };
+    $('ptEnd').onclick = map;
+    $('ptMidMap').onclick = map;
+    $('ptEx').onclick = function () {
+      spModalConfirm('Exit this mock exam? Progress in the current module will be lost.', function () { stop(); done(null); });
+    };
+    var cb = $('ptCB'), shell = $('ptShell');
+    if (cb) {
+      cb.onclick = function () {
+        var p = $('ptCP');
+        if (!shell.classList.contains('calc-open')) {
+          shell.classList.add('calc-open'); p.style.display = 'block'; cb.style.background = '#e74c3c'; cb.textContent = '✕ Close Calculator';
+          if (!calc && window.Desmos) calc = Desmos.GraphingCalculator(p, { keypad: true, expressions: true, settingsMenu: false, folders: false, images: false });
+          if (calc) setTimeout(function () { calc.resize(); }, 35);
+        } else {
+          shell.classList.remove('calc-open'); p.style.display = 'none'; cb.style.background = 'var(--acc2)'; cb.innerHTML = IC_MATH_HTML + ' Calculator (50/50)';
+        }
+      };
+    }
+    draw();
+  };
+
+  // Если вкладка Mock Exams уже открыта — перерисовываем каталог с 8 моками
+  if (typeof buildPT === 'function') buildPT();
+})();
 applyProfileUI();
 refreshDash();
 initDailyChallenges();
