@@ -2138,17 +2138,17 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 
           '<div class="sp-auth-art">' +
             '<div style="display:flex;justify-content:space-between;align-items:center">' +
-              '<span class="sp-stat-pill">🧭 ARCHIPELAGO OUTPOST</span>' +
-              '<span style="font-size:22px">⭐</span>' +
+              '<span class="sp-stat-pill">ARCHIPELAGO OUTPOST</span>' +
+              '<span style="font-size:22px"></span>' +
             '</div>' +
             '<div style="margin:20px 0">' +
               '<div style="font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,0.8);margin-bottom:6px">Know your SAT score</div>' +
-              '<h3 style="font-size:26px;font-weight:800;line-height:1.2;margin-bottom:10px">9,000+ questions &amp; 77+ full practice tests</h3>' +
+              '<h3 style="font-size:26px;font-weight:800;line-height:1.2;margin-bottom:10px">Step by step across every island. Track your progress, crack every problem.</h3>' +
               '<p style="font-size:13px;opacity:0.9;line-height:1.5">Sorted by domain and difficulty to match the adaptive Digital SAT experience.</p>' +
             '</div>' +
             '<div style="background:rgba(0,0,0,0.18);padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,0.15);display:flex;justify-content:space-between;align-items:center">' +
-              '<div style="font-size:12px;font-weight:700">🎯 Adaptive Track &amp; Desmos included</div>' +
-              '<span style="font-size:18px">🚀</span>' +
+              '<div style="font-size:12px;font-weight:700">Adaptive Track &amp; Desmos included</div>' +
+              '<span style="font-size:18px"></span>' +
             '</div>' +
           '</div>' +
         '</div>';
