@@ -1469,11 +1469,40 @@ rw.addEventListener('click',function(e){
 
 function rwBankOpen(ti){
   if (!spendEnergy(1)) return;
-  var ov=document.createElement('div'),ok=0;
-  ov.style.cssText='position:fixed;inset:0;z-index:80;background:var(--bg);overflow:auto;padding:24px';document.body.appendChild(ov);
-  function close(){ov.remove();buildBank()}
-  function pool(){var c=[];if(RQ[ti])RQ[ti].forEach(function(r){c.push(function(){return r})});if(RGEN[ti])RGEN[ti].forEach(function(g){c.push(g)});return c}
-  var myPool = shuffle(pool());
+  var ov = document.createElement('div'), ok = 0;
+  ov.style.cssText = 'position:fixed;inset:0;z-index:80;background:var(--bg);overflow:auto;padding:24px';
+  document.body.appendChild(ov);
+  
+  function close(){ ov.remove(); buildBank(); }
+  
+  // 1. Формируем пул с привязкой к ID, чтобы знать, какой именно это текст
+  function pool(){
+    var c = [];
+    if(RQ[ti]) RQ[ti].forEach(function(r, idx){ c.push({ fn: function(){return r}, id: 'rq_'+idx }) });
+    if(typeof RGEN !== 'undefined' && RGEN[ti]) RGEN[ti].forEach(function(g, idx){ c.push({ fn: g, id: 'rgen_'+idx }) });
+    return c;
+  }
+  
+  // 2. Читаем решенные из localStorage (у каждого острова свой ключ)
+  var solvedKey = 'satpath_rw_solved_island_' + ti;
+  var solvedList = [];
+  try { solvedList = JSON.parse(spGet(solvedKey)) || []; } catch(e) {}
+  
+  var fullPool = pool();
+  
+  // 3. Убираем shuffle() и фильтруем только нерешенные вопросы (по порядку)
+  var myPool = fullPool.filter(function(item) {
+    return solvedList.indexOf(item.id) === -1;
+  });
+  
+  // Если все тексты на острове решены — сбрасываем прогресс и начинаем заново
+  if (myPool.length === 0) {
+    toast("Island fully explored! Resetting questions...");
+    solvedList = [];
+    spSet(solvedKey, JSON.stringify(solvedList));
+    myPool = fullPool;
+  }
+  
   var qIndex = 0;
 
   function draw(){
@@ -1483,15 +1512,28 @@ function rwBankOpen(ti){
       document.getElementById('rx2').onclick = close;
       return;
     }
+    
     var starsNow = getTopicStars('rw_' + ti, true, ti);
-    var x=myPool[qIndex](), ans=x[1], opts=shuffle(x.slice(1)), done=false;
+    var currentItem = myPool[qIndex];
+    // Берем вопрос, перемешиваем только сами варианты ответов A/B/C/D
+    var x = currentItem.fn(), ans = x[1], opts = shuffle(x.slice(1)), done = false;
+    
     ov.innerHTML='<div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_BOOK_HTML + ' R&amp;W ISLAND DRILL</small><div style="font-weight:800;font-size:16px">'+RTOPS[ti]+'</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+miniHudHtml()+renderStarsHtml(starsNow)+'<button id="rx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">Waypoint '+(qIndex + 1)+' of '+myPool.length+' · ✓ '+ok+' · Earn ★ Mastery Stars for +15 PC</span></div><p style="font-size:18px;line-height:1.55;margin:18px 0 14px">'+x[0]+'</p><div id="ra"></div><div id="rf"></div></div>';
-    var a=document.getElementById('ra'),f=document.getElementById('rf');
-    document.getElementById('rx').onclick=close;
+    
+    var a = document.getElementById('ra'), f = document.getElementById('rf');
+    document.getElementById('rx').onclick = close;
+    
     function fin(v){
-      if(done)return;done=true;
+      if(done) return; done = true;
+      
+      // 4. Отмечаем этот текст как пройденный и сохраняем
+      if (solvedList.indexOf(currentItem.id) === -1) {
+        solvedList.push(currentItem.id);
+        spSet(solvedKey, JSON.stringify(solvedList));
+      }
+
       var prevStars = getTopicStars('rw_' + ti, true, ti);
-      var good=v===ans;
+      var good = (v === ans);
       if(good){
         ok++;
         addCoins(5);
@@ -1502,13 +1544,12 @@ function rwBankOpen(ti){
       if(newStars > prevStars){confetti();addCoins(15 * (newStars - prevStars), 'Mastery Star ★ unlocked!');}
       a.querySelectorAll('button').forEach(function(b){b.disabled=true;if(b.dataset.v===ans)b.classList.add('good');else if(b.dataset.v===v)b.classList.add('bad')});
       f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'#e74c3c')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect. Answer: '+ans))+'</p><button class="cta-amber" id="rn">Next Waypoint →</button>';
-      document.getElementById('rn').onclick=function(){qIndex++;draw()};
+      document.getElementById('rn').onclick = function(){ qIndex++; draw(); };
     }
     opts.forEach(function(o,k){var b=document.createElement('button');b.className='qo';b.dataset.v=o;b.innerHTML='<b>'+'ABCD'[k]+'</b>&nbsp; '+o;b.onclick=function(){fin(o)};a.appendChild(b)});
   }
   draw();
 }
-
 /* ===== BLITZ 10 MODE (Fast 10 Questions · Math / R&W / Mixed · Level Selector) ===== */
 var bzCfg = { mode: 'mix', lvl: 'hard' }; // mode: 'mix' | 'math' | 'rw', lvl: 'easy' | 'medium' | 'hard'
 function getBlitzBest() {
