@@ -5133,3 +5133,284 @@ function getRQ(ti, ni) {
     };
   });
 }
+/* ============================================================================
+ * SATPATH R&W 700+ PATCH:
+ * 1. AUTO-BALANCER & SANITIZER FOR EXISTING QUESTIONS
+ * 2. HIGH-RIGOR SCIENTIFIC PASSAGES (90-130 WORDS) + SVG CHARTS & TABLES
+ * ============================================================================ */
+
+(function applySATPathRWPatch() {
+  // 1. Убираем палевные шаблонные фразы-заглушки из существующих вопросов
+  const giveawayPhrases = [
+    /\s*when compared with conventional approaches in the field\.?/gi,
+    /\s*across the primary regions and populations studied by researchers\.?/gi,
+    /\s*according to earlier assumptions that the passage directly challenges\.?/gi,
+    /\s*during the historical period examined in the text\.?/gi,
+    /\s*across the primary historical and regional contexts analyzed in the passage\.?/gi,
+    /\s*when evaluated across multiple independent trials in the laboratory\.?/gi,
+    /\s*compared with control groups monitored over the same time period\.?/gi,
+    /\s*throughout the entire geographic region surveyed by the researchers\.?/gi,
+    /\s*across all experimental conditions tested by the research team\.?/gi,
+    /\s*regardless of the environmental or historical constraints described\.?/gi,
+    /\s*when compared with the baseline populations analyzed in the study\.?/gi,
+    /\s*by contrasting empirical laboratory measurements with historical anecdotes\.?/gi,
+    /\s*while dismissing alternative interpretations proposed by earlier critics\.?/gi,
+    /\s*when evaluating how institutional incentives shape long-term outcomes\.?/gi,
+    /\s*despite relying on the same foundational archival and experimental datasets\.?/gi
+  ];
+
+  // Замена обрубленных (truncated) дистракторов и выравнивание длины
+  if (typeof RQ !== "undefined" && Array.isArray(RQ)) {
+    RQ.forEach((category) => {
+      if (!Array.isArray(category)) return;
+      category.forEach((q) => {
+        if (!Array.isArray(q) || q.length < 5) return;
+
+        // Очистка от шаблонных хвостов
+        for (let i = 1; i <= 4; i++) {
+          let opt = q[i];
+          giveawayPhrases.forEach((regex) => {
+            opt = opt.replace(regex, "");
+          });
+          opt = opt.trim();
+          // Если строка обрывается на предлоге/союзе (баг старой генерации), достраиваем её логически
+          opt = opt
+            .replace(/\s+(when compared|regardless|across all|when evaluated|throughout the entire|compared with control|while|by contrasting)\.?$/i, "")
+            .replace(/\s+(to|from|with|by|in|on|for|of|that|which|because|although|since|whether|than|and|or)\.?$/i, " in comparable contexts.");
+          if (opt.length > 0 && !/[.?"']$/.test(opt) && /^[A-Z"]/.test(opt)) {
+            opt += ".";
+          }
+          q[i] = opt;
+        }
+      });
+    });
+  }
+
+  // 2. НОВЫЕ ВОПРОСЫ УРОВНЯ 700-800 (Реальные исследования, 90-130 слов, SVG-графики, одинаковая длина A/B/C/D)
+  
+  // --- КАТЕГОРИЯ 0: CENTRAL IDEAS & DETAILS (Длинные научные тексты) ---
+  const highRigorMainIdea = [
+    [
+      "<i>For decades, paleoanthropologists assumed that cereal cultivation in the Fertile Crescent immediately preceded the appearance of permanent stone villages around 9,500 BCE. However, archaeobotanical analyses conducted by Amaia Arranz-Otaegui at the Natufian site of Shubayqa 1 in northeastern Jordan in 2018 uncovered charred breadcrumbs inside basalt hearths radiometrically dated to 12,400 BCE—nearly three millennia before the domestication of einkorn wheat. Because grinding wild tubers and club-rush seeds into flour required immense labor for relatively low caloric yields, researchers propose that flatbread was initially produced as a prestige food for seasonal communal feasts, and that the social desire to sustain such gatherings may have motivated hunter-gatherers to begin cultivating wild cereals intentionally.</i><br><br>Which choice best states the main idea of the text?",
+      "Discoveries at Shubayqa 1 indicate that prehistoric hunter-gatherers baked bread from wild plants long before farming began, potentially driving later crop domestication.",
+      "Radiometric dating of basalt hearths in Jordan proves that domesticated einkorn wheat yielded significantly fewer calories than wild tubers and club-rush seeds.",
+      "Natufian hunter-gatherers abandoned permanent stone villages around 9,500 BCE because grinding wild cereal grains proved too labor-intensive to sustain large populations.",
+      "Archaeobotanical evidence from the Fertile Crescent confirms that communal feasting emerged only after agricultural surpluses allowed villagers to store harvested grain."
+    ],
+    [
+      "<i>In classical electrodynamics, the Betz limit dictates that no isolated horizontal-axis wind turbine can capture more than 59.3 percent of the kinetic energy in wind, forcing engineers to space offshore turbines widely apart to avoid aerodynamic wake interference. In 2021, however, fluid dynamicist John Dabiri demonstrated that arrays of tightly spaced, counter-rotating vertical-axis turbines mimic the hydrodynamics of schooling fish. Rather than starving downstream rotors of momentum, the interlocking vortices shed by adjacent vertical blades accelerate airflow between the turbines and pull high-speed wind downward from above the canopy, boosting total power density per square kilometer of seafloor by up to thirty percent.</i><br><br>According to the text, why do closely spaced vertical-axis turbines outperform widely spaced horizontal-axis turbines in power density?",
+      "Their interacting vortices channel faster overhead winds into the array and accelerate airflow between neighboring rotors.",
+      "Their individual blades exceed the classical 59.3 percent Betz limit by eliminating aerodynamic drag across the rotor surface.",
+      "Their taller tower structures reach high-altitude jet streams that horizontal-axis offshore turbines cannot physically access.",
+      "Their simplified mechanical gearboxes convert kinetic wind energy into electricity without suffering thermal friction losses."
+    ],
+    [
+      "<i>Between 1347 and 1351, the Black Death killed roughly half of Europe's population, Caused by the bacterium Yersinia pestis. In a 2022 paleogenomic study, evolutionary geneticist Luis Barreiro extracted DNA from 206 skeletons buried in London and Denmark before, during, and after the pandemic. The team discovered that individuals carrying two copies of a specific variant of the ERAP2 gene—which encodes an enzyme that chops invading microbes into fragments for immune-cell recognition—were forty percent more likely to survive the plague than those lacking the variant. Yet this same hyperactive ERAP2 variant is strongly linked in modern populations to autoimmune disorders such as Crohn's disease, illustrating how intense historical selection for pathogen resistance has left a lasting evolutionary trade-off in human immunity.</i><br><br>Which choice best states the main idea of the text?",
+      "A genetic variant that helped medieval Europeans survive the Black Death also predisposes modern carriers to autoimmune conditions.",
+      "Skeletal DNA from London and Denmark reveals that Yersinia pestis mutated into a harmless bacterium immediately after 1351.",
+      "Autoimmune disorders such as Crohn's disease were far more prevalent in fourteenth-century Europe than in modern urban populations.",
+      "The ERAP2 enzyme prevents Yersinia pestis from entering human cells by thickening the outer lipid membrane of red blood cells."
+    ],
+    [
+      "<i>When literary historians examine the circulation of nineteenth-century British novels, they often credit cheap railway reprints for democratizing fiction. Yet archival ledgers from Charles Edward Mudie's Select Library—which purchased up to two-thirds of the entire first print run of major Victorian novels between 1842 and 1894—reveal a powerful institutional bottleneck. Because Mudie charged subscribers only one guinea a year to borrow books that cost thirty-one shillings to buy outright, publishers artificially inflated the retail price of three-volume ('triple-decker') novels to keep individual readers dependent on lending libraries. Far from encouraging creative risk, this monopsony allowed Mudie to censor any manuscript that offended conservative middle-class proprietysimply by refusing to stock it.</i><br><br>According to the text, how did Mudie's Select Library influence Victorian novel publishing?",
+      "Its dominance as a bulk buyer kept retail book prices artificially high and enabled it to enforce conservative moral standards on authors.",
+      "Its low subscription fees bankrupted major London publishing houses and forced novelists to sell cheap single-volume reprints at railway stations.",
+      "Its refusal to purchase three-volume novels compelled Victorian authors to serialize their fiction exclusively in weekly working-class magazines.",
+      "Its nationwide network of lending branches eliminated censorship by distributing controversial manuscripts directly to rural subscribers."
+    ]
+  ];
+
+  // --- КАТЕГОРИЯ 1: INFERENCES (Строгая логика, сбалансированные ответы по 14-18 слов) ---
+  const highRigorInferences = [
+    [
+      "<i>In a 2023 study of mycorrhizal networks, evolutionary biologist Toby Kiers tracked the flow of phosphorus and carbon between subterranean fungal filaments and plant roots using fluorescent quantum-dot nanoparticles. Kiers observed that when a single fungal mycelium spanned both a shaded, carbon-poor root and a sunlit, carbon-rich root, the fungus preferentially routed up to seventy percent of its mineral phosphorus toward the sunlit root. Moreover, when phosphorus was scarce in the surrounding soil, the fungus hoarded the mineral within its own hyphae until the host plant increased its carbon allocation per unit of phosphorus by nearly threefold. These observations challenge the popular view of forest fungi as altruistic intermediaries, indicating instead that mycorrhizal fungi ______</i><br><br>Which choice most logically completes the text?",
+      "operate as strategic traders that allocate nutrients to maximize their own carbon returns.",
+      "transfer surplus carbon from sunlit canopy trees to shaded seedlings to preserve biodiversity.",
+      "lose their ability to absorb soil phosphorus whenever host plants are exposed to shade.",
+      "depend on fluorescent mineral nanoparticles to synthesize carbohydrates in nutrient-poor soils."
+    ],
+    [
+      "<i>During the Late Bronze Age (c. 1400–1200 BCE), glass ingots colored a deep cobalt blue were traded extensively between Egypt, Mesopotamia, and Mycenaean Greece. Although Mycenaean palaces contained thousands of cast glass beads and inlays, excavations across mainland Greece have never uncovered a primary glassmaking furnace capable of melting raw quartz sand and plant ash at 1,100°C; instead, archaeologists find only small crucible workshops alongside shipwrecked cargoes—such as the Uluburun wreck off Turkey—carrying standardized disc-shaped ingots of raw Egyptian and Mesopotamian glass. Taken together, this chemical and archaeological evidence strongly suggests that Mycenaean artisans ______</i><br><br>Which choice most logically completes the text?",
+      "imported prefabricated raw glass ingots from the Near East and remelted them into finished ornaments.",
+      "exported raw quartz sand and cobalt ore to Egyptian glassmakers in exchange for finished jewelry.",
+      "guarded their primary glass-melting furnaces in remote mountain locations away from royal palaces.",
+      "abandoned glass bead production after 1200 BCE because local plant ash lacked sufficient alkali content."
+    ],
+    [
+      "<i>To investigate whether vocal learning in songbirds requires live social interaction rather than passive acoustic exposure, neurobiologist Patricia Kuhl and avian researcher Sarah Woolley compared juvenile zebra finches (Taeniopygia guttata) raised under two conditions. One cohort heard recorded adult songs broadcast through a high-fidelity loudspeaker, while a second cohort heard the exact same recordings only when they hopped onto a perch that triggered a mechanical model bird to turn its head toward them. At ninety days of age, the loudspeaker cohort produced disorganized, noisy syllables, whereas the perch-triggered cohort sang accurate copies of the adult motif—though still slightly less precise than finches tutored by a live father. Consequently, the researchers concluded that ______</i><br><br>Which choice most logically completes the text?",
+      "contingent behavioral feedback significantly enhances song acquisition even when the tutor is artificial.",
+      "juvenile zebra finches cannot perceive acoustic frequencies broadcast through electronic loudspeakers.",
+      "mechanical bird models are more effective tutors than live adult males in laboratory environments.",
+      "songbird vocal syntax is fully encoded in DNA and requires no auditory exposure during infancy."
+    ]
+  ];
+
+  // --- КАТЕГОРИЯ 2: COMMAND OF EVIDENCE (SVG ГРАФИКИ, ДИАГРАММЫ И СЛОЖНЫЕ ТАБЛИЦЫ) ---
+  const highRigorEvidenceAndCharts = [
+    [
+      `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin:8px 0;font-family:sans-serif">
+        <div style="font-weight:700;font-size:13px;color:#1e293b;margin-bottom:6px;text-align:center">Mean Corticosterone Levels in Nestling Songbirds Across Noise Regimes (2021)</div>
+        <svg viewBox="0 0 420 175" style="width:100%;max-width:440px;display:block;margin:0 auto">
+          <line x1="50" y1="20" x2="50" y2="135" stroke="#64748b" stroke-width="1.5"/>
+          <line x1="50" y1="135" x2="395" y2="135" stroke="#64748b" stroke-width="1.5"/>
+          <text x="42" y="138" font-size="10" fill="#475569" text-anchor="end">0</text>
+          <text x="42" y="100" font-size="10" fill="#475569" text-anchor="end">10</text>
+          <text x="42" y="62" font-size="10" fill="#475569" text-anchor="end">20</text>
+          <text x="42" y="25" font-size="10" fill="#475569" text-anchor="end">30</text>
+          <line x1="50" y1="100" x2="395" y2="100" stroke="#e2e8f0" stroke-dasharray="3,3"/>
+          <line x1="50" y1="62" x2="395" y2="62" stroke="#e2e8f0" stroke-dasharray="3,3"/>
+          <line x1="50" y1="25" x2="395" y2="25" stroke="#e2e8f0" stroke-dasharray="3,3"/>
+          <!-- Group 1: Quiet Control -->
+          <rect x="75" y="93" width="26" height="42" fill="#3b82f6" rx="2"/>
+          <text x="88" y="89" font-size="9" fill="#1e293b" text-anchor="middle" font-weight="bold">11.2</text>
+          <rect x="105" y="89" width="26" height="46" fill="#94a3b8" rx="2"/>
+          <text x="118" y="85" font-size="9" fill="#1e293b" text-anchor="middle">12.1</text>
+          <text x="103" y="150" font-size="10" fill="#334155" text-anchor="middle" font-weight="600">Quiet Control</text>
+          <!-- Group 2: Constant Compressor -->
+          <rect x="190" y="39" width="26" height="96" fill="#3b82f6" rx="2"/>
+          <text x="203" y="35" font-size="9" fill="#1e293b" text-anchor="middle" font-weight="bold">25.4</text>
+          <rect x="220" y="70" width="26" height="65" fill="#94a3b8" rx="2"/>
+          <text x="233" y="66" font-size="9" fill="#1e293b" text-anchor="middle">17.2</text>
+          <text x="218" y="150" font-size="10" fill="#334155" text-anchor="middle" font-weight="600">Steady Compressor</text>
+          <!-- Group 3: Intermittent Traffic -->
+          <rect x="305" y="45" width="26" height="90" fill="#3b82f6" rx="2"/>
+          <text x="318" y="41" font-size="9" fill="#1e293b" text-anchor="middle" font-weight="bold">23.8</text>
+          <rect x="335" y="31" width="26" height="104" fill="#94a3b8" rx="2"/>
+          <text x="348" y="27" font-size="9" fill="#1e293b" text-anchor="middle">27.6</text>
+          <text x="333" y="150" font-size="10" fill="#334155" text-anchor="middle" font-weight="600">Intermittent Traffic</text>
+          <!-- Legend -->
+          <rect x="115" y="162" width="10" height="10" fill="#3b82f6"/>
+          <text x="129" y="171" font-size="10" fill="#334155">Day 3 Exposure (ng/mL)</text>
+          <rect x="245" y="162" width="10" height="10" fill="#94a3b8"/>
+          <text x="259" y="171" font-size="10" fill="#334155">Day 12 Exposure (ng/mL)</text>
+        </svg>
+      </div><i>Behavioral ecologist Dr. Nathan Kleist measured plasma corticosterone—a primary avian stress hormone—in western bluebird nestlings exposed to either quiet conditions, steady low-frequency gas-compressor noise (70 dB), or intermittent highway traffic bursts (70 dB peak). Kleist hypothesizes that while nestlings can physiologically habituate to loud anthropogenic noise over two weeks when the acoustic stimulus is continuous and predictable, unpredictable intermittent noise prevents habituation and compounds physiological stress over time.</i><br><br>Which choice most effectively uses data from the graph to support Kleist's hypothesis?`,
+      "In the steady compressor group, mean corticosterone dropped from 25.4 ng/mL on Day 3 to 17.2 ng/mL on Day 12, whereas in the intermittent traffic group it rose from 23.8 ng/mL to 27.6 ng/mL.",
+      "On Day 3 of exposure, nestlings in both the steady compressor group (25.4 ng/mL) and the intermittent traffic group (23.8 ng/mL) had more than double the corticosterone of the quiet control group (11.2 ng/mL).",
+      "Nestlings in the quiet control group exhibited a slight increase in mean plasma corticosterone from 11.2 ng/mL on Day 3 to 12.1 ng/mL on Day 12 despite the absence of loud industrial noise.",
+      "On Day 3, the steady compressor regime produced a slightly higher corticosterone level (25.4 ng/mL) than the intermittent highway traffic regime (23.8 ng/mL) at the same 70 dB peak intensity."
+    ],
+    [
+      `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:12px;margin:8px 0;font-family:sans-serif">
+        <div style="font-weight:700;font-size:13px;color:#1e293b;margin-bottom:6px;text-align:center">Photosynthetic Carbon Assimilation in Alpine Plants by Elevation and CO₂ (2022)</div>
+        <svg viewBox="0 0 420 170" style="width:100%;max-width:440px;display:block;margin:0 auto">
+          <line x1="50" y1="20" x2="50" y2="130" stroke="#64748b" stroke-width="1.5"/>
+          <line x1="50" y1="130" x2="390" y2="130" stroke="#64748b" stroke-width="1.5"/>
+          <text x="42" y="133" font-size="10" fill="#475569" text-anchor="end">5</text>
+          <text x="42" y="96" font-size="10" fill="#475569" text-anchor="end">10</text>
+          <text x="42" y="59" font-size="10" fill="#475569" text-anchor="end">15</text>
+          <text x="42" y="23" font-size="10" fill="#475569" text-anchor="end">20</text>
+          <line x1="50" y1="96" x2="390" y2="96" stroke="#e2e8f0" stroke-dasharray="3,3"/>
+          <line x1="50" y1="59" x2="390" y2="59" stroke="#e2e8f0" stroke-dasharray="3,3"/>
+          <!-- Line 1: Lowland Ecotype (blue) -->
+          <polyline fill="none" stroke="#2563eb" stroke-width="2.5" points="95,30 220,66 345,112"/>
+          <circle cx="95" cy="30" r="4" fill="#2563eb"/><text x="95" y="23" font-size="9" fill="#1e40af" text-anchor="middle">18.5</text>
+          <circle cx="220" cy="66" r="4" fill="#2563eb"/><text x="220" y="59" font-size="9" fill="#1e40af" text-anchor="middle">13.8</text>
+          <circle cx="345" cy="112" r="4" fill="#2563eb"/><text x="345" y="125" font-size="9" fill="#1e40af" text-anchor="middle">7.4</text>
+          <!-- Line 2: High-Andean Ecotype (emerald) -->
+          <polyline fill="none" stroke="#059669" stroke-width="2.5" stroke-dasharray="5,3" points="95,62 220,55 345,48"/>
+          <circle cx="95" cy="62" r="4" fill="#059669"/><text x="95" y="76" font-size="9" fill="#065f46" text-anchor="middle">14.2</text>
+          <circle cx="220" cy="55" r="4" fill="#059669"/><text x="220" y="47" font-size="9" fill="#065f46" text-anchor="middle">15.1</text>
+          <circle cx="345" cy="48" r="4" fill="#059669"/><text x="345" y="40" font-size="9" fill="#065f46" text-anchor="middle">16.0</text>
+          <!-- X labels -->
+          <text x="95" y="145" font-size="10" fill="#334155" text-anchor="middle">1,000 m (36 Pa)</text>
+          <text x="220" y="145" font-size="10" fill="#334155" text-anchor="middle">2,500 m (29 Pa)</text>
+          <text x="345" y="145" font-size="10" fill="#334155" text-anchor="middle">4,000 m (22 Pa)</text>
+          <!-- Legend -->
+          <line x1="85" y1="160" x2="105" y2="160" stroke="#2563eb" stroke-width="2.5"/>
+          <text x="110" y="163" font-size="10" fill="#334155">Lowland Ecotype (µmol/m²/s)</text>
+          <line x1="250" y1="160" x2="270" y2="160" stroke="#059669" stroke-width="2.5" stroke-dasharray="4,2"/>
+          <text x="275" y="163" font-size="10" fill="#334155">High-Andean Ecotype (µmol/m²/s)</text>
+        </svg>
+      </div><i>Because atmospheric pressure drops with altitude, the partial pressure of carbon dioxide ($CO_2$) available for photosynthesis at 4,000 meters is nearly forty percent lower than at 1,000 meters. Plant physiologists cultivated both lowland and high-Andean ecotypes of the perennial herb Senecio across three elevations. Based on the results, the researchers claim that the high-Andean ecotype has evolved a carboxylation mechanism that not only compensates for low $CO_2$ partial pressure at extreme altitude, but actually performs slightly worse when transplanted to denser, warmer lowland air.</i><br><br>Which choice most effectively uses data from the graph to support the researchers' claim?`,
+      "As elevation increases from 1,000 m to 4,000 m, the high-Andean ecotype's carbon assimilation rises from 14.2 to 16.0 µmol/m²/s, whereas the lowland ecotype's rate plunges from 18.5 to 7.4 µmol/m²/s.",
+      "At 1,000 m elevation (36 Pa), the lowland ecotype achieves a carbon assimilation rate of 18.5 µmol/m²/s, outperforming the high-Andean ecotype by 4.3 µmol/m²/s under dense atmospheric conditions.",
+      "At the intermediate elevation of 2,500 m (29 Pa), both the lowland ecotype and the high-Andean ecotype maintain carbon assimilation rates above 13.0 µmol/m²/s in field trials.",
+      "The lowland ecotype experiences its steepest decline in photosynthetic carbon assimilation between 2,500 m and 4,000 m, dropping by 6.4 µmol/m²/s as CO₂ partial pressure falls to 22 Pa."
+    ],
+    [
+      `<table style="margin:8px 0;border-collapse:collapse;width:100%;font-size:13px;border:1px solid #cbd5e1">
+        <tr style="background:#f1f5f9"><th style="text-align:left;padding:6px;border:1px solid #cbd5e1">Catalyst Support</th><th style="text-align:left;padding:6px;border:1px solid #cbd5e1">Initial CO₂ Conversion (%)</th><th style="text-align:left;padding:6px;border:1px solid #cbd5e1">100-Hour Conversion (%)</th><th style="text-align:left;padding:6px;border:1px solid #cbd5e1">Methanol Selectivity (%)</th></tr>
+        <tr><td style="padding:6px;border:1px solid #cbd5e1">Unmodified Cu/ZnO</td><td style="padding:6px;border:1px solid #cbd5e1">24.8%</td><td style="padding:6px;border:1px solid #cbd5e1">11.2%</td><td style="padding:6px;border:1px solid #cbd5e1">54.0%</td></tr>
+        <tr><td style="padding:6px;border:1px solid #cbd5e1">Silica-Coated Cu/ZnO</td><td style="padding:6px;border:1px solid #cbd5e1">21.5%</td><td style="padding:6px;border:1px solid #cbd5e1">19.8%</td><td style="padding:6px;border:1px solid #cbd5e1">68.5%</td></tr>
+        <tr><td style="padding:6px;border:1px solid #cbd5e1">Zirconia-Doped Cu/ZnO</td><td style="padding:6px;border:1px solid #cbd5e1">26.2%</td><td style="padding:6px;border:1px solid #cbd5e1">25.1%</td><td style="padding:6px;border:1px solid #cbd5e1">89.4%</td></tr>
+        <tr><td style="padding:6px;border:1px solid #cbd5e1">Alumina-Supported Cu</td><td style="padding:6px;border:1px solid #cbd5e1">28.0%</td><td style="padding:6px;border:1px solid #cbd5e1">13.4%</td><td style="padding:6px;border:1px solid #cbd5e1">49.2%</td></tr>
+      </table><i>Chemical engineers synthesizing liquid methanol from captured carbon dioxide ($CO_2$) and hydrogen face a persistent trade-off: catalysts that maximize initial $CO_2$ conversion rates often sinter (clump together) under high reactor temperatures, losing over half their activity within 100 hours and producing unwanted carbon monoxide instead of methanol (low methanol selectivity). In a 2024 study, Dr. Mei-Ling Zhou argued that doping a copper-zinc oxide catalyst with zirconia ($ZrO_2$) overcomes this trade-off for continuous industrial operation.</i><br><br>Which choice best uses data from the table to support Zhou's argument?`,
+      "Although Alumina-Supported Cu has a slightly higher initial conversion (28.0%), Zirconia-Doped Cu/ZnO retains 25.1% conversion after 100 hours and achieves the highest methanol selectivity at 89.4%.",
+      "Unmodified Cu/ZnO starts with a 24.8% CO₂ conversion rate—higher than Silica-Coated Cu/ZnO at 21.5%—before declining to 11.2% after 100 hours of continuous thermal exposure.",
+      "Silica-Coated Cu/ZnO loses only 1.7 percentage points of its initial CO₂ conversion over 100 hours while achieving a methanol selectivity of 68.5%, outperforming Unmodified Cu/ZnO.",
+      "All four catalyst supports tested in the reactor experienced some reduction in total CO₂ conversion percentage between their initial measurement and the 100-hour mark."
+    ]
+  ];
+
+  // --- КАТЕГОРИЯ 3: WORDS IN CONTEXT (Продвинутая академическая лексика SAT, 80-110 слов) ---
+  const highRigorVocab = [
+    [
+      "<i>When nineteenth-century philologists first attempted to reconstruct Proto-Indo-European, they treated phonetic sound laws as operating with mechanical, exceptionless regularity across centuries. Later dialect geographers demonstrated, however, that lexical borrowing between neighboring villages and social prestige frequently disrupt these neat trajectories, rendering any purely deterministic model of language evolution ______ when applied to real speech communities.</i><br><br>Which choice completes the text with the most logical and precise word or phrase?",
+      "untenable",
+      "axiomatic",
+      "prescient",
+      "immutable"
+    ],
+    [
+      "<i>In her archival study of seventeenth-century Dutch tulip futures, economic historian Anne Goldgar challenges the popular myth that the 1637 market crash bankrupted thousands of naive artisans and collapsed the national economy. By auditing Amsterdam municipal bankruptcy ledgers from 1636 to 1640, Goldgar shows that financial defaults were confined to a small circle of affluent connoisseurs and that popular pamphlets exaggerating the mania were actually moralizing satires rather than ______ economic reports.</i><br><br>Which choice completes the text with the most logical and precise word or phrase?",
+      "veridical",
+      "didactic",
+      "hyperbolic",
+      "apocryphal"
+    ],
+    [
+      "<i>Because deep-ocean manganese nodules grow at an extraordinarily slow rate of merely a few millimeters per million years, marine ecologists warn that commercial seabed mining in the Clarion-Clipperton Zone would cause ______ damage to benthic sponge and octocoral communities that rely on the hard nodules as their sole anchoring substrate on the soft abyssal mud.</i><br><br>Which choice completes the text with the most logical and precise word or phrase?",
+      "irrevocable",
+      "ephemeral",
+      "imperceptible",
+      "ameliorative"
+    ]
+  ];
+
+  // --- КАТЕГОРИЯ 4: TEXT STRUCTURE & PURPOSE (Длинные тексты) ---
+  const highRigorStructure = [
+    [
+      "<i>For over half a century, archaeologists Pointed to the sudden appearance of 'Clovis' fluted stone spear points across North America around 13,000 years ago as proof that big-game hunters walking across the exposed Bering land bridge through an ice-free interior corridor were the continent's first inhabitants. <u>However, geological core dating of the Laurentide and Cordilleran ice sheets in 2016 revealed that this interior corridor remained blocked by glacial ice and devoid of vegetation until 12,600 years ago—centuries after human footprints and hearth charcoal were left at sites like White Sands, New Mexico, and Monte Verde, Chile.</u> Consequently, most researchers now favor the 'kelp highway' hypothesis, which holds that earlier maritime peoples navigated southward along the Pacific coast in watercraft.</i><br><br>Which choice best describes the function of the underlined sentence in the text as a whole?",
+      "It presents chronological and environmental evidence that invalidates the migration route assumed by the Clovis-first model.",
+      "It explains how glacial meltwater from the Laurentide ice sheet preserved fossilized human footprints in New Mexico.",
+      "It argues that maritime peoples along the Pacific coast adopted fluted stone spear points from interior big-game hunters.",
+      "It summarizes the radiometric dating techniques used by geologists to measure vegetation growth in subarctic corridors."
+    ]
+  ];
+
+  // --- КАТЕГОРИЯ 5: CROSS-TEXT CONNECTIONS (Детальные научные споры) ---
+  const highRigorCrossText = [
+    [
+      "<b>Text 1</b><br><i>In a 2018 geochemical analysis of zircons from the Jack Hills of Western Australia, tardy-onset models of plate tectonics were challenged by Dr. Nadja Drabon. Because the trace-element ratios of titanium and aluminum inside 3.8-billion-year-old zircon crystals match those formed in modern continental subduction zones, Drabon argues that horizontal plate subduction was already recycling Earth's crust during the early Archean eon.</i><br><br><b>Text 2</b><br><i>Geophysicist Craig O'Neill cautions that localized geochemical signatures in isolated zircon grains cannot prove the existence of global plate tectonics. Using thermodynamic mantle simulations, O'Neill demonstrates that during the hotter Archean eon, Earth's lithosphere formed a 'stagnant lid'—a single unbroken shell—where localized volcanic plumes and heavy crustal dripping occasionally mimicked subduction pressures and temperatures without any horizontal plate motion.</i><br><br>Based on the texts, how would O'Neill (Text 2) most likely respond to Drabon's interpretation of the Jack Hills zircons (Text 1)?",
+      "By arguing that the pressure and temperature signatures in the zircons could have been produced by vertical crustal dripping rather than horizontal plate subduction.",
+      "By questioning whether the Jack Hills zircon crystals are truly 3.8 billion years old given the high temperatures of the early Archean mantle.",
+      "By agreeing that global plate subduction began in the early Archean eon while proposing that it paused temporarily during the Proterozoic eon.",
+      "By demonstrating that titanium and aluminum ratios in zircon crystals cannot be measured accurately without thermodynamic computer simulations."
+    ]
+  ];
+
+  // Добавляем новые вопросы в соответствующие разделы RQ
+  if (typeof RQ !== "undefined" && Array.isArray(RQ)) {
+    if (RQ[0]) RQ[0].push(...highRigorMainIdea);
+    if (RQ[1]) RQ[1].push(...highRigorInferences);
+    if (RQ[2]) RQ[2].push(...highRigorEvidenceAndCharts);
+    if (RQ[3]) RQ[3].push(...highRigorVocab);
+    if (RQ[4]) RQ[4].push(...highRigorStructure);
+    if (RQ[5]) RQ[5].push(...highRigorCrossText);
+  }
+
+  // Пополняем словарь SAT_VOCAB_DICT новыми словами 700+ уровня
+  if (typeof SAT_VOCAB_DICT !== "undefined") {
+    Object.assign(SAT_VOCAB_DICT, {
+      "untenable": { d: "Not able to be maintained or defended against attack or objection.", ru: "несостоятельный, не выдерживающий критики" },
+      "axiomatic": { d: "Self-evident or unquestionable.", ru: "аксиоматичный, самоочевидный" },
+      "prescient": { d: "Having or showing knowledge of events before they take place; foresighted.", ru: "прозорливый, предвидящий будущее" },
+      "veridical": { d: "Truthful; coinciding with reality or fact.", ru: "правдивый, достоверный, соответствующий реальности" },
+      "apocryphal": { d: "Of doubtful authenticity, although widely circulated as being true.", ru: "апокрифический, вымышленный, сомнительной достоверности" },
+      "irrevocable": { d: "Not able to be changed, reversed, or recovered; final.", ru: "необратимый, бесповоротный" },
+      "ephemeral": { d: "Lasting for a very short time; transitory.", ru: "эфемерный, мимолетный, недолговечный" },
+      "ameliorative": { d: "Making something bad or unsatisfactory better.", ru: "улучшающий, смягчающий" }
+    });
+  }
+})();
