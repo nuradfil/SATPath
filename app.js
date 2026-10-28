@@ -44,6 +44,17 @@ function spSet(k, v) {
     return String(a) === String(q.ans);
   };
   /* Приблизительная шкала 200–800: R&W 2×27 вопросов, Math 2×22. Лёгкий второй модуль ограничивает потолок. */
+  /* План R&W-модуля: 27 вопросов, поровну по темам, где есть вопросы (PT_RW из других файлов имеет приоритет) */
+  window.ptRwPlan = function () {
+    if (Array.isArray(window.PT_RW) && window.PT_RW.length) return window.PT_RW;
+    var tis = [];
+    if (typeof RTOPS !== 'undefined' && typeof RQ !== 'undefined') {
+      for (var i = 0; i < RTOPS.length; i++) if (RQ[i] && RQ[i].length) tis.push(i);
+    }
+    var plan = [], total = 27, n = tis.length;
+    for (var k = 0; k < n; k++) plan.push([tis[k], Math.floor(total / n) + (k < total % n ? 1 : 0)]);
+    return plan;
+  };
   if (typeof window.ptScore !== 'function') window.ptScore = function (sec, ok1, ok2, hard) {
     var max = sec === 'r' ? 54 : 44;
     var pct = Math.max(0, Math.min(1, ((+ok1 || 0) + (+ok2 || 0)) / max));
@@ -175,18 +186,18 @@ function removeMistakeByQuestion(qText) {
 }
 function updateNavBadges() {
   var mkLen = getMistakes().length;
-  ['navMistakesCnt', 'sideErrCnt'].forEach(function(id) {
+  ['navMistakesCnt', 'sideErrCnt', 'mbErrCnt'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.textContent = mkLen;
-    el.style.display = mkLen > 0 ? 'inline-block' : 'none';
+    el.style.display = mkLen > 0 ? (id.indexOf('mb') === 0 ? 'grid' : 'inline-block') : 'none';
   });
   var vLen = getVocabList().length;
-  ['navVocabCnt', 'sideVocCnt'].forEach(function(id) {
+  ['navVocabCnt', 'sideVocCnt', 'mbVocCnt'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
     el.textContent = vLen;
-    el.style.display = vLen > 0 ? 'inline-block' : 'none';
+    el.style.display = vLen > 0 ? (id.indexOf('mb') === 0 ? 'grid' : 'inline-block') : 'none';
   });
 }
 
@@ -643,7 +654,7 @@ function spIco(name, cls, style, sw) {
 }
 var IC_MAP_HTML    = spIco('map');
 var IC_COMPAS_HTML = spIco('compass');
-var IC_COIN_HTML = '<img class="ui-ic" src="logo.png" alt="">';
+var IC_COIN_HTML   = spIco('coin');
 var IC_CAMP_HTML   = spIco('camp');
 var IC_ENERGY_HTML = spIco('bolt');
 var IC_ART_HTML    = spIco('trophy');
@@ -1429,7 +1440,7 @@ function decor(ti,c){
 function build(){var h='<div class="mph"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:22px">' + spIco('math','ic','width:32px;height:32px;vertical-align:-7px;color:var(--acc)') + ' Math Path</b><small id="mpc" style="color:var(--mut)"></small></div><div class="bar" style="margin:10px 0 0"><div id="mpb"></div></div></div>',g=0,ti=0;
  CUR.forEach(function(d){d[1].forEach(function(tn){var c=DOM[d[0]];
   h+='<div class="tp" style="background:'+c[0]+'"><small>'+d[0]+' · Topic '+(ti+1)+'/20</small><b>'+tn+'</b></div><div class="pth">';
-  TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px">' + '<img class="lg" src="logo.png" alt="">' + '<em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
+  TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px">' + spIco('logo','lg','color:var(--c)','2.2') + '<em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
   h+=decor(ti,c)+'</div>';ti++})});
  mp.innerHTML=h+'<div class="tp" style="background:var(--acc2)">' + IC_BOOK_HTML + ' SAT Math complete!</div>';built=true;paint()}
 function paint(){if(!built)return;var d=getDone(),cur=-1;
@@ -1753,7 +1764,7 @@ function buildRW(){
   var h='<div class="mph"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:22px">' + spIco('pen','ic','width:32px;height:32px;vertical-align:-7px;color:var(--acc2)') + ' R&amp;W Path</b><small id="rwc" style="color:var(--mut)"></small></div><div class="bar" style="margin:10px 0 0"><div id="rwb"></div></div></div>',g=0,ti=0;
   RCUR.forEach(function(d){d[1].forEach(function(tn){var c=RDOM[d[0]];
     h+='<div class="tp" style="background:'+c[0]+'"><small>'+d[0]+' · Topic '+(ti+1)+'/10</small><b>'+tn+'</b></div><div class="pth">';
-    TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px">' + '<img class="lg" src="logo.png" alt="">' + '<em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
+    TYPES.forEach(function(ty,ni){h+='<button class="isl" data-g="'+g+'" style="--c:'+c[0]+';--d:'+c[1]+';--x:'+Math.round(Math.sin(g*.9)*70)+'px">' + spIco('logo','lg','color:var(--c)','2.2') + '<em class="bd"></em><i class="lb">'+ty.l+'</i></button>';g++});
     h+=decor(ti,c)+'</div>';ti++})});
   rw.innerHTML=h+'<div class="tp" style="background:var(--acc2)">' + IC_BOOK_HTML + ' SAT Reading &amp; Writing complete!</div>';rbuilt=true;paintRW();
 }
@@ -3316,7 +3327,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         }
       });
     } else {
-      PT_RW.forEach(function (x, blockIdx) {
+      ptRwPlan().forEach(function (x, blockIdx) {
         var ti = x[0], countNeeded = x[1];
         var list = RQ[ti] || [];
         var L = list.length;
@@ -3350,12 +3361,33 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
           });
         });
       });
+      if (out.length < 27 && typeof RQ !== 'undefined') {
+        var pool = [];
+        for (var pi = 0; pi < RQ.length; pi++) if (RQ[pi] && RQ[pi].length) pool.push(pi);
+        for (var z = 0, guard = 0; out.length < 27 && pool.length && guard < 800; z++, guard++) {
+          var tj = pool[z % pool.length], Lj = RQ[tj].length, uj = used[tj] || (used[tj] = {});
+          for (var pr = 0; pr < Lj; pr++) {
+            var ci = (masterSeed + z * 31 + pr) % Lj;
+            if (uj[ci]) continue;
+            uj[ci] = 1;
+            var rj = RQ[tj][ci];
+            out.push({
+              q: rj[0], ans: rj[1],
+              opts: deterministicShuffle(rj.slice(1), makeDeterministicRng(masterSeed + tj * 1013 + ci * 97)),
+              isGrid: false, rw: true, top: RTOPS[tj]
+            });
+            break;
+          }
+        }
+      }
     }
     return out;
   };
 
   // Красивое окно входа в Fullscreen в фирменном стиле SATPath
   function showFullscreenCountdownGate(onProceed, onCancel) {
+    var fsOk = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+    if (!fsOk) { sessionStorage.setItem('bb_fullscreen_active', '0'); onProceed(); return; }
     var gate = document.createElement('div');
     gate.className = 'bb-fs-ov';
     var secLeft = 10;
@@ -3364,9 +3396,10 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         '<div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--sand);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px">' + IC_COMPAS_HTML + ' BLUEBOOK EXPEDITION PROTOCOL</div>' +
         '<div class="bb-fs-timer" id="bbFsCount">10</div>' +
         '<div class="bb-fs-title">Enter Fullscreen Mode</div>' +
-        '<div class="bb-fs-sub">Mock Exams run in distraction-free fullscreen mode just like the official Digital SAT. Choose an option below before the countdown ends.</div>' +
+        '<div class="bb-fs-sub">Mock Exams run in distraction-free fullscreen mode just like the official Digital SAT. If you do nothing, the exam starts automatically when the timer ends.</div>' +
         '<button type="button" class="cta-amber" id="bbBtnEnterFs" style="width:100%;max-width:320px;margin-bottom:10px;padding:13px 20px;font-size:14px">Enter Fullscreen &amp; Start →</button>' +
         '<button type="button" class="chip" id="bbBtnSkipFs" style="width:100%;max-width:320px;padding:11px 20px;font-size:13px;font-weight:700;text-align:center">Continue Without Fullscreen</button>' +
+        '<button type="button" id="bbBtnBackFs" style="display:block;margin:14px auto 0;font-size:12.5px;font-weight:700;color:var(--mut);text-decoration:underline">Back to Mock Exams</button>' +
       '</div>';
     document.body.appendChild(gate);
 
@@ -3377,8 +3410,8 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
       if (secLeft <= 0) {
         clearInterval(iv);
         gate.remove();
-        toast('Fullscreen timer expired. Click Start to launch your Mock Exam.');
-        if (onCancel) onCancel();
+        sessionStorage.setItem('bb_fullscreen_active', '0');
+        onProceed();
       }
     }, 1000);
 
@@ -3392,6 +3425,12 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
       } catch (e) {}
       gate.remove();
       onProceed();
+    };
+
+    gate.querySelector('#bbBtnBackFs').onclick = function () {
+      clearInterval(iv);
+      gate.remove();
+      if (onCancel) onCancel();
     };
 
     gate.querySelector('#bbBtnSkipFs').onclick = function () {
@@ -3617,6 +3656,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 
           function startMod1() {
             var qs1 = ptBuild(t, sec, 1, 'mix', used);
+            if (!qs1.length) { toast('Questions for this section did not load. Please refresh the page.'); return buildPT(); }
             var savedModState = (saved && saved.si === si && saved.modStep === 1) ? saved.modState : null;
 
             function launchM1() {
@@ -3647,6 +3687,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 
           function startMod2(o1Data, isHardTrack, resumingM2) {
             var qs2 = ptBuild(t, sec, 2, isHardTrack ? 'hard' : 'easy', used);
+            if (!qs2.length) { toast('Questions for this section did not load. Please refresh the page.'); return buildPT(); }
             var savedMod2State = resumingM2 && saved ? saved.modState : null;
 
             function launchM2() {
@@ -3697,6 +3738,27 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
   };
 
   try { if (typeof buildPT === 'function') buildPT(); } catch (e) { console.error('buildPT failed:', e); }
+})();
+
+/* ===== MOBILE BOTTOM NAV: sync active tab with show() ===== */
+(function mobileBottomNav() {
+  var bar = document.getElementById('mbar');
+  if (!bar || typeof window.show !== 'function') return;
+  function mark(w) {
+    bar.querySelectorAll('button').forEach(function(b) { b.classList.toggle('on', b.getAttribute('data-t') === w); });
+  }
+  var origShow = window.show;
+  window.show = function(w) {
+    var r = origShow.apply(this, arguments);
+    mark(w);
+    if (window.innerWidth <= 820) { try { window.scrollTo(0, 0); } catch (e) {} }
+    return r;
+  };
+  bar.querySelectorAll('button').forEach(function(b) {
+    b.onclick = function() { show(b.getAttribute('data-t')); };
+  });
+  mark('d');
+  updateNavBadges();
 })();
 
 applyProfileUI();
