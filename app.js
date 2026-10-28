@@ -1669,18 +1669,16 @@ function openAiTokenDonateModal(neededCost) {
   }
 }
 
-/* Wider AI dock: injected here so it applies even if index.html CSS is stale */
+/* AI tutor removed: single-column drill layout, hide AI token pills */
 (function() {
   if (document.getElementById('spAiDockCss')) return;
   var st = document.createElement('style');
   st.id = 'spAiDockCss';
   st.textContent =
+    '.hud-pill.ai-tok,.sp-ai-fab,.sp-ai-dock,.sp-ai-backdrop{display:none!important}' +
     '@media (min-width:1041px){' +
-    '.sp-ai-stage{width:calc(100vw - 40px)!important;max-width:none!important;margin:0 auto!important;grid-template-columns:minmax(0,1fr) minmax(480px,32%)!important;gap:20px!important}' +
-    '.sp-ai-stage.calc-open{grid-template-columns:minmax(0,1fr) minmax(380px,.9fr) minmax(460px,28%)!important}' +
-    '.sp-ai-dock{height:calc(100vh - 32px)!important;max-height:none!important;padding:20px!important}' +
-    '.sp-ai-body{flex:1 1 0!important;max-height:none!important;min-height:0!important}' +
-    '.sp-ai-step{font-size:15px!important}' +
+    '.sp-ai-stage{grid-template-columns:minmax(0,1fr)!important;max-width:1240px!important;width:96vw!important}' +
+    '.sp-ai-stage.calc-open{grid-template-columns:minmax(0,1fr) minmax(380px,1fr)!important;max-width:1820px!important;width:97vw!important}' +
     '}';
   document.head.appendChild(st);
 })();
@@ -1706,6 +1704,7 @@ function spAiLabels(isRu) {
 
 /* Mounts the SATPath AI Companion panel inside Atlas & Mistake Log overlays */
 function createSatPathAiPanelHtml() {
+  return ''; // AI tutor removed
   var curAi = getAiTokens();
   var isRu = (_spAiLang === 'ru');
   var L = spAiLabels(isRu);
