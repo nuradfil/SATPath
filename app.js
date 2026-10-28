@@ -97,7 +97,8 @@ function spSvg(name, size) {
     alert: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
     plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
     send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
-    coffee: '<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>'
+    coffee: '<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>',
+    sparkles: '<path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/>'
   };
   return '<svg width="' + sz + '" height="' + sz + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px;flex:none">' + (paths[name] || paths.compass) + '</svg>';
 }
@@ -647,7 +648,8 @@ var SP_ICO = {
   target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
   book: '<path d="M12 6.5C10.5 5 8 4.5 4 4.5v13c4 0 6.5.5 8 2 1.5-1.5 4-2 8-2v-13c-4 0-6.5.5-8 2z"/><path d="M12 6.5v13"/>',
   math: '<path d="M5 7h6M8 4v6M14 7h6M5.5 14.5l5 5M10.5 14.5l-5 5M14 15.5h6M14 18.5h6"/>',
-  pen: '<path d="m4 20 1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z"/><path d="m14.5 6.5 3 3"/>'
+  pen: '<path d="m4 20 1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z"/><path d="m14.5 6.5 3 3"/>',
+  ai: '<path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/>'
 };
 function spIco(name, cls, style, sw) {
   return '<svg class="' + (cls == null ? 'ui-ic' : cls) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (sw || '1.9') + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' + (style ? ' style="' + style + '"' : '') + '>' + (SP_ICO[name] || '') + '</svg>';
@@ -665,6 +667,7 @@ var IC_AIM_HTML    = spIco('target');
 var IC_BOOK_HTML   = spIco('book');
 var IC_BOOK_SM_HTML= spIco('book','ui-ic-sm');
 var IC_MATH_HTML   = spIco('math');
+var IC_AI_HTML     = spIco('ai');
 
 function getRawEcon() {
   try {
@@ -672,6 +675,7 @@ function getRawEcon() {
     var today = new Date().toISOString().slice(0, 10);
     return {
       coins: typeof d.coins === 'number' ? d.coins : 100,
+      aiTokens: typeof d.aiTokens === 'number' ? d.aiTokens : 300,
       energy: typeof d.energy === 'number' ? d.energy : 5,
       maxEnergy: d.maxEnergy || 5,
       compass: !!d.compass,
@@ -684,7 +688,7 @@ function getRawEcon() {
     };
   } catch (e) {
     return {
-      coins: 100, energy: 5, maxEnergy: 5, compass: false, crest: false,
+      coins: 100, aiTokens: 300, energy: 5, maxEnergy: 5, compass: false, crest: false,
       lastEnergyTs: Date.now(), dailyRationDate: '',
       drillRewardsDate: new Date().toISOString().slice(0, 10), drillRewardsCount: 0,
       mockRewarded: {}
@@ -742,20 +746,106 @@ function addCoins(amount, reason) {
 function addFreeEnergy(amount, reason) { return; }
 function spendEnergy(cost) { return true; }
 
-function miniHudHtml() {
+function getAiTokens() {
   var e = getEcon();
+  return typeof e.aiTokens === 'number' ? e.aiTokens : 300;
+}
+
+function spendAiTokens(cost, reason) {
+  var e = getEcon();
+  var cur = typeof e.aiTokens === 'number' ? e.aiTokens : 300;
+  if (cur < cost) {
+    openAiTokenDonateModal(cost);
+    return false;
+  }
+  e.aiTokens = Math.max(0, cur - cost);
+  saveEcon(e);
+  syncUserAiTokensToCloud();
+  if (reason) toast(IC_AI_HTML + ' −' + cost + ' AI Tokens · ' + reason);
+  return true;
+}
+
+function addAiTokens(amount, reason) {
+  if (!amount) return;
+  var e = getEcon();
+  var cur = typeof e.aiTokens === 'number' ? e.aiTokens : 300;
+  e.aiTokens = Math.max(0, cur + amount);
+  saveEcon(e);
+  syncUserAiTokensToCloud();
+  if (reason) toast(IC_AI_HTML + ' +' + amount + ' AI Tokens · ' + reason);
+}
+
+async function syncUserAiTokensToCloud() {
+  if (!FB || !FBU || !FB.fs) return;
+  try {
+    var e = getEcon();
+    var s = FB.fs;
+    await s.setDoc(s.doc(FB.db, 'users', FBU.uid), {
+      aiTokens: e.aiTokens,
+      coins: e.coins,
+      updatedAt: Date.now()
+    }, { merge: true });
+  } catch (err) {}
+}
+
+async function ensureUserCloudTokens(u) {
+  if (!u || !FB || !FB.fs) return;
+  try {
+    var s = FB.fs;
+    var ref = s.doc(FB.db, 'users', u.uid);
+    var snap = await s.getDoc(ref);
+    var e = getEcon();
+    if (!snap.exists()) {
+      // New registration: grant 300 AI Tokens!
+      e.aiTokens = 300;
+      saveEcon(e);
+      await s.setDoc(ref, {
+        name: u.displayName || (u.email ? u.email.split('@')[0] : 'Explorer'),
+        email: u.email || '',
+        aiTokens: 300,
+        coins: e.coins,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      }, { merge: true });
+      toast(IC_AI_HTML + ' Welcome! 300 SATPath AI Tokens credited to your account');
+    } else {
+      var data = snap.data() || {};
+      if (typeof data.aiTokens === 'number') {
+        e.aiTokens = data.aiTokens;
+        saveEcon(e);
+      } else {
+        await s.setDoc(ref, { aiTokens: e.aiTokens }, { merge: true });
+      }
+    }
+  } catch (err) {
+    // Fallback if Firestore rules restrict 'users' collection
+    paintHud();
+  }
+}
+
+function miniHudHtml(showAiPill) {
+  var e = getEcon();
+  var aiCount = typeof e.aiTokens === 'number' ? e.aiTokens : 300;
   return '<button type="button" class="hud-pill coin" onclick="openSupplyShop()" title="Pathcoins" style="padding:4px 10px;font-size:12px">' +
-    IC_COIN_HTML + ' <span class="q-hud-coins">' + e.coins.toLocaleString() + '</span> PC</button>';
+    IC_COIN_HTML + ' <span class="q-hud-coins">' + e.coins.toLocaleString() + '</span> PC</button>' +
+    (showAiPill ? ' <button type="button" class="hud-pill ai-tok" onclick="openAiTokenDonateModal()" title="SATPath AI Tokens" style="padding:4px 10px;font-size:12px">' +
+    IC_AI_HTML + ' <span class="q-hud-ai">' + aiCount.toLocaleString() + '</span> AI</button>' : '');
 }
 
 function paintHud() {
   var e = getEcon();
+  var aiCount = typeof e.aiTokens === 'number' ? e.aiTokens : 300;
   var cEl = document.getElementById('hudCoins');
+  var aEl = document.getElementById('hudAiTokens');
   var crEl = document.getElementById('dashCrest');
   if (cEl) cEl.textContent = e.coins.toLocaleString();
+  if (aEl) aEl.textContent = aiCount.toLocaleString();
   if (crEl) crEl.hidden = !e.crest;
   document.querySelectorAll('.q-hud-coins').forEach(function(el) {
     el.textContent = e.coins.toLocaleString();
+  });
+  document.querySelectorAll('.q-hud-ai').forEach(function(el) {
+    el.textContent = aiCount.toLocaleString();
   });
 }
 
@@ -1502,6 +1592,360 @@ function getRankLabel(stars, statObj) {
   return labels[stars];
 }
 
+
+/* ===== SATPATH AI: DONATION TOP-UP MODAL & STEP-BY-STEP TUTOR ENGINE ===== */
+var _spAiLang = spGet('satpath_ai_lang') || 'ru';
+var _spAiCache = {};
+
+function setSpAiLang(lang) {
+  _spAiLang = (lang === 'en') ? 'en' : 'ru';
+  spSet('satpath_ai_lang', _spAiLang);
+}
+
+function openAiTokenDonateModal(neededCost) {
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:240;background:rgba(6,21,23,0.78);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px;overflow:auto';
+  var curAi = getAiTokens();
+  var uEmail = (typeof FBU !== 'undefined' && FBU && FBU.email) ? FBU.email : getProfile().name;
+
+  ov.innerHTML = '<div class="qb" style="max-width:540px;width:100%;border-radius:28px;border:2px solid var(--acc);box-shadow:0 24px 60px rgba(0,0,0,0.45);animation:up .22s ease">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1.5px dashed var(--line);margin-bottom:14px">' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<span class="sp-ai-orb">' + spSvg('sparkles', 20) + '</span>' +
+        '<div><small style="color:var(--acc);font-weight:800;letter-spacing:.08em;text-transform:uppercase">SATPATH AI TOKENS</small><h2 style="font-size:21px;font-weight:800">Top Up via Donation</h2></div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px"><span class="hud-pill ai-tok">' + IC_AI_HTML + ' <span class="q-hud-ai">' + curAi + '</span> AI</span><button class="tbtn" id="aiDonClose">✕</button></div>' +
+    '</div>' +
+    (neededCost && curAi < neededCost ? '<div style="padding:10px 14px;border-radius:14px;background:rgba(231,76,60,0.12);border:1px solid #e74c3c;color:#e74c3c;font-size:12.5px;font-weight:700;margin-bottom:14px">You need ' + neededCost + ' AI Tokens for this action (current balance: ' + curAi + ' AI).</div>' : '') +
+    '<p class="sub" style="font-size:13px;line-height:1.55;margin-bottom:16px">Every Explorer receives <b>300 free AI Tokens</b> upon registration. Hints cost <b>3 AI</b> and full Step-by-Step Breakdowns cost <b>5 AI</b>. Support the project via donation to replenish your balance and keep SATPath AI running fast for everyone:</p>' +
+    '<div style="display:grid;gap:10px;margin-bottom:18px">' +
+      [
+        { pack: 'Starter Pack · +300 AI Tokens', desc: '100 Hints or 60 Full Step-by-Step Breakdowns', badge: '$2 / 1,000 ₸', tgText: 'Hello! I want to donate for +300 SATPath AI Tokens. Account: ' + uEmail },
+        { pack: 'Scholar Pack · +1,000 AI Tokens', desc: '330+ Hints or 200 Full Breakdowns · Best Value', badge: '$5 / 2,500 ₸', tgText: 'Hello! I want to donate for +1000 SATPath AI Tokens. Account: ' + uEmail },
+        { pack: '1600 Sovereign · +3,000 AI Tokens', desc: 'Unlimited prep season for Atlas & Mistake Log', badge: '$10 / 5,000 ₸', tgText: 'Hello! I want to donate for +3000 SATPath AI Tokens. Account: ' + uEmail }
+      ].map(function(p) {
+        return '<a href="https://t.me/slayerofprep?text=' + encodeURIComponent(p.tgText) + '" target="_blank" rel="noopener" class="card" style="padding:14px 16px;border-radius:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;text-decoration:none;border-color:var(--line)">' +
+          '<div><b style="font-size:14.5px;color:var(--tx);display:flex;align-items:center;gap:6px">' + IC_AI_HTML + ' ' + p.pack + '</b><small style="color:var(--mut);font-size:12px;display:block;margin-top:2px">' + p.desc + '</small></div>' +
+          '<span class="cta-amber" style="padding:7px 13px;font-size:12px;border-radius:12px;white-space:nowrap">' + p.badge + ' →</span>' +
+        '</a>';
+      }).join('') +
+    '</div>' +
+    '<div style="background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:12px 14px;font-size:12px;color:var(--mut);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">' +
+      '<span>Direct Donation &amp; Instant Activation via Telegram: <a href="https://t.me/slayerofprep" target="_blank" rel="noopener" style="color:var(--acc);font-weight:800">@slayerofprep</a> · <a href="https://t.me/gOlvzZ" target="_blank" rel="noopener" style="color:var(--acc);font-weight:800">@gOlvzZ</a></span>' +
+      '<button type="button" class="chip" id="aiPromoBtn" style="font-size:11px;padding:4px 10px">Have a Promo Code?</button>' +
+    '</div>' +
+    '<div id="aiPromoBox" hidden style="margin-top:10px;display:flex;gap:8px">' +
+      '<input id="aiPromoInp" class="qin" style="font-size:13.5px;padding:8px 12px;text-align:left" placeholder="Enter supporter code...">' +
+      '<button type="button" class="cta" id="aiPromoApply" style="padding:8px 14px;font-size:12.5px;border-radius:12px;white-space:nowrap">Redeem</button>' +
+    '</div>' +
+  '</div>';
+
+  document.body.appendChild(ov);
+  ov.querySelector('#aiDonClose').onclick = function() { ov.remove(); };
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
+  var prBtn = ov.querySelector('#aiPromoBtn');
+  var prBox = ov.querySelector('#aiPromoBox');
+  if (prBtn && prBox) {
+    prBtn.onclick = function() { prBox.hidden = !prBox.hidden; };
+    ov.querySelector('#aiPromoApply').onclick = function() {
+      var code = (ov.querySelector('#aiPromoInp').value || '').trim().toUpperCase();
+      if (!code) return;
+      var redeemedKey = 'satpath_promo_' + code;
+      if (spGet(redeemedKey)) return toast('This code was already used on this device.');
+      if (code === 'SATPATH300' || code === 'DONATE300') {
+        spSet(redeemedKey, '1');
+        addAiTokens(300, 'Supporter Code Redeemed!');
+        confetti();
+        ov.remove();
+      } else if (code === 'SATPATH1000') {
+        spSet(redeemedKey, '1');
+        addAiTokens(1000, 'Scholar Supporter Code Redeemed!');
+        confetti();
+        ov.remove();
+      } else {
+        toast('Invalid code. Contact @slayerofprep on Telegram after donating.');
+      }
+    };
+  }
+}
+
+/* Built-in Pedagogical Step-by-Step & Hint Generator (instant fallback + zero external API cost if needed) */
+function buildLocalPedagogicalAiResponse(qObj, mode, lang) {
+  var isRu = (lang === 'ru');
+  var isRw = !!qObj.rw;
+  var top = qObj.top || (isRw ? 'Reading & Writing' : 'SAT Math');
+  var rawQ = String(qObj.q || '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<svg[\s\S]*?>[\s\S]*?<\/svg>/gi, ' [Diagram/Graph] ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  var ans = String(qObj.ans || '').replace(/<[^>]+>/g, ' ').trim();
+  var opts = Array.isArray(qObj.opts) ? qObj.opts : [];
+
+  // Extract numbers or equations for tailored Math steps
+  var nums = rawQ.match(/[-+]?\d+(?:\.\d+)?(?:\/\d+)?/g) || [];
+  var hasEq = /[=<>]/.test(rawQ);
+  var hasPct = /%|percent/i.test(rawQ);
+  var hasTri = /triangle|circle|angle|radius|area|volume|perimeter|hypotenuse|sin|cos|tan/i.test(rawQ + ' ' + top);
+  var hasSys = /system|intersect|no solution|infinitely many/i.test(rawQ + ' ' + top);
+  var hasQuad = /quadratic|parabola|vertex|x\^2|x²|minimum|maximum|roots|zeros/i.test(rawQ + ' ' + top);
+
+  if (mode === 'hint') {
+    if (isRw) {
+      var rwSkillHintRu = 'Прочитайте предложение с пропуском или ключевым тезисом и определите логическую связь между первой и второй частью (причина, контраст, пример или уточнение).';
+      var rwSkillHintEn = 'Read the target sentence and identify the exact logical relationship between the clauses (cause-and-effect, contrast, elaboration, or evidence support).';
+      if (/Boundary|Punctuation|Semicolon|Colon|Comma|Convention|Structure/i.test(top)) {
+        rwSkillHintRu = 'Проверьте грамматическую основу слева и справа от знака препинания: если обе части — самостоятельные предложения (Independent Clauses), между ними нужна точка с запятой (;), точка или запятая + FANBOYS.';
+        rwSkillHintEn = 'Check whether the clauses before and after the punctuation mark are Independent Clauses (can stand alone as complete sentences). Two independent clauses cannot be joined by a comma alone (comma splice)!';
+      } else if (/Transition/i.test(top)) {
+        rwSkillHintRu = 'Закройте варианты ответа и своими словами определите отношение между предыдущим и следующим предложением: согласие (+/+), противоречие (+/-) или следствие (→).';
+        rwSkillHintEn = 'Cover the answer choices first and label the relationship between the sentence before the blank and the sentence after it: Agreement (+/+), Contrast (+/-), or Cause/Effect (→).';
+      } else if (/Words in Context|Vocabulary/i.test(top)) {
+        rwSkillHintRu = 'Найдите в тексте слово-подсказку (restate clue) или конструкцию противопоставления (unlike, although, rather than), которая прямо задаёт нужное значение слова в пропуске.';
+        rwSkillHintEn = 'Locate the context restatement clue or contrast trigger (such as "unlike", "however", or a colon ":" that defines the preceding idea) before looking at the choices.';
+      }
+      return isRu
+        ? '<div class="sp-ai-step warn"><b>💡 Шаг 1 · Проверяемый навык (' + lbEsc(top) + ')</b>' + rwSkillHintRu + '</div>' +
+          '<div class="sp-ai-step"><b>🔍 Шаг 2 · На что опереться в тексте</b>Найдите главную мысль автора (ключевые маркеры: <i>however, therefore, specifically, findings indicate</i>). Правильный ответ на 100% опирается только на факты из отрывка без домыслов.</div>' +
+          '<div class="sp-ai-step"><b>🛡️ Шаг 3 · Как отсечь ловушки</b>Исключите варианты со слишком категоричными словами (<i>always, never, completely</i>) и варианты, которые упоминают верные слова из текста, но искажают причинно-следственную связь.</div>'
+        : '<div class="sp-ai-step warn"><b>💡 Step 1 · Target Skill (' + lbEsc(top) + ')</b>' + rwSkillHintEn + '</div>' +
+          '<div class="sp-ai-step"><b>🔍 Step 2 · Evidence Anchor</b>Underline the pivot words in the passage (<i>however, consequently, for instance, researchers found</i>). The correct choice must restate the passage claim without adding outside assumptions.</div>' +
+          '<div class="sp-ai-step"><b>🛡️ Step 3 · Eliminate SAT Traps</b>Cross out choices that are <i>Too Extreme</i>, <i>Half-Right</i> (start strong but end with an unsupported detail), or violate standard clause boundaries.</div>';
+    } else {
+      var mathStrategyRu = 'Выпишите искомую величину (что именно просят найти в последнем предложении — само значение x или выражение вроде 2x + 5).';
+      var mathStrategyEn = 'Write down the exact target expression requested in the final phrase (check whether it asks for x itself or an expression like 2x + 5).';
+      if (hasSys) {
+        mathStrategyRu = 'В системе уравнений приведите оба уравнения к виду y = mx + b или выровняйте коэффициенты при x и y. Напомню: отсутствие решений означает равные угловые коэффициенты (m₁ = m₂) при разных свободных членах.';
+        mathStrategyEn = 'Align both equations in standard form (Ax + By = C) or slope-intercept form (y = mx + b). Remember: "no solution" means parallel lines (same slope, different y-intercept).';
+      } else if (hasQuad) {
+        mathStrategyRu = 'Для квадратичной функции используй формулу вершины параболы x = -b / (2a), теорему Виета (сумма корней = -b/a, произведение = c/a) или дискриминант D = b² - 4ac.';
+        mathStrategyEn = 'For quadratic equations, check if you need the vertex formula x = -b/(2a), sum of solutions (-b/a), product of solutions (c/a), or the discriminant b² - 4ac.';
+      } else if (hasTri) {
+        mathStrategyRu = 'Сделайте быстрый чертёж и отметьте известные углы/стороны. Проверьте теорему Пифагора, подобные треугольники или соотношения 30°-60°-90° / 45°-45°-90°.';
+        mathStrategyEn = 'Label all given lengths and angles on the figure. Check for special right triangles (3-4-5, 5-12-13, 30°-60°-90°) or central/inscribed angle relationships.';
+      } else if (hasPct) {
+        mathStrategyRu = 'Переведите проценты в десятичные множители: увеличение на p% — это умножение на (1 + p/100), а уменьшение на p% — умножение на (1 - p/100).';
+        mathStrategyEn = 'Convert percent changes into decimal multipliers: a p% increase multiplies by (1 + p/100), and a p% decrease multiplies by (1 - p/100).';
+      }
+      return isRu
+        ? '<div class="sp-ai-step warn"><b>💡 Шаг 1 · Ключевой подход (' + lbEsc(top) + ')</b>' + mathStrategyRu + '</div>' +
+          '<div class="sp-ai-step"><b>📐 Шаг 2 · Составление модели</b>Используйте ключевые данные из условия' + (nums.length ? ' (числа в задаче: <code>' + nums.slice(0, 5).join(', ') + '</code>)' : '') + ' и запишите базовое уравнение, не торопясь раскрывать скобки.</div>' +
+          '<div class="sp-ai-step"><b>📈 Шаг 3 · Лайфхак с Desmos</b>Откройте встроенный калькулятор <b>Desmos</b> сверху: введите левую и правую части уравнения отдельными строками и кликните на точку пересечения графиков!</div>'
+        : '<div class="sp-ai-step warn"><b>💡 Step 1 · Core Principle (' + lbEsc(top) + ')</b>' + mathStrategyEn + '</div>' +
+          '<div class="sp-ai-step"><b>📐 Step 2 · Equation Setup</b>Translate the given values' + (nums.length ? ' (<code>' + nums.slice(0, 5).join(', ') + '</code>)' : '') + ' into an algebraic equation and isolate the target variable step by step.</div>' +
+          '<div class="sp-ai-step"><b>📈 Step 3 · Desmos Shortcut</b>Open the built-in <b>Desmos Calculator</b> above: graph both sides of the equation as separate lines and click the intersection point!</div>';
+    }
+  }
+
+  // Full Step-by-Step Breakdown (5 AI Tokens)
+  if (isRw) {
+    var wrongList = opts.filter(function(o) { return String(o) !== String(qObj.ans); }).slice(0, 3);
+    return isRu
+      ? '<div class="sp-ai-step"><b>🎯 Шаг 1 · Цель вопроса (' + lbEsc(top) + ')</b>В этом задании проверяется умение точно соотносить структуру и смысл текста с требованием вопроса без домыслов.</div>' +
+        '<div class="sp-ai-step"><b>🔎 Шаг 2 · Пошаговый анализ контекста</b>1. Выделим ядро отрывка: автор формулирует ключевой тезис и подтверждает его деталями в тексте.<br>2. Сопоставим грамматическую и логическую связь на границе предложения или внутри аргумента.</div>' +
+        '<div class="sp-ai-step warn"><b>✅ Шаг 3 · Почему правильный ответ: ' + lbEsc(ans) + '</b>Вариант <b>«' + lbEsc(ans) + '»</b> — единственный, который строго следует правилам Digital SAT по теме <i>' + lbEsc(top) + '</i> и напрямую подтверждается текстом без логических скачков.</div>' +
+        (wrongList.length ? '<div class="sp-ai-step"><b>❌ Шаг 4 · Разбор ловушек в других вариантах</b>Остальные варианты (<i>' + wrongList.map(lbEsc).join('</i>; <i>') + '</i>) создают либо пунктуационную ошибку (comma splice / фрагмент), либо выходят за рамки сказанного в отрывке.</div>' : '')
+      : '<div class="sp-ai-step"><b>🎯 Step 1 · Question Objective (' + lbEsc(top) + ')</b>This question tests your ability to align textual evidence and standard English conventions under <i>' + lbEsc(top) + '</i>.</div>' +
+        '<div class="sp-ai-step"><b>🔎 Step 2 · Step-by-Step Passage Analysis</b>1. Identify the central claim and context markers in the passage.<br>2. Evaluate how the target blank or claim connects to the surrounding clauses.</div>' +
+        '<div class="sp-ai-step warn"><b>✅ Step 3 · Why the Correct Answer Works: ' + lbEsc(ans) + '</b>Choice <b>"' + lbEsc(ans) + '"</b> directly satisfies the logical and grammatical constraints of the passage without introducing unsupported claims.</div>' +
+        (wrongList.length ? '<div class="sp-ai-step"><b>❌ Step 4 · Why Distractors Fail</b>Other options (<i>' + wrongList.map(lbEsc).join('</i>; <i>') + '</i>) either distort the author&apos;s relationship between ideas or violate clause boundary rules.</div>' : '');
+  } else {
+    var fmtCorrect = (typeof rHTML === 'function' && typeof fmtAns === 'function') ? rHTML(fmtAns(qObj.ans)) : lbEsc(ans);
+    return isRu
+      ? '<div class="sp-ai-step"><b>🎯 Шаг 1 · Анализ условия (' + lbEsc(top) + ')</b>Из условия задачи выделяем ключевые числовые данные' + (nums.length ? ' (<code>' + nums.slice(0, 6).join(', ') + '</code>)' : '') + ' и определяем целевую величину.</div>' +
+        '<div class="sp-ai-step"><b>🧮 Шаг 2 · Пошаговое математическое решение</b>1. Запишем алгебраическое соотношение по теме <i>' + lbEsc(top) + '</i>.<br>2. Упростим выражение, приведя подобные слагаемые и выразив искомую переменную.<br>3. Подставим исходные данные и выполним проверку знаков и единиц измерения.</div>' +
+        '<div class="sp-ai-step warn"><b>✅ Шаг 3 · Итоговый ответ: ' + fmtCorrect + '</b>После вычислений получаем точное значение: <b>' + fmtCorrect + '</b>.</div>' +
+        '<div class="sp-ai-step"><b>⚡ Шаг 4 · Быстрая проверка через Desmos</b>На реальном экзамене вбейте функцию или уравнение в <b>Desmos Calculator</b> или подставьте полученное значение <b>' + fmtCorrect + '</b> обратно в исходное условие, чтобы за 5 секунд убедиться в равенстве!</div>'
+      : '<div class="sp-ai-step"><b>🎯 Step 1 · Extract Given Data (' + lbEsc(top) + ')</b>Identify the given quantities' + (nums.length ? ' (<code>' + nums.slice(0, 6).join(', ') + '</code>)' : '') + ' and the exact target expression requested by the problem.</div>' +
+        '<div class="sp-ai-step"><b>🧮 Step 2 · Step-by-Step Algebraic Solution</b>1. Set up the core equation using the rules of <i>' + lbEsc(top) + '</i>.<br>2. Isolate the target variable or expression by combining like terms.<br>3. Substitute the known values and simplify to lowest terms.</div>' +
+        '<div class="sp-ai-step warn"><b>✅ Step 3 · Confirmed Final Answer: ' + fmtCorrect + '</b>Evaluating the expression yields the exact answer: <b>' + fmtCorrect + '</b>.</div>' +
+        '<div class="sp-ai-step"><b>⚡ Step 4 · 10-Second Desmos Verification</b>You can verify this immediately in <b>Desmos</b> by graphing both sides of the equation and checking that the intersection matches <b>' + fmtCorrect + '</b>!</div>';
+  }
+}
+
+function formatAiMarkdownToHtml(rawText, qObj, mode) {
+  if (!rawText || !String(rawText).trim()) {
+    return buildLocalPedagogicalAiResponse(qObj, mode, _spAiLang);
+  }
+  var safe = lbEsc(String(rawText).trim());
+  // Convert **bold** and numbered blocks into neat SATPath step cards
+  safe = safe.replace(/\*\*(.+?)\*\*/g, '<b style="color:var(--acc);display:inline">$1</b>');
+  var paras = safe.split(/\n{2,}/);
+  return paras.map(function(p, idx) {
+    var isHighlight = (idx === 0 && mode === 'hint') || (idx === paras.length - 1 && mode === 'explain');
+    return '<div class="sp-ai-step' + (isHighlight ? ' warn' : '') + '" style="line-height:1.55">' + p.replace(/\n/g, '<br>') + '</div>';
+  }).join('');
+}
+
+/* Mounts the SATPath AI Companion panel inside Atlas & Mistake Log overlays */
+function createSatPathAiPanelHtml() {
+  var curAi = getAiTokens();
+  var isRu = (_spAiLang === 'ru');
+  return '<div class="sp-ai-backdrop" id="spAiBackdrop"></div>' +
+    '<button type="button" class="sp-ai-fab" id="spAiFabBtn">' +
+      spSvg('sparkles', 17) + ' <span>SATPath AI</span> <span class="tok-badge q-hud-ai">' + curAi + '</span>' +
+    '</button>' +
+    '<aside class="sp-ai-dock" id="spAiDock" aria-label="SATPath AI Tutor">' +
+      '<div class="sp-ai-head">' +
+        '<div class="sp-ai-brand">' +
+          '<div class="sp-ai-orb">' + spSvg('sparkles', 20) + '</div>' +
+          '<div>' +
+            '<div style="display:flex;align-items:center;gap:6px"><b style="font-size:15px">SATPath AI</b><span class="tag n" style="margin:0;font-size:9.5px;padding:1px 6px">TUTOR</span></div>' +
+            '<small style="color:var(--mut);font-size:11px;display:block">Step-by-Step Hints &amp; Solutions</small>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
+          '<div class="sp-ai-lang-toggle" title="Explanation Language">' +
+            '<button type="button" data-ailang="ru" class="' + (isRu ? 'on' : '') + '">RU</button>' +
+            '<button type="button" data-ailang="en" class="' + (!isRu ? 'on' : '') + '">EN</button>' +
+          '</div>' +
+          '<button type="button" class="hud-pill ai-tok" id="spAiTopUpBtn" style="padding:4px 9px;font-size:11.5px" title="Top up AI Tokens">' +
+            IC_AI_HTML + ' <span class="q-hud-ai">' + curAi + '</span>' +
+          '</button>' +
+          '<button type="button" class="tbtn" id="spAiMobClose" style="width:28px;height:28px;font-size:12px" title="Close">✕</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sp-ai-actions">' +
+        '<button type="button" class="sp-ai-btn primary" id="spAiHintBtn">' +
+          '<div class="sp-ai-btn-top"><b style="font-size:13px;color:var(--tx)">💡 ' + (isRu ? 'Подсказка' : 'Get Hint') + '</b><span class="sp-ai-cost">3 AI</span></div>' +
+          '<small style="font-size:11px;color:var(--mut);line-height:1.3">' + (isRu ? 'Направление мысли без спойлера ответа' : 'Socratic nudge without spoiling') + '</small>' +
+        '</button>' +
+        '<button type="button" class="sp-ai-btn sand" id="spAiExplainBtn">' +
+          '<div class="sp-ai-btn-top"><b style="font-size:13px;color:var(--tx)">🧠 ' + (isRu ? 'Разбор' : 'Step-by-Step') + '</b><span class="sp-ai-cost">5 AI</span></div>' +
+          '<small style="font-size:11px;color:var(--mut);line-height:1.3">' + (isRu ? 'Полное решение задачи по шагам' : 'Full step-by-step breakdown') + '</small>' +
+        '</button>' +
+      '</div>' +
+      '<div class="sp-ai-body" id="spAiBody">' +
+        '<div style="text-align:center;padding:22px 10px;color:var(--mut)">' +
+          '<div style="color:var(--acc);margin-bottom:8px">' + spSvg('sparkles', 28) + '</div>' +
+          '<b style="color:var(--tx);display:block;font-size:13.5px;margin-bottom:4px">' + (isRu ? 'Застрял на задаче?' : 'Stuck on this question?') + '</b>' +
+          '<p style="font-size:12px;line-height:1.5">' + (isRu ? 'Выбери <b>Подсказку (3 AI)</b>, чтобы получить зацепку и решить самому, или <b>Разбор (5 AI)</b> для полного пошагового объяснения.' : 'Choose <b>Get Hint (3 AI)</b> for a smart clue without spoilers, or <b>Step-by-Step (5 AI)</b> for a complete walkthrough.') + '</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sp-ai-foot">' +
+        '<span>' + (isRu ? 'Повторный просмотр для этой задачи — 0 AI' : 'Re-viewing on the same question is free') + '</span>' +
+        '<button type="button" id="spAiDonateLink" style="color:var(--acc);font-weight:800">' + (isRu ? '+ Пополнить AI' : '+ Get Tokens') + '</button>' +
+      '</div>' +
+    '</aside>';
+}
+
+function bindSatPathAiEvents(containerEl, getQuestionObjFn) {
+  if (!containerEl) return;
+  var dock = containerEl.querySelector('#spAiDock');
+  var backdrop = containerEl.querySelector('#spAiBackdrop');
+  var fab = containerEl.querySelector('#spAiFabBtn');
+  var mobClose = containerEl.querySelector('#spAiMobClose');
+  var hintBtn = containerEl.querySelector('#spAiHintBtn');
+  var explainBtn = containerEl.querySelector('#spAiExplainBtn');
+  var bodyEl = containerEl.querySelector('#spAiBody');
+  var topUpBtn = containerEl.querySelector('#spAiTopUpBtn');
+  var donLink = containerEl.querySelector('#spAiDonateLink');
+
+  function openMobileAi() {
+    if (dock) dock.classList.add('mob-open');
+    if (backdrop) backdrop.classList.add('mob-open');
+  }
+  function closeMobileAi() {
+    if (dock) dock.classList.remove('mob-open');
+    if (backdrop) backdrop.classList.remove('mob-open');
+  }
+
+  // Hide close button on desktop where dock is always visible side-by-side
+  if (mobClose) {
+    if (window.innerWidth > 1040) mobClose.style.display = 'none';
+    mobClose.onclick = closeMobileAi;
+  }
+  if (fab) fab.onclick = openMobileAi;
+  if (backdrop) backdrop.onclick = closeMobileAi;
+  if (topUpBtn) topUpBtn.onclick = function() { openAiTokenDonateModal(); };
+  if (donLink) donLink.onclick = function() { openAiTokenDonateModal(); };
+
+  containerEl.querySelectorAll('[data-ailang]').forEach(function(b) {
+    b.onclick = function() {
+      setSpAiLang(b.getAttribute('data-ailang'));
+      containerEl.querySelectorAll('[data-ailang]').forEach(function(x) {
+        x.classList.toggle('on', x.getAttribute('data-ailang') === _spAiLang);
+      });
+      var isRu = (_spAiLang === 'ru');
+      if (hintBtn) {
+        hintBtn.querySelector('b').textContent = '💡 ' + (isRu ? 'Подсказка' : 'Get Hint');
+        hintBtn.querySelector('small').textContent = isRu ? 'Направление мысли без спойлера ответа' : 'Socratic nudge without spoiling';
+      }
+      if (explainBtn) {
+        explainBtn.querySelector('b').textContent = '🧠 ' + (isRu ? 'Разбор' : 'Step-by-Step');
+        explainBtn.querySelector('small').textContent = isRu ? 'Полное решение задачи по шагам' : 'Full step-by-step breakdown';
+      }
+    };
+  });
+
+  async function requestAi(mode) {
+    var qObj = typeof getQuestionObjFn === 'function' ? getQuestionObjFn() : getQuestionObjFn;
+    if (!qObj || !qObj.q) return;
+    var cost = (mode === 'explain') ? 5 : 3;
+    var cacheKey = mode + '_' + _spAiLang + '_' + String(qObj.q).slice(0, 120);
+
+    // If student already unlocked this mode for this exact question, show cached explanation for 0 tokens!
+    if (_spAiCache[cacheKey]) {
+      bodyEl.innerHTML = _spAiCache[cacheKey];
+      openMobileAi();
+      return;
+    }
+
+    if (!spendAiTokens(cost, mode === 'explain' ? 'Step-by-Step Breakdown' : 'AI Hint')) {
+      return;
+    }
+
+    openMobileAi();
+    if (hintBtn) hintBtn.disabled = true;
+    if (explainBtn) explainBtn.disabled = true;
+
+    var isRu = (_spAiLang === 'ru');
+    bodyEl.innerHTML = '<div style="text-align:center;padding:28px 12px;color:var(--mut)">' +
+      '<div style="color:var(--acc);margin-bottom:8px;animation:pl 1.2s infinite">' + spSvg('sparkles', 28) + '</div>' +
+      '<b style="color:var(--tx);display:block;font-size:13.5px">' + (isRu ? (mode === 'explain' ? 'SATPath AI строит пошаговый разбор…' : 'SATPath AI готовит подсказку…') : (mode === 'explain' ? 'SATPath AI is building a step-by-step breakdown…' : 'SATPath AI is crafting your hint…')) + '</b>' +
+    '</div>';
+
+    var renderedHtml = '';
+    try {
+      var ctl = window.AbortController ? new AbortController() : null;
+      var tmId = setTimeout(function() { if (ctl) ctl.abort(); }, 9500);
+      var resp = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: ctl ? ctl.signal : undefined,
+        body: JSON.stringify({
+          mode: mode,
+          question: qObj.q,
+          options: qObj.opts || [],
+          answer: qObj.ans,
+          topic: qObj.top || (qObj.rw ? 'Reading & Writing' : 'SAT Math'),
+          isRw: !!qObj.rw,
+          isGrid: !!qObj.isGrid,
+          userAnswer: qObj.wrongAns || '',
+          lang: _spAiLang
+        })
+      });
+      clearTimeout(tmId);
+      if (resp && resp.ok) {
+        var data = await resp.json();
+        if (data && data.text && !data.fallback) {
+          renderedHtml = formatAiMarkdownToHtml(data.text, qObj, mode);
+        }
+      }
+    } catch (err) {
+      // Fall back gracefully to local pedagogical engine
+    }
+
+    if (!renderedHtml) {
+      renderedHtml = buildLocalPedagogicalAiResponse(qObj, mode, _spAiLang);
+    }
+
+    _spAiCache[cacheKey] = renderedHtml;
+    bodyEl.innerHTML = renderedHtml;
+    if (hintBtn) hintBtn.disabled = false;
+    if (explainBtn) explainBtn.disabled = false;
+  }
+
+  if (hintBtn) hintBtn.onclick = function() { requestAi('hint'); };
+  if (explainBtn) explainBtn.onclick = function() { requestAi('explain'); };
+}
+
 function buildBank() {
   var st = bankStats();
   var maxStars = (RTOPS.length + TOPS.length) * 3;
@@ -1668,8 +2112,9 @@ function bankOpen(ti) {
     q.top = TOPS[ti];
     q.rw = false;
     var wasOpen = ov.dataset.calcOpen === '1';
-    ov.innerHTML = '<div id="bSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_MATH_HTML + ' MATH ISLAND DRILL</small><div style="font-weight:800;font-size:16px">' + TOPS[ti] + '</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + renderStarsHtml(starsNow) + '<button id="bcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="bx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">✓ ' + ok + ' / ' + tot + ' solved · Earn ★ Mastery Stars for +15 PC</span></div><div style="font-size:20px;line-height:1.6;margin:22px 0 14px">' + rHTML(q.q) + '</div><div id="ba"></div><div id="bf"></div></div><div id="d-panel" class="quiz-calc-pane"></div></div>';
+    ov.innerHTML = '<div id="bSplitWrap" class="sp-ai-stage quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_MATH_HTML + ' MATH ISLAND DRILL</small><div style="font-weight:800;font-size:16px">' + TOPS[ti] + '</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml(true) + renderStarsHtml(starsNow) + '<button id="bcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="bx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">✓ ' + ok + ' / ' + tot + ' solved · Earn ★ Mastery Stars for +15 PC</span></div><div style="font-size:20px;line-height:1.6;margin:22px 0 14px">' + rHTML(q.q) + '</div><div id="ba"></div><div id="bf"></div></div><div id="d-panel" class="quiz-calc-pane"></div>' + createSatPathAiPanelHtml() + '</div>';
     document.getElementById('bx').onclick = close;
+    bindSatPathAiEvents(ov, function() { return q; });
     var bSplitWrap = document.getElementById('bSplitWrap');
     var dPanel = document.getElementById('d-panel');
     var calcBtn = document.getElementById('bcalc');
@@ -1913,10 +2358,12 @@ function rwBankOpen(ti){
     var currentItem = myPool[qIndex];
     var x = currentItem.fn(), ans = x[1], opts = shuffle(x.slice(1)), done = false;
 
-    ov.innerHTML='<div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_BOOK_HTML + ' R&amp;W ISLAND DRILL</small><div style="font-weight:800;font-size:16px">'+RTOPS[ti]+'</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+miniHudHtml()+'<button class="chip" id="rwAddVocBtn" style="font-weight:700;color:var(--sand);border-color:var(--sand-line)">' + spSvg('plus', 13) + ' Add Word</button>'+renderStarsHtml(starsNow)+'<button id="rx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">Waypoint '+(qIndex + 1)+' of '+myPool.length+' · ✓ '+ok+' · Click any word in text to save to Vocabulary</span></div><div id="rwDrillPassage" style="font-size:18px;line-height:1.55;margin:18px 0 14px">'+wrapWordsForVocab(x[0])+'</div><div id="ra"></div><div id="rf"></div></div>';
+    var rwQObj = { q: x[0], ans: ans, opts: opts, isGrid: false, rw: true, top: RTOPS[ti] };
+    ov.innerHTML='<div class="sp-ai-stage"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_BOOK_HTML + ' R&amp;W ISLAND DRILL</small><div style="font-weight:800;font-size:16px">'+RTOPS[ti]+'</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+miniHudHtml(true)+'<button class="chip" id="rwAddVocBtn" style="font-weight:700;color:var(--sand);border-color:var(--sand-line)">' + spSvg('plus', 13) + ' Add Word</button>'+renderStarsHtml(starsNow)+'<button id="rx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">Waypoint '+(qIndex + 1)+' of '+myPool.length+' · ✓ '+ok+' · Click any word in text to save to Vocabulary</span></div><div id="rwDrillPassage" style="font-size:18px;line-height:1.55;margin:18px 0 14px">'+wrapWordsForVocab(x[0])+'</div><div id="ra"></div><div id="rf"></div></div>' + createSatPathAiPanelHtml() + '</div>';
 
     var a = document.getElementById('ra'), f = document.getElementById('rf');
     document.getElementById('rx').onclick = close;
+    bindSatPathAiEvents(ov, function() { return rwQObj; });
     var passEl = document.getElementById('rwDrillPassage');
     bindVocabClicksOnContainer(passEl);
     document.getElementById('rwAddVocBtn').onclick = function() {
@@ -2297,8 +2744,8 @@ function buildMistakesTab() {
           '<div style="font-size:15.5px;line-height:1.55;margin-bottom:10px">' + fx(item.q) + '</div>' +
           '<div style="font-size:12.5px;color:#e74c3c;font-weight:700">Previous answer: ' + fx(item.wrongAns) + '</div>' +
         '</div>' +
-        '<div style="display:flex;gap:8px;align-items:center">' +
-          '<button class="cta" data-mk-single="' + idx + '" style="padding:9px 15px;font-size:12.5px;border-radius:12px">Retry Question →</button>' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+          '<button class="cta" data-mk-single="' + idx + '" style="padding:9px 15px;font-size:12.5px;border-radius:12px">' + spSvg('sparkles', 14) + ' Solve with SATPath AI →</button>' +
           '<button class="tbtn" data-mk-del="' + item.id + '" title="Remove from mistakes">✕</button>' +
         '</div>' +
       '</div>';
@@ -2369,11 +2816,12 @@ function startMistakesDrill(questionsList) {
     var fx = function(s) { return q.rw ? wrapWordsForVocab(s) : rHTML(s); };
     var wasOpen = ov.dataset.calcOpen === '1' && !q.rw;
 
-    ov.innerHTML = '<div id="mkSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '">' +
+    ov.innerHTML = '<div id="mkSplitWrap" class="sp-ai-stage quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '">' +
       '<div class="qb" style="border-radius:26px">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">' +
           '<div style="display:flex;align-items:center;gap:8px"><span class="tag n" style="margin:0">MISTAKE DRILL ' + (idx + 1) + '/' + questionsList.length + '</span><small style="color:var(--mut);font-weight:700">' + lbEsc(q.top || '') + '</small></div>' +
-          '<div style="display:flex;align-items:center;gap:8px">' +
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+            miniHudHtml(true) +
             (!q.rw ? '<button id="mkCalcBtn" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button>' : '') +
             '<button class="tbtn" id="mkQuit">✕</button>' +
           '</div>' +
@@ -2382,9 +2830,11 @@ function startMistakesDrill(questionsList) {
         '<div id="mkAns"></div><div id="mkFeed"></div>' +
       '</div>' +
       '<div id="mkCalcPane" class="quiz-calc-pane"></div>' +
+      createSatPathAiPanelHtml() +
     '</div>';
 
     ov.querySelector('#mkQuit').onclick = closeDrill;
+    bindSatPathAiEvents(ov, function() { return q; });
     bindVocabClicksOnContainer(ov.querySelector('#mkPassage'));
 
     var mkCalcBtn = ov.querySelector('#mkCalcBtn');
@@ -2589,6 +3039,8 @@ var sbUserEl = document.getElementById('sidebarUserBox'); if(sbUserEl) sbUserEl.
 var btnProfEl = document.getElementById('btnEditProfile'); if(btnProfEl) btnProfEl.onclick=openProfileModal;
 document.getElementById('hudShopBtn').onclick=openSupplyShop;
 document.getElementById('hudCoinBtn').onclick=openSupplyShop;
+var hudAiBtnEl = document.getElementById('hudAiBtn');
+if (hudAiBtnEl) hudAiBtnEl.onclick = function() { openAiTokenDonateModal(); };
 
 var sd=document.getElementById('side');
 document.getElementById('bg').onclick=function(e){e.stopPropagation();sd.classList.toggle('o')};
@@ -2642,7 +3094,7 @@ async function fbInit(){if(!FB_CONFIG||FB)return;
  var B='https://www.gstatic.com/firebasejs/10.12.2/';
  var a=await import(B+'firebase-app.js'),au=await import(B+'firebase-auth.js'),f=await import(B+'firebase-firestore.js');
  var app=a.initializeApp(FB_CONFIG);FB={auth:au.getAuth(app),db:f.getFirestore(app),au:au,fs:f};
- au.onAuthStateChanged(FB.auth,function(u){FBU=u;paintUser();if(u)lbFlush();if(!document.getElementById('vLB').hidden)buildLB()})}
+ au.onAuthStateChanged(FB.auth,function(u){FBU=u;paintUser();if(u){ensureUserCloudTokens(u);lbFlush();}if(!document.getElementById('vLB').hidden)buildLB()})}
 function paintUser(){var u=FBU,soAll=document.querySelectorAll('.so');
  if(u){var p=getProfile();if(!p.name||p.name==='Explorer'||p.name==='Guest'){p.name=u.displayName||u.email.split('@')[0];saveProfile(p)}}
  applyProfileUI();
