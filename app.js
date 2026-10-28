@@ -1669,6 +1669,22 @@ function openAiTokenDonateModal(neededCost) {
   }
 }
 
+/* Wider AI dock: injected here so it applies even if index.html CSS is stale */
+(function() {
+  if (document.getElementById('spAiDockCss')) return;
+  var st = document.createElement('style');
+  st.id = 'spAiDockCss';
+  st.textContent =
+    '@media (min-width:1041px){' +
+    '.sp-ai-stage{width:calc(100vw - 40px)!important;max-width:none!important;margin:0 auto!important;grid-template-columns:minmax(0,1fr) minmax(480px,32%)!important;gap:20px!important}' +
+    '.sp-ai-stage.calc-open{grid-template-columns:minmax(0,1fr) minmax(380px,.9fr) minmax(460px,28%)!important}' +
+    '.sp-ai-dock{height:calc(100vh - 32px)!important;max-height:none!important;padding:20px!important}' +
+    '.sp-ai-body{flex:1 1 0!important;max-height:none!important;min-height:0!important}' +
+    '.sp-ai-step{font-size:15px!important}' +
+    '}';
+  document.head.appendChild(st);
+})();
+
 /* SATPath AI tutor: answers come from /api/ai (Gemini). No canned fallback text. */
 function formatAiMarkdownToHtml(rawText, mode) {
   var safe = lbEsc(String(rawText || '').trim());
