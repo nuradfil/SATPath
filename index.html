@@ -1398,6 +1398,28 @@ aside{height:100vh;height:100dvh}
   }
 }
 
+
+/* SATPath AI dock v2: roomier panel, no clipped header */
+.sp-ai-head{flex-wrap:wrap;row-gap:8px;border-bottom:1px solid var(--line);border-bottom-style:solid}
+.sp-ai-brand{min-width:0}
+.sp-ai-controls{display:flex;align-items:center;gap:6px;flex:none}
+.sp-ai-lang-toggle{flex:none}
+.sp-ai-lang-toggle button{white-space:nowrap}
+.sp-ai-btn b{font-size:13.5px;color:var(--tx)}
+.sp-ai-btn small{font-size:11.5px;color:var(--mut);line-height:1.3}
+.sp-ai-body{max-height:none;min-height:0;padding:16px 18px}
+.sp-ai-step{font-size:14.5px;line-height:1.65;padding:12px 14px}
+.sp-ai-step strong{color:var(--tx);font-weight:800}
+.sp-ai-empty{text-align:center;padding:26px 12px;color:var(--mut)}
+.sp-ai-empty b{display:block;color:var(--tx);font-size:14px;margin-bottom:6px}
+.sp-ai-empty p{font-size:12.5px;line-height:1.55}
+.sp-ai-retry{margin-top:12px;padding:8px 18px;border-radius:12px;background:var(--acc);color:#fff;font-weight:800;font-size:13px}
+@media (min-width:1041px){
+  .sp-ai-stage{grid-template-columns:minmax(0,1fr) clamp(410px,30vw,500px);max-width:1640px}
+  .sp-ai-stage.calc-open{grid-template-columns:minmax(0,1fr) minmax(380px,.9fr) clamp(390px,26vw,450px);max-width:1900px}
+  .sp-ai-dock{height:calc(100vh - 32px);max-height:none;padding:18px}
+  .sp-ai-body{flex:1 1 0}
+}
 </style>
 </head><body>
 <div class="app">
