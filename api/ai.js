@@ -1,202 +1,119 @@
-/**
- * Vercel Serverless Function: /api/ai.js
- * SATPath AI — Socratic Hints (3 AI Tokens) & Step-by-Step Breakdowns (5 AI Tokens)
- *
- * Works out of the box on Vercel!
- * Set ONE of the following environment variables in Vercel Project Settings -> Environment Variables:
- *   - OPENAI_API_KEY   (uses gpt-4o-mini by default)
- *   - GEMINI_API_KEY   (uses gemini-2.0-flash by default)
- *   - GROQ_API_KEY     (uses llama-3.3-70b-versatile by default)
- */
+// /api/ai — SATPath AI tutor (Gemini). Env var: GEMINI_AI (optional GEMINI_MODEL).
+// Vercel serverless function (CommonJS). If your project has "type":"module", change
+// `module.exports =` to `export default`.
 
-module.exports = async function handler(req, res) {
-  // CORS headers for local testing & Vercel preview domains
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+const clean = (s, max) =>
+  String(s == null ? '' : s)
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<svg[\s\S]*?<\/svg>/gi, ' [diagram omitted] ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max);
+
+function buildPrompts(b) {
+  const ru = b.lang === 'ru';
+  const isRw = !!b.isRw;
+  const opts = Array.isArray(b.options) ? b.options.map((o, i) => String.fromCharCode(65 + i) + ') ' + clean(o, 300)) : [];
+  const q = clean(b.question, 4000);
+  const ans = clean(b.answer, 300);
+  const topic = clean(b.topic, 120);
+  const wrong = clean(b.userAnswer, 300);
+
+  const system = [
+    'You are SATPath AI, a sharp, concise Digital SAT tutor for a high-school student.',
+    'Write ONLY about the specific question given. Never write generic advice that would fit any question.',
+    'Use the actual numbers, words and sentences from the question.',
+    'Output plain text only: no emojis, no headings with #, no bullet symbols, no LaTeX. Write math inline in plain text, e.g. a/b = 7/6, x^2, sqrt(5).',
+    'Format: short blocks separated by one blank line. A block may start with a bold label like **Step 1** on its own line, followed by 1-3 sentences.',
+    ru
+      ? 'Reply in Russian. Keep math terms and answer choices as they appear in the question.'
+      : 'Reply in English.',
+    'Be correct. If the provided correct answer disagrees with your own work, trust your own careful work and state the result you derive.',
+  ].join('\n');
+
+  const task =
+    b.mode === 'hint'
+      ? [
+          'MODE: HINT. Do NOT reveal the final answer or say which choice is correct.',
+          'Give 2-3 short sentences: (1) what exactly this question asks, (2) the one key idea or relationship to use, (3) the first concrete move to make with the given numbers.',
+          'Max 70 words total. No bold labels.',
+        ].join('\n')
+      : [
+          'MODE: FULL SOLUTION.',
+          isRw
+            ? 'Quote the key phrase from the text, explain the rule or logic it tests, say why the correct choice works, and in one line each why the other choices fail. 120-200 words.'
+            : 'Show the real worked solution with actual calculations, 3-5 numbered steps (**Step 1**, **Step 2** ...). Show each computed value. 120-220 words.',
+          'Finish with a final block **Answer** stating the correct choice and value.',
+        ].join('\n');
+
+  const user = [
+    'Section: ' + (isRw ? 'Reading & Writing' : 'Math') + (topic ? ' · Topic: ' + topic : ''),
+    'Question: ' + q,
+    opts.length ? 'Choices:\n' + opts.join('\n') : b.isGrid ? 'Student-produced response (no choices).' : '',
+    ans ? 'Correct answer: ' + ans : '',
+    wrong ? 'Student answered: ' + wrong + ' (explain why this is wrong).' : '',
+    '',
+    task,
+  ]
+    .filter((x) => x !== '')
+    .join('\n');
+
+  return { system, user };
+}
+
+module.exports = async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+
+  const key = process.env.GEMINI_AI;
+  if (!key) return res.status(500).json({ error: 'GEMINI_AI env var is not set' });
+
+  let body = req.body;
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch (e) { body = null; }
+  }
+  if (!body || !body.question || (body.mode !== 'hint' && body.mode !== 'explain')) {
+    return res.status(400).json({ error: 'bad request' });
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
-  }
+  const { system, user } = buildPrompts(body);
 
   try {
-    const {
-      mode = 'hint', // 'hint' (3 tokens) | 'explain' (5 tokens)
-      question = '',
-      options = [],
-      answer = '',
-      topic = 'Digital SAT',
-      isRw = false,
-      isGrid = false,
-      userAnswer = '',
-      lang = 'en'
-    } = req.body || {};
-
-    if (!question || String(question).trim().length < 3) {
-      return res.status(400).json({ error: 'Missing question text.' });
+    const r = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts: [{ text: user }] }],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 3000,
+            thinkingConfig: { thinkingBudget: body.mode === 'hint' ? 256 : 1024 },
+          },
+        }),
+      }
+    );
+    const data = await r.json();
+    if (!r.ok) {
+      console.error('Gemini error', r.status, JSON.stringify(data).slice(0, 500));
+      return res.status(502).json({ error: 'gemini_' + r.status });
     }
-
-    const cleanQuestion = String(question)
-      .replace(/<style[\s\S]*?<\/style>/gi, '')
-      .replace(/<svg[\s\S]*?>[\s\S]*?<\/svg>/gi, '[Graph/Diagram included in question]')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
+    const text = ((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [])
+      .map((p) => p.text || '')
+      .join('')
       .trim();
-
-    const cleanOptions = Array.isArray(options)
-      ? options.map((o, idx) => `${'ABCD'[idx] || idx + 1}) ${String(o).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}`).join('\n')
-      : '';
-
-    const cleanAns = String(answer || '').replace(/<[^>]+>/g, ' ').trim();
-
-    const systemPrompt = isRw
-      ? `You are SATPath AI, an elite Digital SAT Reading & Writing tutor.
-Your goal is to teach students how to think like a 1600-scorer using strict evidence-based reading and grammar rules.
-Formatting rules:
-- Use clear, encouraging, concise formatting with bold key terms.
-- Never use raw LaTeX delimiters like \\( or $$ — write clean readable text.
-- If mode is "hint": DO NOT reveal the final letter or exact answer! Give a 3-part Socratic nudge:
-  1) **Core Skill**: Identify what SAT R&W skill is being tested (${topic}).
-  2) **Context Clue / Signal**: Point out the exact transition word, punctuation boundary, or claim keywords in the passage to focus on.
-  3) **Trap Alert**: Explain what kind of wrong-answer trap to eliminate (e.g., Too Extreme, Half-Right, Out of Scope, or Comma Splice) without naming the exact letter.
-- If mode is "explain": Provide a complete, structured Step-by-Step Breakdown:
-  1) **Core Concept & Goal**: State what the question asks and the key rule/claim in 1-2 sentences.
-  2) **Step-by-Step Analysis**: Walk through the passage evidence or grammar structure step by step.
-  3) **Why the Correct Answer Works**: Explicitly justify why "${cleanAns}" is 100% supported.
-  4) **Why Distractors Fail**: Briefly explain the flaw in the other choices.
-  5) **SATPath Pro Tip**: One memorable 1-sentence takeaway for test day.`
-      : `You are SATPath AI, an elite Digital SAT Math tutor.
-Your goal is to teach students fast, crystal-clear mathematical reasoning and Desmos graphing shortcuts.
-Formatting rules:
-- Write clean equations using standard readable symbols (e.g., x^2, (a/b), ≤, ≥, √) — avoid raw LaTeX code blocks like \\frac{}{} unless converted to plain readable math.
-- If mode is "hint": DO NOT reveal the final numeric answer or choice! Give a 3-part strategic nudge:
-  1) **Concept & Formula**: State the exact algebraic/geometric principle or formula needed (${topic}).
-  2) **First Step Setup**: Show how to set up the first equation or variable from the word problem without solving it to the end.
-  3) **Desmos / Fast Shortcut**: Explain how the student can type this into the built-in Desmos calculator or spot a shortcut.
-- If mode is "explain": Provide a complete, structured Step-by-Step Breakdown:
-  1) **Target & Given Data**: Identify what the question is asking for and extract the key equations/values.
-  2) **Step-by-Step Solution**: Show Step 1, Step 2, Step 3 clearly with intermediate algebra so the student never gets lost.
-  3) **Final Answer Confirmation**: Confirm the exact answer (${cleanAns}).
-  4) **Desmos & Time-Saver Hack**: Explain how to solve or verify this in 10 seconds using Desmos or backsolving.`;
-
-    const userPrompt = `Mode requested: ${mode === 'explain' ? 'FULL STEP-BY-STEP BREAKDOWN (5 Tokens)' : 'STRATEGIC HINT WITHOUT SPOILING THE ANSWER (3 Tokens)'}
-Section: ${isRw ? 'Reading & Writing' : 'SAT Math'}
-Topic: ${topic}
-Question Type: ${isGrid ? 'Student-Produced Response (Grid-In)' : 'Multiple Choice'}
-Question:
-${cleanQuestion}
-
-${cleanOptions ? `Answer Choices:\n${cleanOptions}\n` : ''}
-Correct Answer (for your reference; DO NOT reveal if mode is "hint"): ${cleanAns}
-${userAnswer ? `Student's previous/selected answer: ${userAnswer}` : ''}
-Language preference: ${lang === 'ru' ? 'Respond in Russian (keep SAT terms/quotes in English where helpful)' : 'Respond in clear English'}`;
-
-    const openaiKey = process.env.OPENAI_API_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY;
-    const groqKey = process.env.GROQ_API_KEY;
-
-    // 1. Try OpenAI (gpt-4o-mini)
-    if (openaiKey) {
-      const r = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiKey}`
-        },
-        body: JSON.stringify({
-          model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-          temperature: 0.35,
-          max_tokens: mode === 'explain' ? 650 : 320,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ]
-        })
-      });
-      const data = await r.json();
-      if (r.ok && data.choices && data.choices[0]?.message?.content) {
-        return res.status(200).json({
-          ok: true,
-          provider: 'openai',
-          mode,
-          text: data.choices[0].message.content.trim()
-        });
-      }
-    }
-
-    // 2. Try Google Gemini (gemini-2.0-flash)
-    if (geminiKey) {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
-      const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-            generationConfig: {
-              temperature: 0.35,
-              maxOutputTokens: mode === 'explain' ? 700 : 350
-            }
-          })
-        }
-      );
-      const data = await r.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (r.ok && text) {
-        return res.status(200).json({
-          ok: true,
-          provider: 'gemini',
-          mode,
-          text: text.trim()
-        });
-      }
-    }
-
-    // 3. Try Groq (llama-3.3-70b-versatile)
-    if (groqKey) {
-      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqKey}`
-        },
-        body: JSON.stringify({
-          model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
-          temperature: 0.35,
-          max_tokens: mode === 'explain' ? 650 : 320,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ]
-        })
-      });
-      const data = await r.json();
-      if (r.ok && data.choices && data.choices[0]?.message?.content) {
-        return res.status(200).json({
-          ok: true,
-          provider: 'groq',
-          mode,
-          text: data.choices[0].message.content.trim()
-        });
-      }
-    }
-
-    // 4. Built-in Pedagogical Fallback if no API key is configured yet on Vercel
-    return res.status(200).json({
-      ok: true,
-      provider: 'satpath-engine',
-      mode,
-      fallback: true,
-      text: ''
-    });
-  } catch (err) {
-    console.error('SATPath AI error:', err);
-    return res.status(500).json({ error: 'Failed to generate AI response.' });
+    if (!text) return res.status(502).json({ error: 'empty' });
+    return res.status(200).json({ text });
+  } catch (e) {
+    console.error('ai.js', e);
+    return res.status(502).json({ error: 'network' });
   }
-}
+};
+
+module.exports.config = { maxDuration: 30 };
