@@ -1,8 +1,8 @@
-// /api/ai — SATPath AI tutor (Gemini). Env var: GEMINI_AI (optional GEMINI_MODEL).
-// Vercel serverless function (CommonJS). If your project has "type":"module", change
-// `module.exports =` to `export default`.
+// /api/ai — SATPath AI tutor (Gemini). Key: GEMINI_AI or GEMINI_API_KEY (optional GEMINI_MODEL).
+// Vercel serverless function (CommonJS). If package.json has "type":"module",
+// replace `module.exports =` with `export default` and delete the last line.
 
-// Tried in order; a model that returns 404 (retired / not available to new keys) is skipped.
+// Tried in order; a model that returns 404 (retired / not available to this key) is skipped.
 const MODELS = [process.env.GEMINI_MODEL, 'gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-flash'].filter(Boolean);
 
 const clean = (s, max) =>
@@ -30,9 +30,7 @@ function buildPrompts(b) {
     'Use the actual numbers, words and sentences from the question.',
     'Output plain text only: no emojis, no headings with #, no bullet symbols, no LaTeX. Write math inline in plain text, e.g. a/b = 7/6, x^2, sqrt(5).',
     'Format: short blocks separated by one blank line. A block may start with a bold label like **Step 1** on its own line, followed by 1-3 sentences.',
-    ru
-      ? 'Reply in Russian. Keep math terms and answer choices as they appear in the question.'
-      : 'Reply in English.',
+    ru ? 'Reply in Russian. Keep math terms and answer choices as they appear in the question.' : 'Reply in English.',
     'Be correct. If the provided correct answer disagrees with your own work, trust your own careful work and state the result you derive.',
   ].join('\n');
 
@@ -59,9 +57,7 @@ function buildPrompts(b) {
     wrong ? 'Student answered: ' + wrong + ' (explain why this is wrong).' : '',
     '',
     task,
-  ]
-    .filter((x) => x !== '')
-    .join('\n');
+  ].filter((x) => x !== '').join('\n');
 
   return { system, user };
 }
@@ -71,12 +67,10 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
   const key = (process.env.GEMINI_AI || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_KEY || '').trim();
-  if (!key) return res.status(500).json({ error: 'GEMINI_AI env var is not set (checked GEMINI_AI, GEMINI_API_KEY, GOOGLE_API_KEY, GEMINI_KEY)' });
+  if (!key) return res.status(500).json({ error: 'no api key env var' });
 
   let body = req.body;
-  if (typeof body === 'string') {
-    try { body = JSON.parse(body); } catch (e) { body = null; }
-  }
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = null; } }
   if (!body || !body.question || (body.mode !== 'hint' && body.mode !== 'explain')) {
     return res.status(400).json({ error: 'bad request' });
   }
@@ -102,31 +96,22 @@ module.exports = async (req, res) => {
     for (const model of MODELS) {
       r = await call(model, true);
       data = await r.json();
-      if (r.status === 400) { // some models reject thinkingBudget: retry plain
-        r = await call(model, false);
-        data = await r.json();
-      }
+      if (r.status === 400) { r = await call(model, false); data = await r.json(); }
       used = model;
       if (r.status !== 404) break;
       console.error('model unavailable, trying next:', model);
     }
     if (!r.ok) {
       console.error('Gemini error', used, r.status, JSON.stringify(data).slice(0, 500));
-      const msg = (data && data.error && data.error.message) || '';
-      return res.status(502).json({ error: 'gemini_' + r.status, detail: (used + ': ' + msg).slice(0, 220) });
+      return res.status(502).json({ error: 'gemini_' + r.status });
     }
     const text = ((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [])
-      .map((p) => p.text || '')
-      .join('')
-      .trim();
-    if (!text) {
-      const why = (data.promptFeedback && data.promptFeedback.blockReason) || (data.candidates && data.candidates[0] && data.candidates[0].finishReason) || '';
-      return res.status(502).json({ error: 'empty', detail: String(why) });
-    }
+      .map((p) => p.text || '').join('').trim();
+    if (!text) return res.status(502).json({ error: 'empty' });
     return res.status(200).json({ text });
   } catch (e) {
     console.error('ai.js', e);
-    return res.status(502).json({ error: 'network', detail: String((e && e.message) || e).slice(0, 200) });
+    return res.status(502).json({ error: 'network' });
   }
 };
 
