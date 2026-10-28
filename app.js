@@ -2405,7 +2405,7 @@ function buildMistakesTab() {
           '<div style="font-size:12.5px;color:#e74c3c;font-weight:700">Previous answer: ' + fx(item.wrongAns) + '</div>' +
         '</div>' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-          '<button class="cta" data-mk-single="' + idx + '" style="padding:9px 15px;font-size:12.5px;border-radius:12px">' + spSvg('sparkles', 14) + ' Solve with SATPath AI →</button>' +
+          ' Retry →</button>' +
           '<button class="tbtn" data-mk-del="' + item.id + '" title="Remove from mistakes">✕</button>' +
         '</div>' +
       '</div>';
