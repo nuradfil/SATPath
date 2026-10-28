@@ -807,7 +807,6 @@ async function ensureUserCloudTokens(u) {
         createdAt: Date.now(),
         updatedAt: Date.now()
       }, { merge: true });
-      toast(IC_AI_HTML + ' Welcome! 300 SATPath AI Tokens credited to your account');
     } else {
       var data = snap.data() || {};
       if (typeof data.aiTokens === 'number') {
@@ -828,8 +827,7 @@ function miniHudHtml(showAiPill) {
   var aiCount = typeof e.aiTokens === 'number' ? e.aiTokens : 300;
   return '<button type="button" class="hud-pill coin" onclick="openSupplyShop()" title="Pathcoins" style="padding:4px 10px;font-size:12px">' +
     IC_COIN_HTML + ' <span class="q-hud-coins">' + e.coins.toLocaleString() + '</span> PC</button>' +
-    (showAiPill ? ' <button type="button" class="hud-pill ai-tok" onclick="openAiTokenDonateModal()" title="SATPath AI Tokens" style="padding:4px 10px;font-size:12px">' +
-    IC_AI_HTML + ' <span class="q-hud-ai">' + aiCount.toLocaleString() + '</span> AI</button>' : '');
+    '';
 }
 
 function paintHud() {
@@ -1593,309 +1591,20 @@ function getRankLabel(stars, statObj) {
 }
 
 
-/* ===== SATPATH AI: DONATION TOP-UP MODAL & STEP-BY-STEP TUTOR ENGINE ===== */
-var _spAiLang = spGet('satpath_ai_lang') || 'ru';
-var _spAiCache = {};
-
-function setSpAiLang(lang) {
-  _spAiLang = (lang === 'en') ? 'en' : 'ru';
-  spSet('satpath_ai_lang', _spAiLang);
-}
-
-function openAiTokenDonateModal(neededCost) {
-  var ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;z-index:240;background:rgba(6,21,23,0.78);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px;overflow:auto';
-  var curAi = getAiTokens();
-  var uEmail = (typeof FBU !== 'undefined' && FBU && FBU.email) ? FBU.email : getProfile().name;
-
-  ov.innerHTML = '<div class="qb" style="max-width:540px;width:100%;border-radius:28px;border:2px solid var(--acc);box-shadow:0 24px 60px rgba(0,0,0,0.45);animation:up .22s ease">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1.5px dashed var(--line);margin-bottom:14px">' +
-      '<div style="display:flex;align-items:center;gap:10px">' +
-        '<span class="sp-ai-orb">' + spSvg('sparkles', 20) + '</span>' +
-        '<div><small style="color:var(--acc);font-weight:800;letter-spacing:.08em;text-transform:uppercase">SATPATH AI TOKENS</small><h2 style="font-size:21px;font-weight:800">Top Up via Donation</h2></div>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px"><span class="hud-pill ai-tok">' + IC_AI_HTML + ' <span class="q-hud-ai">' + curAi + '</span> AI</span><button class="tbtn" id="aiDonClose">✕</button></div>' +
-    '</div>' +
-    (neededCost && curAi < neededCost ? '<div style="padding:10px 14px;border-radius:14px;background:rgba(231,76,60,0.12);border:1px solid #e74c3c;color:#e74c3c;font-size:12.5px;font-weight:700;margin-bottom:14px">You need ' + neededCost + ' AI Tokens for this action (current balance: ' + curAi + ' AI).</div>' : '') +
-    '<p class="sub" style="font-size:13px;line-height:1.55;margin-bottom:16px">Every Explorer receives <b>300 free AI Tokens</b> upon registration. Hints cost <b>3 AI</b> and full Step-by-Step Breakdowns cost <b>5 AI</b>. Support the project via donation to replenish your balance and keep SATPath AI running fast for everyone:</p>' +
-    '<div style="display:grid;gap:10px;margin-bottom:18px">' +
-      [
-        { pack: 'Starter Pack · +300 AI Tokens', desc: '100 Hints or 60 Full Step-by-Step Breakdowns', badge: '$2 / 1,000 ₸', tgText: 'Hello! I want to donate for +300 SATPath AI Tokens. Account: ' + uEmail },
-        { pack: 'Scholar Pack · +1,000 AI Tokens', desc: '330+ Hints or 200 Full Breakdowns · Best Value', badge: '$5 / 2,500 ₸', tgText: 'Hello! I want to donate for +1000 SATPath AI Tokens. Account: ' + uEmail },
-        { pack: '1600 Sovereign · +3,000 AI Tokens', desc: 'Unlimited prep season for Atlas & Mistake Log', badge: '$10 / 5,000 ₸', tgText: 'Hello! I want to donate for +3000 SATPath AI Tokens. Account: ' + uEmail }
-      ].map(function(p) {
-        return '<a href="https://t.me/slayerofprep?text=' + encodeURIComponent(p.tgText) + '" target="_blank" rel="noopener" class="card" style="padding:14px 16px;border-radius:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;text-decoration:none;border-color:var(--line)">' +
-          '<div><b style="font-size:14.5px;color:var(--tx);display:flex;align-items:center;gap:6px">' + IC_AI_HTML + ' ' + p.pack + '</b><small style="color:var(--mut);font-size:12px;display:block;margin-top:2px">' + p.desc + '</small></div>' +
-          '<span class="cta-amber" style="padding:7px 13px;font-size:12px;border-radius:12px;white-space:nowrap">' + p.badge + ' →</span>' +
-        '</a>';
-      }).join('') +
-    '</div>' +
-    '<div style="background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:12px 14px;font-size:12px;color:var(--mut);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">' +
-      '<span>Direct Donation &amp; Instant Activation via Telegram: <a href="https://t.me/slayerofprep" target="_blank" rel="noopener" style="color:var(--acc);font-weight:800">@slayerofprep</a> · <a href="https://t.me/gOlvzZ" target="_blank" rel="noopener" style="color:var(--acc);font-weight:800">@gOlvzZ</a></span>' +
-      '<button type="button" class="chip" id="aiPromoBtn" style="font-size:11px;padding:4px 10px">Have a Promo Code?</button>' +
-    '</div>' +
-    '<div id="aiPromoBox" hidden style="margin-top:10px;display:flex;gap:8px">' +
-      '<input id="aiPromoInp" class="qin" style="font-size:13.5px;padding:8px 12px;text-align:left" placeholder="Enter supporter code...">' +
-      '<button type="button" class="cta" id="aiPromoApply" style="padding:8px 14px;font-size:12.5px;border-radius:12px;white-space:nowrap">Redeem</button>' +
-    '</div>' +
-  '</div>';
-
-  document.body.appendChild(ov);
-  ov.querySelector('#aiDonClose').onclick = function() { ov.remove(); };
-  ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
-  var prBtn = ov.querySelector('#aiPromoBtn');
-  var prBox = ov.querySelector('#aiPromoBox');
-  if (prBtn && prBox) {
-    prBtn.onclick = function() { prBox.hidden = !prBox.hidden; };
-    ov.querySelector('#aiPromoApply').onclick = function() {
-      var code = (ov.querySelector('#aiPromoInp').value || '').trim().toUpperCase();
-      if (!code) return;
-      var redeemedKey = 'satpath_promo_' + code;
-      if (spGet(redeemedKey)) return toast('This code was already used on this device.');
-      if (code === 'SATPATH300' || code === 'DONATE300') {
-        spSet(redeemedKey, '1');
-        addAiTokens(300, 'Supporter Code Redeemed!');
-        confetti();
-        ov.remove();
-      } else if (code === 'SATPATH1000') {
-        spSet(redeemedKey, '1');
-        addAiTokens(1000, 'Scholar Supporter Code Redeemed!');
-        confetti();
-        ov.remove();
-      } else {
-        toast('Invalid code. Contact @slayerofprep on Telegram after donating.');
-      }
-    };
-  }
-}
-
-/* SATPath AI tutor: answers come from /api/ai (Gemini). No canned fallback text. */
-/* SATPath AI dock styles (injected so the design never depends on index.html). Panel width = --sp-ai-w */
+/* AI tutor removed */
 (function() {
-  if (document.getElementById('spAiDockCss')) return;
+  if (document.getElementById('spNoAiCss')) return;
   var st = document.createElement('style');
-  st.id = 'spAiDockCss';
-  st.textContent = "/* Desktop & Mobile Adaptive Workspace for Atlas & Mistake Log */ .sp-ai-stage { max-width: 1380px; width: 96vw; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 370px; gap: 18px; align-items: start; transition: all .22s ease; } .sp-ai-stage.calc-open { max-width: 1860px; width: 98vw; grid-template-columns: minmax(0, 1fr) minmax(380px, 0.95fr) 350px; } .sp-ai-stage > .qb { max-width: none; margin: 0; } /* SATPath AI Companion Card */ .sp-ai-dock { background: linear-gradient(160deg, var(--panel) 0%, var(--panel2) 100%); border: 2px solid var(--acc); border-radius: 26px; padding: 20px; box-shadow: 0 14px 34px -10px rgba(0,0,0,0.22), 0 4px 0 var(--line); position: sticky; top: 16px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; gap: 14px; overflow: hidden; animation: up .3s ease; } .sp-ai-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1.5px dashed var(--line); } .sp-ai-brand { display: flex; align-items: center; gap: 10px; } .sp-ai-orb { width: 38px; height: 38px; border-radius: 13px; background: linear-gradient(135deg, var(--acc) 0%, var(--acc2) 100%); color: #fff; display: grid; place-items: center; box-shadow: 0 3px 0 var(--acc2); flex: none; } .sp-ai-lang-toggle { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 99px; padding: 2px; font-size: 11px; font-weight: 800; } .sp-ai-lang-toggle button { padding: 3px 8px; border-radius: 99px; color: var(--mut); transition: .15s; } .sp-ai-lang-toggle button.on { background: var(--acc); color: #fff; } .sp-ai-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .sp-ai-btn { padding: 11px 12px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--panel); display: flex; flex-direction: column; gap: 4px; transition: transform .16s, border-color .16s, box-shadow .16s; text-align: left; } .sp-ai-btn:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--acc); box-shadow: 0 5px 0 var(--line); } .sp-ai-btn.primary { background: linear-gradient(155deg, rgba(34,163,129,0.14) 0%, var(--panel) 100%); border-color: var(--acc); } .sp-ai-btn.sand { background: linear-gradient(155deg, var(--sand-bg) 0%, var(--panel) 100%); border-color: var(--sand-line); } .sp-ai-btn:disabled { opacity: 0.55; cursor: wait; } .sp-ai-btn-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; width: 100%; } .sp-ai-cost { font-size: 10.5px; font-weight: 800; padding: 2px 7px; border-radius: 99px; background: var(--panel2); color: var(--acc); border: 1px solid var(--acc); white-space: nowrap; } .sp-ai-btn.sand .sp-ai-cost { color: var(--sand); border-color: var(--sand-line); background: var(--sand-bg); } .sp-ai-body { flex: 1; overflow-y: auto; background: var(--panel); border: 1.5px solid var(--line); border-radius: 18px; padding: 14px 16px; font-size: 13.5px; line-height: 1.6; color: var(--tx); min-height: 190px; max-height: 52vh; } .sp-ai-step { padding: 10px 12px; border-radius: 13px; background: var(--panel2); border-left: 3.5px solid var(--acc); margin-bottom: 10px; } .sp-ai-step.warn { border-left-color: var(--sand); background: var(--sand-bg); } .sp-ai-step b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--acc); margin-bottom: 3px; } .sp-ai-step.warn b { color: var(--sand); } .sp-ai-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11.5px; color: var(--mut); padding-top: 4px; } /* Mobile Floating Trigger & Bottom Sheet for SATPath AI */ .sp-ai-fab { display: none; } .sp-ai-backdrop { display: none; } @media (max-width: 1040px) { .sp-ai-stage, .sp-ai-stage.calc-open { grid-template-columns: 1fr !important; width: 100% !important; } .sp-ai-dock { position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 210; max-height: 82dvh; border-radius: 26px 26px 0 0; border-bottom: 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateY(105%); transition: transform .26s cubic-bezier(.2,.8,.2,1); box-shadow: 0 -16px 48px rgba(0,0,0,0.42); } .sp-ai-dock.mob-open { transform: translateY(0); } .sp-ai-backdrop.mob-open { display: block; position: fixed; inset: 0; z-index: 205; background: rgba(6, 21, 23, 0.62); backdrop-filter: blur(3px); } .sp-ai-fab { display: inline-flex; align-items: center; gap: 8px; position: fixed; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 195; padding: 12px 18px; border-radius: 99px; background: linear-gradient(135deg, var(--acc) 0%, var(--acc2) 100%); color: #fff; font-weight: 800; font-size: 13.5px; box-shadow: 0 8px 24px rgba(17, 103, 106, 0.48), 0 0 0 2px var(--panel); } .sp-ai-fab .tok-badge { background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 99px; font-size: 11.5px; } } .sp-ai-head{flex-wrap:wrap;row-gap:8px} .sp-ai-brand{min-width:0} .sp-ai-controls{display:flex;align-items:center;gap:6px;flex:none} .sp-ai-lang-toggle{flex:none} .sp-ai-lang-toggle button{white-space:nowrap} .sp-ai-btn b{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--tx)} .sp-ai-btn b svg{color:var(--acc)} .sp-ai-btn.sand b svg{color:var(--sand)} .sp-ai-btn small{font-size:11.5px;color:var(--mut);line-height:1.3} .sp-ai-body{max-height:none;min-height:0;padding:16px 18px} .sp-ai-step{font-size:14.5px;line-height:1.65;padding:12px 14px} .sp-ai-step strong{color:var(--tx);font-weight:800} .sp-ai-empty{text-align:center;padding:26px 12px;color:var(--mut)} .sp-ai-empty b{display:block;color:var(--tx);font-size:14px;margin-bottom:6px} .sp-ai-empty p{font-size:12.5px;line-height:1.55} .sp-ai-retry{margin-top:12px;padding:8px 18px;border-radius:12px;background:var(--acc);color:#fff;font-weight:800;font-size:13px} .sp-ai-resize{display:none} @media (max-width:1040px){ .sp-ai-dock{left:0!important;right:0!important;width:100vw!important;max-width:100vw!important;box-sizing:border-box!important;height:auto!important;max-height:78dvh!important;padding:16px 14px calc(16px + env(safe-area-inset-bottom,0px))!important;gap:10px!important} .sp-ai-head{padding-bottom:10px!important} .sp-ai-actions{grid-template-columns:1fr 1fr!important;gap:8px!important} .sp-ai-btn{padding:9px 10px!important} .sp-ai-btn small{display:none!important} .sp-ai-body{flex:0 1 auto!important;min-height:130px!important;max-height:46dvh!important;padding:12px 14px!important} .sp-ai-step{font-size:14px!important;padding:10px 12px!important} } .sp-ai-dock{min-width:0} .sp-ai-actions{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))!important} .sp-ai-btn{min-width:0} .sp-ai-btn-top{flex-wrap:wrap} :root{--sp-ai-w:clamp(480px,32vw,680px)} @media (min-width:1041px){ .sp-ai-stage{display:grid!important;width:calc(100vw - 40px)!important;max-width:none!important;margin:0 auto!important;gap:20px!important;grid-template-columns:minmax(0,1fr) var(--sp-ai-w)!important} .sp-ai-stage.calc-open{grid-template-columns:minmax(0,1fr) minmax(380px,.9fr) var(--sp-ai-w)!important;max-width:none!important;width:calc(100vw - 40px)!important} .sp-ai-dock{height:calc(100vh - 32px);max-height:none;padding:20px;position:sticky} .sp-ai-body{flex:1 1 0} .sp-ai-resize{display:block;position:absolute;left:0;top:0;bottom:0;width:10px;cursor:col-resize;z-index:5} .sp-ai-resize:hover{background:linear-gradient(90deg,var(--acc),transparent);opacity:.5} } ";
+  st.id = 'spNoAiCss';
+  st.textContent = '.hud-pill.ai-tok{display:none!important}' +
+    '.sp-ai-stage{display:block!important;max-width:1240px!important;width:96vw!important;margin:0 auto!important}' +
+    '.sp-ai-stage>.qb{max-width:none!important;margin:0!important}' +
+    '@media (min-width:1041px){.sp-ai-stage.calc-open{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(380px,1fr)!important;gap:18px!important;max-width:1820px!important;width:97vw!important;align-items:start}}';
   document.head.appendChild(st);
-  try { var sw = spGet('satpath_ai_w'); if (sw) document.documentElement.style.setProperty('--sp-ai-w', sw); } catch (e) {}
 })();
-
-function formatAiMarkdownToHtml(rawText, mode) {
-  var safe = lbEsc(String(rawText || '').trim());
-  var paras = safe.split(/\n{2,}/).filter(function(p) { return p.trim(); });
-  return paras.map(function(p, idx) {
-    var m = p.match(/^\*\*(.+?)\*\*[ \t]*\n?([\s\S]*)$/);
-    var title = m ? m[1] : '';
-    var body = (m ? m[2] : p).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-    var hl = (mode === 'explain' && paras.length > 1 && idx === paras.length - 1);
-    return '<div class="sp-ai-step' + (hl ? ' warn' : '') + '">' + (title ? '<b>' + title + '</b>' : '') + body + '</div>';
-  }).join('');
-}
-
-function spAiLabels(isRu) {
-  return isRu
-    ? { hint: 'Подсказка', hintSub: 'Зацепка без спойлера', explain: 'Разбор', explainSub: 'Решение по шагам' }
-    : { hint: 'Hint', hintSub: 'A nudge, no spoilers', explain: 'Full solution', explainSub: 'Step-by-step breakdown' };
-}
-
-/* Mounts the SATPath AI Companion panel inside Atlas & Mistake Log overlays */
-function createSatPathAiPanelHtml() {
-  var curAi = getAiTokens();
-  var isRu = (_spAiLang === 'ru');
-  var L = spAiLabels(isRu);
-  return '<div class="sp-ai-backdrop" id="spAiBackdrop"></div>' +
-    '<button type="button" class="sp-ai-fab" id="spAiFabBtn">' +
-      spSvg('sparkles', 17) + ' <span>SATPath AI</span> <span class="tok-badge q-hud-ai">' + curAi + '</span>' +
-    '</button>' +
-    '<aside class="sp-ai-dock" id="spAiDock" aria-label="SATPath AI Tutor">' +
-      '<div class="sp-ai-resize" id="spAiResize" title="Drag to resize · double-click to reset"></div>' +
-      '<div class="sp-ai-head">' +
-        '<div class="sp-ai-brand">' +
-          '<div class="sp-ai-orb">' + spSvg('sparkles', 20) + '</div>' +
-          '<b style="font-size:16px">SATPath AI</b>' +
-        '</div>' +
-        '<div class="sp-ai-controls">' +
-          '<div class="sp-ai-lang-toggle" title="Explanation Language">' +
-            '<button type="button" data-ailang="ru" class="' + (isRu ? 'on' : '') + '">RU</button>' +
-            '<button type="button" data-ailang="en" class="' + (!isRu ? 'on' : '') + '">EN</button>' +
-          '</div>' +
-          '<button type="button" class="hud-pill ai-tok" id="spAiTopUpBtn" style="padding:4px 9px;font-size:11.5px" title="Top up AI Tokens">' +
-            IC_AI_HTML + ' <span class="q-hud-ai">' + curAi + '</span>' +
-          '</button>' +
-          '<button type="button" class="tbtn" id="spAiMobClose" style="width:28px;height:28px;font-size:12px" title="Close">✕</button>' +
-        '</div>' +
-      '</div>' +
-      '<div class="sp-ai-actions">' +
-        '<button type="button" class="sp-ai-btn primary" id="spAiHintBtn">' +
-          '<div class="sp-ai-btn-top"><b>' + spSvg('zap', 15) + '<span class="lbl">' + L.hint + '</span></b><span class="sp-ai-cost">3 AI</span></div>' +
-          '<small>' + L.hintSub + '</small>' +
-        '</button>' +
-        '<button type="button" class="sp-ai-btn sand" id="spAiExplainBtn">' +
-          '<div class="sp-ai-btn-top"><b>' + spSvg('layers', 15) + '<span class="lbl">' + L.explain + '</span></b><span class="sp-ai-cost">5 AI</span></div>' +
-          '<small>' + L.explainSub + '</small>' +
-        '</button>' +
-      '</div>' +
-      '<div class="sp-ai-body" id="spAiBody">' +
-        '<div class="sp-ai-empty">' +
-          '<div style="color:var(--acc);margin-bottom:8px">' + spSvg('sparkles', 26) + '</div>' +
-          '<b>' + (isRu ? 'Застрял на задаче?' : 'Stuck on this question?') + '</b>' +
-          '<p>' + (isRu ? 'Подсказка (3 AI) даст зацепку, чтобы решить самому. Разбор (5 AI) — полное решение по шагам.' : 'Hint (3 AI) gives a clue so you can solve it yourself. Full solution (5 AI) walks through every step.') + '</p>' +
-        '</div>' +
-      '</div>' +
-      '<div class="sp-ai-foot">' +
-        '<span>' + (isRu ? 'Повторный просмотр — бесплатно' : 'Re-viewing is free') + '</span>' +
-        '<button type="button" id="spAiDonateLink" style="color:var(--acc);font-weight:800">' + (isRu ? '+ Пополнить' : '+ Get Tokens') + '</button>' +
-      '</div>' +
-    '</aside>';
-}
-
-function bindSatPathAiEvents(containerEl, getQuestionObjFn) {
-  if (!containerEl) return;
-  var dock = containerEl.querySelector('#spAiDock');
-  var backdrop = containerEl.querySelector('#spAiBackdrop');
-  var fab = containerEl.querySelector('#spAiFabBtn');
-  var mobClose = containerEl.querySelector('#spAiMobClose');
-  var hintBtn = containerEl.querySelector('#spAiHintBtn');
-  var explainBtn = containerEl.querySelector('#spAiExplainBtn');
-  var bodyEl = containerEl.querySelector('#spAiBody');
-  var topUpBtn = containerEl.querySelector('#spAiTopUpBtn');
-  var donLink = containerEl.querySelector('#spAiDonateLink');
-
-  function openMobileAi() {
-    if (dock) dock.classList.add('mob-open');
-    if (backdrop) backdrop.classList.add('mob-open');
-  }
-  function closeMobileAi() {
-    if (dock) dock.classList.remove('mob-open');
-    if (backdrop) backdrop.classList.remove('mob-open');
-  }
-
-  if (mobClose) {
-    if (window.innerWidth > 1040) mobClose.style.display = 'none';
-    mobClose.onclick = closeMobileAi;
-  }
-  if (fab) fab.onclick = openMobileAi;
-  if (backdrop) backdrop.onclick = closeMobileAi;
-  if (topUpBtn) topUpBtn.onclick = function() { openAiTokenDonateModal(); };
-  if (donLink) donLink.onclick = function() { openAiTokenDonateModal(); };
-
-  containerEl.querySelectorAll('[data-ailang]').forEach(function(b) {
-    b.onclick = function() {
-      setSpAiLang(b.getAttribute('data-ailang'));
-      containerEl.querySelectorAll('[data-ailang]').forEach(function(x) {
-        x.classList.toggle('on', x.getAttribute('data-ailang') === _spAiLang);
-      });
-      var L = spAiLabels(_spAiLang === 'ru');
-      if (hintBtn) { hintBtn.querySelector('.lbl').textContent = L.hint; hintBtn.querySelector('small').textContent = L.hintSub; }
-      if (explainBtn) { explainBtn.querySelector('.lbl').textContent = L.explain; explainBtn.querySelector('small').textContent = L.explainSub; }
-    };
-  });
-
-  var rz = containerEl.querySelector('#spAiResize');
-  if (rz) {
-    rz.onmousedown = function(e) {
-      e.preventDefault();
-      document.body.style.userSelect = 'none';
-      function mv(ev) {
-        var w = Math.round(window.innerWidth - 20 - ev.clientX);
-        w = Math.max(360, Math.min(900, w));
-        document.documentElement.style.setProperty('--sp-ai-w', w + 'px');
-      }
-      function up() {
-        document.removeEventListener('mousemove', mv);
-        document.removeEventListener('mouseup', up);
-        document.body.style.userSelect = '';
-        spSet('satpath_ai_w', document.documentElement.style.getPropertyValue('--sp-ai-w').trim());
-      }
-      document.addEventListener('mousemove', mv);
-      document.addEventListener('mouseup', up);
-    };
-    rz.ondblclick = function() {
-      document.documentElement.style.removeProperty('--sp-ai-w');
-      spSet('satpath_ai_w', '');
-    };
-  }
-
-  function setBusy(on) {
-    if (hintBtn) hintBtn.disabled = on;
-    if (explainBtn) explainBtn.disabled = on;
-  }
-
-  async function requestAi(mode) {
-    var qObj = typeof getQuestionObjFn === 'function' ? getQuestionObjFn() : getQuestionObjFn;
-    if (!qObj || !qObj.q) return;
-    var isRu = (_spAiLang === 'ru');
-    var cost = (mode === 'explain') ? 5 : 3;
-    var cacheKey = mode + '_' + _spAiLang + '_' + String(qObj.q).slice(0, 120);
-
-    if (_spAiCache[cacheKey]) {
-      bodyEl.innerHTML = _spAiCache[cacheKey];
-      openMobileAi();
-      return;
-    }
-
-    if (!spendAiTokens(cost, mode === 'explain' ? 'Step-by-Step Breakdown' : 'AI Hint')) return;
-
-    openMobileAi();
-    setBusy(true);
-    bodyEl.innerHTML = '<div class="sp-ai-empty"><div style="color:var(--acc);margin-bottom:8px;animation:pl 1.2s infinite">' + spSvg('sparkles', 26) + '</div>' +
-      '<b>' + (isRu ? (mode === 'explain' ? 'Разбираю задачу…' : 'Готовлю подсказку…') : (mode === 'explain' ? 'Working through the problem…' : 'Preparing your hint…')) + '</b></div>';
-
-    var html = '';
-    var errInfo = '';
-    try {
-      var ctl = window.AbortController ? new AbortController() : null;
-      var tmId = setTimeout(function() { if (ctl) ctl.abort(); }, 28000);
-      var resp = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: ctl ? ctl.signal : undefined,
-        body: JSON.stringify({
-          mode: mode,
-          question: qObj.q,
-          options: qObj.opts || [],
-          answer: qObj.ans,
-          topic: qObj.top || (qObj.rw ? 'Reading & Writing' : 'SAT Math'),
-          isRw: !!qObj.rw,
-          isGrid: !!qObj.isGrid,
-          userAnswer: qObj.wrongAns || '',
-          lang: _spAiLang
-        })
-      });
-      clearTimeout(tmId);
-      if (resp && resp.ok) {
-        var data = await resp.json();
-        if (data && data.text) html = formatAiMarkdownToHtml(data.text, mode);
-        else errInfo = 'empty response';
-      } else if (resp) {
-        var raw = '';
-        try { raw = await resp.text(); } catch (e2) {}
-        errInfo = 'HTTP ' + resp.status + ' ' + String(raw).slice(0, 300);
-      }
-    } catch (err) { errInfo = String((err && err.name) || err); }
-
-    setBusy(false);
-
-    if (!html) {
-      // AI failed: refund tokens and show a short friendly message (details only in console)
-      if (window.console) console.warn('SATPath AI error:', errInfo);
-      addAiTokens(cost, isRu ? 'Токены возвращены' : 'Tokens refunded');
-      bodyEl.innerHTML = '<div class="sp-ai-empty"><div style="color:var(--sand);margin-bottom:8px">' + spSvg('alert', 26) + '</div>' +
-        '<b>' + (isRu ? 'Технические неполадки' : 'Technical issues') + '</b>' +
-        '<p>' + (isRu ? 'Токены возвращены. Попробуйте ещё раз.' : 'Your tokens were refunded. Please try again.') + '</p>' +
-        '<button type="button" class="sp-ai-retry" id="spAiRetry">' + (isRu ? 'Повторить' : 'Try again') + '</button></div>';
-      var rb = bodyEl.querySelector('#spAiRetry');
-      if (rb) rb.onclick = function() { requestAi(mode); };
-      return;
-    }
-
-    _spAiCache[cacheKey] = html;
-    bodyEl.innerHTML = html;
-  }
-
-  if (hintBtn) hintBtn.onclick = function() { requestAi('hint'); };
-  if (explainBtn) explainBtn.onclick = function() { requestAi('explain'); };
-}
+function createSatPathAiPanelHtml() { return ''; }
+function bindSatPathAiEvents() {}
+function openAiTokenDonateModal() {}
 
 function buildBank() {
   var st = bankStats();
