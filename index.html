@@ -691,14 +691,18 @@ aside {
   font-weight: 800;
   color: var(--sand);
   background: var(--sand-bg);
-  padding: 3px 9px;
+  padding: 4px 10px;
   border-radius: 99px;
   font-size: 11px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
+  flex: none;
 }
-
+.isl-bounty svg { flex: none; }
+.isl-foot { gap: 10px; }
+.isl-rank { min-width: 0; }
 .mock-cards-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
