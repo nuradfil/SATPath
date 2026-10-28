@@ -69,8 +69,8 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  const key = process.env.GEMINI_AI;
-  if (!key) return res.status(500).json({ error: 'GEMINI_AI env var is not set' });
+  const key = (process.env.GEMINI_AI || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_KEY || '').trim();
+  if (!key) return res.status(500).json({ error: 'GEMINI_AI env var is not set (checked GEMINI_AI, GEMINI_API_KEY, GOOGLE_API_KEY, GEMINI_KEY)' });
 
   let body = req.body;
   if (typeof body === 'string') {
