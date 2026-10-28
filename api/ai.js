@@ -2,7 +2,8 @@
 // Vercel serverless function (CommonJS). If your project has "type":"module", change
 // `module.exports =` to `export default`.
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+// Tried in order; a model that returns 404 (retired / not available to new keys) is skipped.
+const MODELS = [process.env.GEMINI_MODEL, 'gemini-3.8-flash', 'gemini-flash-latest', 'gemini-2.5-flash'].filter(Boolean);
 
 const clean = (s, max) =>
   String(s == null ? '' : s)
@@ -82,28 +83,37 @@ module.exports = async (req, res) => {
 
   const { system, user } = buildPrompts(body);
 
+  const call = (model, withThinking) =>
+    fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: 'user', parts: [{ text: user }] }],
+        generationConfig: Object.assign(
+          { temperature: 0.3, maxOutputTokens: 3000 },
+          withThinking ? { thinkingConfig: { thinkingBudget: body.mode === 'hint' ? 256 : 1024 } } : {}
+        ),
+      }),
+    });
+
   try {
-    const r = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: system }] },
-          contents: [{ role: 'user', parts: [{ text: user }] }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 3000,
-            thinkingConfig: { thinkingBudget: body.mode === 'hint' ? 256 : 1024 },
-          },
-        }),
+    let r = null, data = null, used = '';
+    for (const model of MODELS) {
+      r = await call(model, true);
+      data = await r.json();
+      if (r.status === 400) { // some models reject thinkingBudget: retry plain
+        r = await call(model, false);
+        data = await r.json();
       }
-    );
-    const data = await r.json();
+      used = model;
+      if (r.status !== 404) break;
+      console.error('model unavailable, trying next:', model);
+    }
     if (!r.ok) {
-      console.error('Gemini error', r.status, JSON.stringify(data).slice(0, 500));
+      console.error('Gemini error', used, r.status, JSON.stringify(data).slice(0, 500));
       const msg = (data && data.error && data.error.message) || '';
-      return res.status(502).json({ error: 'gemini_' + r.status, detail: String(msg).slice(0, 200) });
+      return res.status(502).json({ error: 'gemini_' + r.status, detail: (used + ': ' + msg).slice(0, 220) });
     }
     const text = ((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [])
       .map((p) => p.text || '')
@@ -116,7 +126,7 @@ module.exports = async (req, res) => {
     return res.status(200).json({ text });
   } catch (e) {
     console.error('ai.js', e);
-    return res.status(502).json({ error: 'network', detail: String(e && e.message || e).slice(0, 200) });
+    return res.status(502).json({ error: 'network', detail: String((e && e.message) || e).slice(0, 200) });
   }
 };
 
