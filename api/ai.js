@@ -102,17 +102,21 @@ module.exports = async (req, res) => {
     const data = await r.json();
     if (!r.ok) {
       console.error('Gemini error', r.status, JSON.stringify(data).slice(0, 500));
-      return res.status(502).json({ error: 'gemini_' + r.status });
+      const msg = (data && data.error && data.error.message) || '';
+      return res.status(502).json({ error: 'gemini_' + r.status, detail: String(msg).slice(0, 200) });
     }
     const text = ((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [])
       .map((p) => p.text || '')
       .join('')
       .trim();
-    if (!text) return res.status(502).json({ error: 'empty' });
+    if (!text) {
+      const why = (data.promptFeedback && data.promptFeedback.blockReason) || (data.candidates && data.candidates[0] && data.candidates[0].finishReason) || '';
+      return res.status(502).json({ error: 'empty', detail: String(why) });
+    }
     return res.status(200).json({ text });
   } catch (e) {
     console.error('ai.js', e);
-    return res.status(502).json({ error: 'network' });
+    return res.status(502).json({ error: 'network', detail: String(e && e.message || e).slice(0, 200) });
   }
 };
 
