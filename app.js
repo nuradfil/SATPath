@@ -1806,6 +1806,7 @@ function bindSatPathAiEvents(containerEl, getQuestionObjFn) {
       '<b>' + (isRu ? (mode === 'explain' ? 'Разбираю задачу…' : 'Готовлю подсказку…') : (mode === 'explain' ? 'Working through the problem…' : 'Preparing your hint…')) + '</b></div>';
 
     var html = '';
+    var errInfo = '';
     try {
       var ctl = window.AbortController ? new AbortController() : null;
       var tmId = setTimeout(function() { if (ctl) ctl.abort(); }, 28000);
@@ -1829,8 +1830,13 @@ function bindSatPathAiEvents(containerEl, getQuestionObjFn) {
       if (resp && resp.ok) {
         var data = await resp.json();
         if (data && data.text) html = formatAiMarkdownToHtml(data.text, mode);
+        else errInfo = 'empty response';
+      } else if (resp) {
+        var raw = '';
+        try { raw = await resp.text(); } catch (e2) {}
+        errInfo = 'HTTP ' + resp.status + ' ' + String(raw).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 160);
       }
-    } catch (err) { /* handled below */ }
+    } catch (err) { errInfo = (err && err.name === 'AbortError') ? 'timeout' : String(err && err.message || err); }
 
     setBusy(false);
 
@@ -1839,7 +1845,7 @@ function bindSatPathAiEvents(containerEl, getQuestionObjFn) {
       addAiTokens(cost, isRu ? 'Токены возвращены' : 'Tokens refunded');
       bodyEl.innerHTML = '<div class="sp-ai-empty"><b>' + (isRu ? 'ИИ сейчас не отвечает' : 'The AI is not responding') + '</b>' +
         '<p>' + (isRu ? 'Токены возвращены. Попробуй ещё раз.' : 'Your tokens were refunded. Please try again.') + '</p>' +
-        '<button type="button" class="sp-ai-retry" id="spAiRetry">' + (isRu ? 'Повторить' : 'Retry') + '</button></div>';
+        (errInfo ? '<p style="font-size:11px;opacity:.7;word-break:break-word">' + lbEsc(errInfo) + '</p>' : '') + '<button type="button" class="sp-ai-retry" id="spAiRetry">' + (isRu ? 'Повторить' : 'Retry') + '</button></div>';
       var rb = bodyEl.querySelector('#spAiRetry');
       if (rb) rb.onclick = function() { requestAi(mode); };
       return;
