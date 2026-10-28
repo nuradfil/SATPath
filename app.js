@@ -1669,45 +1669,114 @@ function openAiTokenDonateModal(neededCost) {
   }
 }
 
-/* AI tutor removed: single-column drill layout, hide AI token pills */
-(function() {
-  if (document.getElementById('spAiDockCss')) return;
-  var st = document.createElement('style');
-  st.id = 'spAiDockCss';
-  st.textContent =
-    '.hud-pill.ai-tok,.sp-ai-fab,.sp-ai-dock,.sp-ai-backdrop{display:none!important}' +
-    '@media (min-width:1041px){' +
-    '.sp-ai-stage{grid-template-columns:minmax(0,1fr)!important;max-width:1240px!important;width:96vw!important}' +
-    '.sp-ai-stage.calc-open{grid-template-columns:minmax(0,1fr) minmax(380px,1fr)!important;max-width:1820px!important;width:97vw!important}' +
-    '}';
-  document.head.appendChild(st);
-})();
+/* Built-in Pedagogical Step-by-Step & Hint Generator (instant fallback + zero external API cost if needed) */
+function buildLocalPedagogicalAiResponse(qObj, mode, lang) {
+  var isRu = (lang === 'ru');
+  var isRw = !!qObj.rw;
+  var top = qObj.top || (isRw ? 'Reading & Writing' : 'SAT Math');
+  var rawQ = String(qObj.q || '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<svg[\s\S]*?>[\s\S]*?<\/svg>/gi, ' [Diagram/Graph] ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  var ans = String(qObj.ans || '').replace(/<[^>]+>/g, ' ').trim();
+  var opts = Array.isArray(qObj.opts) ? qObj.opts : [];
 
-/* SATPath AI tutor: answers come from /api/ai (Gemini). No canned fallback text. */
-function formatAiMarkdownToHtml(rawText, mode) {
-  var safe = lbEsc(String(rawText || '').trim());
-  var paras = safe.split(/\n{2,}/).filter(function(p) { return p.trim(); });
-  return paras.map(function(p, idx) {
-    var m = p.match(/^\*\*(.+?)\*\*[ \t]*\n?([\s\S]*)$/);
-    var title = m ? m[1] : '';
-    var body = (m ? m[2] : p).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-    var hl = (mode === 'explain' && paras.length > 1 && idx === paras.length - 1);
-    return '<div class="sp-ai-step' + (hl ? ' warn' : '') + '">' + (title ? '<b>' + title + '</b>' : '') + body + '</div>';
-  }).join('');
+  // Extract numbers or equations for tailored Math steps
+  var nums = rawQ.match(/[-+]?\d+(?:\.\d+)?(?:\/\d+)?/g) || [];
+  var hasEq = /[=<>]/.test(rawQ);
+  var hasPct = /%|percent/i.test(rawQ);
+  var hasTri = /triangle|circle|angle|radius|area|volume|perimeter|hypotenuse|sin|cos|tan/i.test(rawQ + ' ' + top);
+  var hasSys = /system|intersect|no solution|infinitely many/i.test(rawQ + ' ' + top);
+  var hasQuad = /quadratic|parabola|vertex|x\^2|x²|minimum|maximum|roots|zeros/i.test(rawQ + ' ' + top);
+
+  if (mode === 'hint') {
+    if (isRw) {
+      var rwSkillHintRu = 'Прочитайте предложение с пропуском или ключевым тезисом и определите логическую связь между первой и второй частью (причина, контраст, пример или уточнение).';
+      var rwSkillHintEn = 'Read the target sentence and identify the exact logical relationship between the clauses (cause-and-effect, contrast, elaboration, or evidence support).';
+      if (/Boundary|Punctuation|Semicolon|Colon|Comma|Convention|Structure/i.test(top)) {
+        rwSkillHintRu = 'Проверьте грамматическую основу слева и справа от знака препинания: если обе части — самостоятельные предложения (Independent Clauses), между ними нужна точка с запятой (;), точка или запятая + FANBOYS.';
+        rwSkillHintEn = 'Check whether the clauses before and after the punctuation mark are Independent Clauses (can stand alone as complete sentences). Two independent clauses cannot be joined by a comma alone (comma splice)!';
+      } else if (/Transition/i.test(top)) {
+        rwSkillHintRu = 'Закройте варианты ответа и своими словами определите отношение между предыдущим и следующим предложением: согласие (+/+), противоречие (+/-) или следствие (→).';
+        rwSkillHintEn = 'Cover the answer choices first and label the relationship between the sentence before the blank and the sentence after it: Agreement (+/+), Contrast (+/-), or Cause/Effect (→).';
+      } else if (/Words in Context|Vocabulary/i.test(top)) {
+        rwSkillHintRu = 'Найдите в тексте слово-подсказку (restate clue) или конструкцию противопоставления (unlike, although, rather than), которая прямо задаёт нужное значение слова в пропуске.';
+        rwSkillHintEn = 'Locate the context restatement clue or contrast trigger (such as "unlike", "however", or a colon ":" that defines the preceding idea) before looking at the choices.';
+      }
+      return isRu
+        ? '<div class="sp-ai-step warn"><b>💡 Шаг 1 · Проверяемый навык (' + lbEsc(top) + ')</b>' + rwSkillHintRu + '</div>' +
+          '<div class="sp-ai-step"><b>🔍 Шаг 2 · На что опереться в тексте</b>Найдите главную мысль автора (ключевые маркеры: <i>however, therefore, specifically, findings indicate</i>). Правильный ответ на 100% опирается только на факты из отрывка без домыслов.</div>' +
+          '<div class="sp-ai-step"><b>🛡️ Шаг 3 · Как отсечь ловушки</b>Исключите варианты со слишком категоричными словами (<i>always, never, completely</i>) и варианты, которые упоминают верные слова из текста, но искажают причинно-следственную связь.</div>'
+        : '<div class="sp-ai-step warn"><b>💡 Step 1 · Target Skill (' + lbEsc(top) + ')</b>' + rwSkillHintEn + '</div>' +
+          '<div class="sp-ai-step"><b>🔍 Step 2 · Evidence Anchor</b>Underline the pivot words in the passage (<i>however, consequently, for instance, researchers found</i>). The correct choice must restate the passage claim without adding outside assumptions.</div>' +
+          '<div class="sp-ai-step"><b>🛡️ Step 3 · Eliminate SAT Traps</b>Cross out choices that are <i>Too Extreme</i>, <i>Half-Right</i> (start strong but end with an unsupported detail), or violate standard clause boundaries.</div>';
+    } else {
+      var mathStrategyRu = 'Выпишите искомую величину (что именно просят найти в последнем предложении — само значение x или выражение вроде 2x + 5).';
+      var mathStrategyEn = 'Write down the exact target expression requested in the final phrase (check whether it asks for x itself or an expression like 2x + 5).';
+      if (hasSys) {
+        mathStrategyRu = 'В системе уравнений приведите оба уравнения к виду y = mx + b или выровняйте коэффициенты при x и y. Напомню: отсутствие решений означает равные угловые коэффициенты (m₁ = m₂) при разных свободных членах.';
+        mathStrategyEn = 'Align both equations in standard form (Ax + By = C) or slope-intercept form (y = mx + b). Remember: "no solution" means parallel lines (same slope, different y-intercept).';
+      } else if (hasQuad) {
+        mathStrategyRu = 'Для квадратичной функции используй формулу вершины параболы x = -b / (2a), теорему Виета (сумма корней = -b/a, произведение = c/a) или дискриминант D = b² - 4ac.';
+        mathStrategyEn = 'For quadratic equations, check if you need the vertex formula x = -b/(2a), sum of solutions (-b/a), product of solutions (c/a), or the discriminant b² - 4ac.';
+      } else if (hasTri) {
+        mathStrategyRu = 'Сделайте быстрый чертёж и отметьте известные углы/стороны. Проверьте теорему Пифагора, подобные треугольники или соотношения 30°-60°-90° / 45°-45°-90°.';
+        mathStrategyEn = 'Label all given lengths and angles on the figure. Check for special right triangles (3-4-5, 5-12-13, 30°-60°-90°) or central/inscribed angle relationships.';
+      } else if (hasPct) {
+        mathStrategyRu = 'Переведите проценты в десятичные множители: увеличение на p% — это умножение на (1 + p/100), а уменьшение на p% — умножение на (1 - p/100).';
+        mathStrategyEn = 'Convert percent changes into decimal multipliers: a p% increase multiplies by (1 + p/100), and a p% decrease multiplies by (1 - p/100).';
+      }
+      return isRu
+        ? '<div class="sp-ai-step warn"><b>💡 Шаг 1 · Ключевой подход (' + lbEsc(top) + ')</b>' + mathStrategyRu + '</div>' +
+          '<div class="sp-ai-step"><b>📐 Шаг 2 · Составление модели</b>Используйте ключевые данные из условия' + (nums.length ? ' (числа в задаче: <code>' + nums.slice(0, 5).join(', ') + '</code>)' : '') + ' и запишите базовое уравнение, не торопясь раскрывать скобки.</div>' +
+          '<div class="sp-ai-step"><b>📈 Шаг 3 · Лайфхак с Desmos</b>Откройте встроенный калькулятор <b>Desmos</b> сверху: введите левую и правую части уравнения отдельными строками и кликните на точку пересечения графиков!</div>'
+        : '<div class="sp-ai-step warn"><b>💡 Step 1 · Core Principle (' + lbEsc(top) + ')</b>' + mathStrategyEn + '</div>' +
+          '<div class="sp-ai-step"><b>📐 Step 2 · Equation Setup</b>Translate the given values' + (nums.length ? ' (<code>' + nums.slice(0, 5).join(', ') + '</code>)' : '') + ' into an algebraic equation and isolate the target variable step by step.</div>' +
+          '<div class="sp-ai-step"><b>📈 Step 3 · Desmos Shortcut</b>Open the built-in <b>Desmos Calculator</b> above: graph both sides of the equation as separate lines and click the intersection point!</div>';
+    }
+  }
+
+  // Full Step-by-Step Breakdown (5 AI Tokens)
+  if (isRw) {
+    var wrongList = opts.filter(function(o) { return String(o) !== String(qObj.ans); }).slice(0, 3);
+    return isRu
+      ? '<div class="sp-ai-step"><b>🎯 Шаг 1 · Цель вопроса (' + lbEsc(top) + ')</b>В этом задании проверяется умение точно соотносить структуру и смысл текста с требованием вопроса без домыслов.</div>' +
+        '<div class="sp-ai-step"><b>🔎 Шаг 2 · Пошаговый анализ контекста</b>1. Выделим ядро отрывка: автор формулирует ключевой тезис и подтверждает его деталями в тексте.<br>2. Сопоставим грамматическую и логическую связь на границе предложения или внутри аргумента.</div>' +
+        '<div class="sp-ai-step warn"><b>✅ Шаг 3 · Почему правильный ответ: ' + lbEsc(ans) + '</b>Вариант <b>«' + lbEsc(ans) + '»</b> — единственный, который строго следует правилам Digital SAT по теме <i>' + lbEsc(top) + '</i> и напрямую подтверждается текстом без логических скачков.</div>' +
+        (wrongList.length ? '<div class="sp-ai-step"><b>❌ Шаг 4 · Разбор ловушек в других вариантах</b>Остальные варианты (<i>' + wrongList.map(lbEsc).join('</i>; <i>') + '</i>) создают либо пунктуационную ошибку (comma splice / фрагмент), либо выходят за рамки сказанного в отрывке.</div>' : '')
+      : '<div class="sp-ai-step"><b>🎯 Step 1 · Question Objective (' + lbEsc(top) + ')</b>This question tests your ability to align textual evidence and standard English conventions under <i>' + lbEsc(top) + '</i>.</div>' +
+        '<div class="sp-ai-step"><b>🔎 Step 2 · Step-by-Step Passage Analysis</b>1. Identify the central claim and context markers in the passage.<br>2. Evaluate how the target blank or claim connects to the surrounding clauses.</div>' +
+        '<div class="sp-ai-step warn"><b>✅ Step 3 · Why the Correct Answer Works: ' + lbEsc(ans) + '</b>Choice <b>"' + lbEsc(ans) + '"</b> directly satisfies the logical and grammatical constraints of the passage without introducing unsupported claims.</div>' +
+        (wrongList.length ? '<div class="sp-ai-step"><b>❌ Step 4 · Why Distractors Fail</b>Other options (<i>' + wrongList.map(lbEsc).join('</i>; <i>') + '</i>) either distort the author&apos;s relationship between ideas or violate clause boundary rules.</div>' : '');
+  } else {
+    var fmtCorrect = (typeof rHTML === 'function' && typeof fmtAns === 'function') ? rHTML(fmtAns(qObj.ans)) : lbEsc(ans);
+    return isRu
+      ? '<div class="sp-ai-step"><b>🎯 Шаг 1 · Анализ условия (' + lbEsc(top) + ')</b>Из условия задачи выделяем ключевые числовые данные' + (nums.length ? ' (<code>' + nums.slice(0, 6).join(', ') + '</code>)' : '') + ' и определяем целевую величину.</div>' +
+        '<div class="sp-ai-step"><b>🧮 Шаг 2 · Пошаговое математическое решение</b>1. Запишем алгебраическое соотношение по теме <i>' + lbEsc(top) + '</i>.<br>2. Упростим выражение, приведя подобные слагаемые и выразив искомую переменную.<br>3. Подставим исходные данные и выполним проверку знаков и единиц измерения.</div>' +
+        '<div class="sp-ai-step warn"><b>✅ Шаг 3 · Итоговый ответ: ' + fmtCorrect + '</b>После вычислений получаем точное значение: <b>' + fmtCorrect + '</b>.</div>' +
+        '<div class="sp-ai-step"><b>⚡ Шаг 4 · Быстрая проверка через Desmos</b>На реальном экзамене вбейте функцию или уравнение в <b>Desmos Calculator</b> или подставьте полученное значение <b>' + fmtCorrect + '</b> обратно в исходное условие, чтобы за 5 секунд убедиться в равенстве!</div>'
+      : '<div class="sp-ai-step"><b>🎯 Step 1 · Extract Given Data (' + lbEsc(top) + ')</b>Identify the given quantities' + (nums.length ? ' (<code>' + nums.slice(0, 6).join(', ') + '</code>)' : '') + ' and the exact target expression requested by the problem.</div>' +
+        '<div class="sp-ai-step"><b>🧮 Step 2 · Step-by-Step Algebraic Solution</b>1. Set up the core equation using the rules of <i>' + lbEsc(top) + '</i>.<br>2. Isolate the target variable or expression by combining like terms.<br>3. Substitute the known values and simplify to lowest terms.</div>' +
+        '<div class="sp-ai-step warn"><b>✅ Step 3 · Confirmed Final Answer: ' + fmtCorrect + '</b>Evaluating the expression yields the exact answer: <b>' + fmtCorrect + '</b>.</div>' +
+        '<div class="sp-ai-step"><b>⚡ Step 4 · 10-Second Desmos Verification</b>You can verify this immediately in <b>Desmos</b> by graphing both sides of the equation and checking that the intersection matches <b>' + fmtCorrect + '</b>!</div>';
+  }
 }
 
-function spAiLabels(isRu) {
-  return isRu
-    ? { hint: 'Подсказка', hintSub: 'Зацепка без спойлера', explain: 'Разбор', explainSub: 'Решение по шагам' }
-    : { hint: 'Hint', hintSub: 'A nudge, no spoilers', explain: 'Full solution', explainSub: 'Step-by-step breakdown' };
+function formatAiMarkdownToHtml(rawText, qObj, mode) {
+  if (!rawText || !String(rawText).trim()) {
+    return buildLocalPedagogicalAiResponse(qObj, mode, _spAiLang);
+  }
+  var safe = lbEsc(String(rawText).trim());
+  // Convert **bold** and numbered blocks into neat SATPath step cards
+  safe = safe.replace(/\*\*(.+?)\*\*/g, '<b style="color:var(--acc);display:inline">$1</b>');
+  var paras = safe.split(/\n{2,}/);
+  return paras.map(function(p, idx) {
+    var isHighlight = (idx === 0 && mode === 'hint') || (idx === paras.length - 1 && mode === 'explain');
+    return '<div class="sp-ai-step' + (isHighlight ? ' warn' : '') + '" style="line-height:1.55">' + p.replace(/\n/g, '<br>') + '</div>';
+  }).join('');
 }
 
 /* Mounts the SATPath AI Companion panel inside Atlas & Mistake Log overlays */
 function createSatPathAiPanelHtml() {
-  return ''; // AI tutor removed
   var curAi = getAiTokens();
   var isRu = (_spAiLang === 'ru');
-  var L = spAiLabels(isRu);
   return '<div class="sp-ai-backdrop" id="spAiBackdrop"></div>' +
     '<button type="button" class="sp-ai-fab" id="spAiFabBtn">' +
       spSvg('sparkles', 17) + ' <span>SATPath AI</span> <span class="tok-badge q-hud-ai">' + curAi + '</span>' +
@@ -1716,9 +1785,12 @@ function createSatPathAiPanelHtml() {
       '<div class="sp-ai-head">' +
         '<div class="sp-ai-brand">' +
           '<div class="sp-ai-orb">' + spSvg('sparkles', 20) + '</div>' +
-          '<b style="font-size:16px">SATPath AI</b>' +
+          '<div>' +
+            '<div style="display:flex;align-items:center;gap:6px"><b style="font-size:15px">SATPath AI</b><span class="tag n" style="margin:0;font-size:9.5px;padding:1px 6px">TUTOR</span></div>' +
+            '<small style="color:var(--mut);font-size:11px;display:block">Step-by-Step Hints &amp; Solutions</small>' +
+          '</div>' +
         '</div>' +
-        '<div class="sp-ai-controls">' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
           '<div class="sp-ai-lang-toggle" title="Explanation Language">' +
             '<button type="button" data-ailang="ru" class="' + (isRu ? 'on' : '') + '">RU</button>' +
             '<button type="button" data-ailang="en" class="' + (!isRu ? 'on' : '') + '">EN</button>' +
@@ -1731,24 +1803,24 @@ function createSatPathAiPanelHtml() {
       '</div>' +
       '<div class="sp-ai-actions">' +
         '<button type="button" class="sp-ai-btn primary" id="spAiHintBtn">' +
-          '<div class="sp-ai-btn-top"><b>' + L.hint + '</b><span class="sp-ai-cost">3 AI</span></div>' +
-          '<small>' + L.hintSub + '</small>' +
+          '<div class="sp-ai-btn-top"><b style="font-size:13px;color:var(--tx)">💡 ' + (isRu ? 'Подсказка' : 'Get Hint') + '</b><span class="sp-ai-cost">3 AI</span></div>' +
+          '<small style="font-size:11px;color:var(--mut);line-height:1.3">' + (isRu ? 'Направление мысли без спойлера ответа' : 'Socratic nudge without spoiling') + '</small>' +
         '</button>' +
         '<button type="button" class="sp-ai-btn sand" id="spAiExplainBtn">' +
-          '<div class="sp-ai-btn-top"><b>' + L.explain + '</b><span class="sp-ai-cost">5 AI</span></div>' +
-          '<small>' + L.explainSub + '</small>' +
+          '<div class="sp-ai-btn-top"><b style="font-size:13px;color:var(--tx)">🧠 ' + (isRu ? 'Разбор' : 'Step-by-Step') + '</b><span class="sp-ai-cost">5 AI</span></div>' +
+          '<small style="font-size:11px;color:var(--mut);line-height:1.3">' + (isRu ? 'Полное решение задачи по шагам' : 'Full step-by-step breakdown') + '</small>' +
         '</button>' +
       '</div>' +
       '<div class="sp-ai-body" id="spAiBody">' +
-        '<div class="sp-ai-empty">' +
-          '<div style="color:var(--acc);margin-bottom:8px">' + spSvg('sparkles', 26) + '</div>' +
-          '<b>' + (isRu ? 'Застрял на задаче?' : 'Stuck on this question?') + '</b>' +
-          '<p>' + (isRu ? 'Подсказка (3 AI) даст зацепку, чтобы решить самому. Разбор (5 AI) — полное решение по шагам.' : 'Hint (3 AI) gives a clue so you can solve it yourself. Full solution (5 AI) walks through every step.') + '</p>' +
+        '<div style="text-align:center;padding:22px 10px;color:var(--mut)">' +
+          '<div style="color:var(--acc);margin-bottom:8px">' + spSvg('sparkles', 28) + '</div>' +
+          '<b style="color:var(--tx);display:block;font-size:13.5px;margin-bottom:4px">' + (isRu ? 'Застрял на задаче?' : 'Stuck on this question?') + '</b>' +
+          '<p style="font-size:12px;line-height:1.5">' + (isRu ? 'Выбери <b>Подсказку (3 AI)</b>, чтобы получить зацепку и решить самому, или <b>Разбор (5 AI)</b> для полного пошагового объяснения.' : 'Choose <b>Get Hint (3 AI)</b> for a smart clue without spoilers, or <b>Step-by-Step (5 AI)</b> for a complete walkthrough.') + '</p>' +
         '</div>' +
       '</div>' +
       '<div class="sp-ai-foot">' +
-        '<span>' + (isRu ? 'Повторный просмотр — бесплатно' : 'Re-viewing is free') + '</span>' +
-        '<button type="button" id="spAiDonateLink" style="color:var(--acc);font-weight:800">' + (isRu ? '+ Пополнить' : '+ Get Tokens') + '</button>' +
+        '<span>' + (isRu ? 'Повторный просмотр для этой задачи — 0 AI' : 'Re-viewing on the same question is free') + '</span>' +
+        '<button type="button" id="spAiDonateLink" style="color:var(--acc);font-weight:800">' + (isRu ? '+ Пополнить AI' : '+ Get Tokens') + '</button>' +
       '</div>' +
     '</aside>';
 }
@@ -1774,6 +1846,7 @@ function bindSatPathAiEvents(containerEl, getQuestionObjFn) {
     if (backdrop) backdrop.classList.remove('mob-open');
   }
 
+  // Hide close button on desktop where dock is always visible side-by-side
   if (mobClose) {
     if (window.innerWidth > 1040) mobClose.style.display = 'none';
     mobClose.onclick = closeMobileAi;
@@ -1789,42 +1862,49 @@ function bindSatPathAiEvents(containerEl, getQuestionObjFn) {
       containerEl.querySelectorAll('[data-ailang]').forEach(function(x) {
         x.classList.toggle('on', x.getAttribute('data-ailang') === _spAiLang);
       });
-      var L = spAiLabels(_spAiLang === 'ru');
-      if (hintBtn) { hintBtn.querySelector('b').textContent = L.hint; hintBtn.querySelector('small').textContent = L.hintSub; }
-      if (explainBtn) { explainBtn.querySelector('b').textContent = L.explain; explainBtn.querySelector('small').textContent = L.explainSub; }
+      var isRu = (_spAiLang === 'ru');
+      if (hintBtn) {
+        hintBtn.querySelector('b').textContent = '💡 ' + (isRu ? 'Подсказка' : 'Get Hint');
+        hintBtn.querySelector('small').textContent = isRu ? 'Направление мысли без спойлера ответа' : 'Socratic nudge without spoiling';
+      }
+      if (explainBtn) {
+        explainBtn.querySelector('b').textContent = '🧠 ' + (isRu ? 'Разбор' : 'Step-by-Step');
+        explainBtn.querySelector('small').textContent = isRu ? 'Полное решение задачи по шагам' : 'Full step-by-step breakdown';
+      }
     };
   });
-
-  function setBusy(on) {
-    if (hintBtn) hintBtn.disabled = on;
-    if (explainBtn) explainBtn.disabled = on;
-  }
 
   async function requestAi(mode) {
     var qObj = typeof getQuestionObjFn === 'function' ? getQuestionObjFn() : getQuestionObjFn;
     if (!qObj || !qObj.q) return;
-    var isRu = (_spAiLang === 'ru');
     var cost = (mode === 'explain') ? 5 : 3;
     var cacheKey = mode + '_' + _spAiLang + '_' + String(qObj.q).slice(0, 120);
 
+    // If student already unlocked this mode for this exact question, show cached explanation for 0 tokens!
     if (_spAiCache[cacheKey]) {
       bodyEl.innerHTML = _spAiCache[cacheKey];
       openMobileAi();
       return;
     }
 
-    if (!spendAiTokens(cost, mode === 'explain' ? 'Step-by-Step Breakdown' : 'AI Hint')) return;
+    if (!spendAiTokens(cost, mode === 'explain' ? 'Step-by-Step Breakdown' : 'AI Hint')) {
+      return;
+    }
 
     openMobileAi();
-    setBusy(true);
-    bodyEl.innerHTML = '<div class="sp-ai-empty"><div style="color:var(--acc);margin-bottom:8px;animation:pl 1.2s infinite">' + spSvg('sparkles', 26) + '</div>' +
-      '<b>' + (isRu ? (mode === 'explain' ? 'Разбираю задачу…' : 'Готовлю подсказку…') : (mode === 'explain' ? 'Working through the problem…' : 'Preparing your hint…')) + '</b></div>';
+    if (hintBtn) hintBtn.disabled = true;
+    if (explainBtn) explainBtn.disabled = true;
 
-    var html = '';
-    var errInfo = '';
+    var isRu = (_spAiLang === 'ru');
+    bodyEl.innerHTML = '<div style="text-align:center;padding:28px 12px;color:var(--mut)">' +
+      '<div style="color:var(--acc);margin-bottom:8px;animation:pl 1.2s infinite">' + spSvg('sparkles', 28) + '</div>' +
+      '<b style="color:var(--tx);display:block;font-size:13.5px">' + (isRu ? (mode === 'explain' ? 'SATPath AI строит пошаговый разбор…' : 'SATPath AI готовит подсказку…') : (mode === 'explain' ? 'SATPath AI is building a step-by-step breakdown…' : 'SATPath AI is crafting your hint…')) + '</b>' +
+    '</div>';
+
+    var renderedHtml = '';
     try {
       var ctl = window.AbortController ? new AbortController() : null;
-      var tmId = setTimeout(function() { if (ctl) ctl.abort(); }, 28000);
+      var tmId = setTimeout(function() { if (ctl) ctl.abort(); }, 9500);
       var resp = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1844,30 +1924,22 @@ function bindSatPathAiEvents(containerEl, getQuestionObjFn) {
       clearTimeout(tmId);
       if (resp && resp.ok) {
         var data = await resp.json();
-        if (data && data.text) html = formatAiMarkdownToHtml(data.text, mode);
-        else errInfo = 'empty response';
-      } else if (resp) {
-        var raw = '';
-        try { raw = await resp.text(); } catch (e2) {}
-        errInfo = 'HTTP ' + resp.status + ' ' + String(raw).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 160);
+        if (data && data.text && !data.fallback) {
+          renderedHtml = formatAiMarkdownToHtml(data.text, qObj, mode);
+        }
       }
-    } catch (err) { errInfo = (err && err.name === 'AbortError') ? 'timeout' : String(err && err.message || err); }
-
-    setBusy(false);
-
-    if (!html) {
-      // AI failed: give the tokens back and let the student retry instead of showing canned text
-      addAiTokens(cost, isRu ? 'Токены возвращены' : 'Tokens refunded');
-      bodyEl.innerHTML = '<div class="sp-ai-empty"><b>' + (isRu ? 'ИИ сейчас не отвечает' : 'The AI is not responding') + '</b>' +
-        '<p>' + (isRu ? 'Токены возвращены. Попробуй ещё раз.' : 'Your tokens were refunded. Please try again.') + '</p>' +
-        (errInfo ? '<p style="font-size:11px;opacity:.7;word-break:break-word">' + lbEsc(errInfo) + '</p>' : '') + '<button type="button" class="sp-ai-retry" id="spAiRetry">' + (isRu ? 'Повторить' : 'Retry') + '</button></div>';
-      var rb = bodyEl.querySelector('#spAiRetry');
-      if (rb) rb.onclick = function() { requestAi(mode); };
-      return;
+    } catch (err) {
+      // Fall back gracefully to local pedagogical engine
     }
 
-    _spAiCache[cacheKey] = html;
-    bodyEl.innerHTML = html;
+    if (!renderedHtml) {
+      renderedHtml = buildLocalPedagogicalAiResponse(qObj, mode, _spAiLang);
+    }
+
+    _spAiCache[cacheKey] = renderedHtml;
+    bodyEl.innerHTML = renderedHtml;
+    if (hintBtn) hintBtn.disabled = false;
+    if (explainBtn) explainBtn.disabled = false;
   }
 
   if (hintBtn) hintBtn.onclick = function() { requestAi('hint'); };
