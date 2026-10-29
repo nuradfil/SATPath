@@ -98,7 +98,16 @@ function spSvg(name, size) {
     plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
     send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
     coffee: '<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/>',
-    sparkles: '<path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/>'
+    sparkles: '<path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/>',
+    ruler: '<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/>',
+    geometry: '<path d="M3 20h18L12 4Z"/><path d="M12 4v16"/><path d="M12 16h4v4"/>',
+    strike: '<path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><line x1="4" y1="12" x2="20" y2="12"/>',
+    eyeOff: '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>',
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    refresh: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+    shuffle: '<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>',
+    star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
   };
   return '<svg width="' + sz + '" height="' + sz + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px;flex:none">' + (paths[name] || paths.compass) + '</svg>';
 }
@@ -127,6 +136,374 @@ function createFullDesmos(el) {
     qwertyKeyboard: true,
     degreeMode: false
   });
+}
+
+/* ===== BLUEBOOK OPTION ELIMINATOR (ЗАЧЕРКИВАНИЕ) & GEOMETRY REFERENCE SHEET (SVG) ===== */
+(function injectSatPathToolkitStyles() {
+  if (document.getElementById('spToolkitCss')) return;
+  var st = document.createElement('style');
+  st.id = 'spToolkitCss';
+  st.textContent = `
+    /* Строка варианта ответа с кнопкой зачеркивания */
+    .qo-row {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .qo-row > .qo {
+      margin: 0 !important;
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      transition: opacity .18s, border-color .18s, background .18s, transform .18s;
+    }
+    .qo-row.is-elim > .qo {
+      opacity: 0.42;
+      border-style: dashed;
+      background: transparent;
+      text-decoration: line-through;
+      filter: grayscale(0.6);
+    }
+    .qo-row.is-elim > .qo::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      top: 50%;
+      height: 2px;
+      background: var(--mut);
+      opacity: 0.65;
+      pointer-events: none;
+    }
+    .qo-elim-btn {
+      width: 44px;
+      flex: none;
+      border-radius: 14px;
+      border: 2px solid var(--line);
+      background: var(--panel2);
+      color: var(--mut);
+      display: grid;
+      place-items: center;
+      transition: .18s;
+      cursor: pointer;
+    }
+    .qo-elim-btn:hover:not(:disabled) {
+      border-color: var(--sand);
+      color: var(--sand);
+      background: var(--sand-bg);
+    }
+    .qo-row.is-elim > .qo-elim-btn {
+      border-color: var(--sand);
+      background: var(--sand-bg);
+      color: var(--sand);
+    }
+    .qo-elim-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    /* Кнопка Reference Sheet в шапке математических модулей */
+    .sp-ref-btn {
+      background: var(--panel2);
+      color: var(--tx);
+      border: 1.5px solid var(--line);
+      padding: 5px 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: .18s;
+      cursor: pointer;
+    }
+    .sp-ref-btn:hover, .sp-ref-btn.on {
+      border-color: var(--sand);
+      background: var(--sand-bg);
+      color: var(--sand);
+    }
+
+    /* Модальное окно Reference Sheet по геометрии и тригонометрии */
+    .sp-ref-ov {
+      position: fixed;
+      inset: 0;
+      z-index: 210;
+      background: rgba(6, 21, 23, 0.72);
+      backdrop-filter: blur(4px);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      overflow-y: auto;
+      animation: fade .18s ease;
+    }
+    .sp-ref-card {
+      background: var(--panel);
+      border: 2px solid var(--sand-line);
+      border-radius: 28px;
+      max-width: 960px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 24px 28px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.4), 0 4px 0 var(--line);
+      color: var(--tx);
+    }
+    .sp-ref-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .sp-ref-item {
+      background: var(--panel2);
+      border: 1.5px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .sp-ref-item b.ref-name {
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--mut);
+      font-weight: 800;
+    }
+    .sp-ref-svg {
+      width: 100%;
+      max-width: 150px;
+      height: 92px;
+      color: var(--acc);
+    }
+    .sp-ref-fml {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px 10px;
+      width: 100%;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--tx);
+      line-height: 1.5;
+    }
+    .sp-ref-notes {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .sp-ref-note {
+      background: var(--panel2);
+      border: 1.5px solid var(--line);
+      border-radius: 16px;
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    /* Тренажёр карточек (3D Flip Flashcards) в Vocabulary */
+    .sp-fc-stage {
+      perspective: 1200px;
+      width: 100%;
+      max-width: 640px;
+      margin: 18px auto;
+    }
+    .sp-fc-inner {
+      position: relative;
+      width: 100%;
+      min-height: 320px;
+      transform-style: preserve-3d;
+      transition: transform 0.52s cubic-bezier(.2,.85,.3,1);
+      cursor: pointer;
+    }
+    .sp-fc-inner.is-flipped {
+      transform: rotateY(180deg);
+    }
+    .sp-fc-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      background: linear-gradient(155deg, var(--panel) 0%, var(--panel2) 100%);
+      border: 2px solid var(--sand-line);
+      border-radius: 28px;
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 16px 38px -12px rgba(0,0,0,0.28), 0 4px 0 var(--line);
+    }
+    .sp-fc-back {
+      transform: rotateY(180deg);
+      border-color: var(--acc);
+    }
+  `;
+  document.head.appendChild(st);
+})();
+
+/* Универсальный декоратор кнопок .qo для поддержки зачеркивания во всех режимах */
+function attachOptionEliminator(container, optsCfg) {
+  if (!container) return;
+  optsCfg = optsCfg || {};
+  var elimMap = optsCfg.elimMap || {};
+  var btns = Array.prototype.slice.call(container.querySelectorAll('.qo'));
+  btns.forEach(function(b, idx) {
+    if (b.parentElement && b.parentElement.classList.contains('qo-row')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'qo-row' + (elimMap[idx] ? ' is-elim' : '');
+    b.parentNode.insertBefore(wrap, b);
+    wrap.appendChild(b);
+
+    var strikeBtn = document.createElement('button');
+    strikeBtn.type = 'button';
+    strikeBtn.className = 'qo-elim-btn';
+    strikeBtn.title = 'Cross out / restore choice';
+    strikeBtn.setAttribute('aria-label', 'Cross out choice ' + ('ABCD'[idx] || ''));
+    strikeBtn.innerHTML = spSvg('strike', 16);
+    wrap.appendChild(strikeBtn);
+
+    var origClick = b.onclick;
+    b.onclick = function(ev) {
+      if (wrap.classList.contains('is-elim')) {
+        toast('Choice is crossed out. Click the strike icon on the right to restore it.');
+        return;
+      }
+      if (origClick) origClick.call(b, ev);
+    };
+
+    strikeBtn.onclick = function(ev) {
+      ev.stopPropagation();
+      ev.preventDefault();
+      if (b.disabled) return;
+      var nowElim = !wrap.classList.contains('is-elim');
+      wrap.classList.toggle('is-elim', nowElim);
+      elimMap[idx] = nowElim ? 1 : 0;
+      if (optsCfg.onToggleElim) optsCfg.onToggleElim(idx, nowElim);
+    };
+  });
+
+  // Синхронизируем disabled состояние кнопки зачеркивания, когда вопрос проверен
+  var obs = new MutationObserver(function() {
+    container.querySelectorAll('.qo-row').forEach(function(r) {
+      var qb = r.querySelector('.qo'), sb = r.querySelector('.qo-elim-btn');
+      if (qb && sb) sb.disabled = !!qb.disabled;
+    });
+  });
+  obs.observe(container, { attributes: true, subtree: true, attributeFilter: ['disabled', 'class'] });
+}
+
+/* Шпаргалка по геометрии и тригонометрии (Bluebook Reference Sheet) строго на SVG */
+function openMathReferenceSheet() {
+  var existing = document.getElementById('spMathRefModal');
+  if (existing) { existing.remove(); return; }
+  var ov = document.createElement('div');
+  ov.id = 'spMathRefModal';
+  ov.className = 'sp-ref-ov';
+
+  var shapes = [
+    {
+      name: 'Circle',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 140 90" fill="none" stroke="currentColor" stroke-width="2"><circle cx="70" cy="45" r="32" fill="rgba(34,163,129,0.10)"/><circle cx="70" cy="45" r="2.5" fill="currentColor"/><line x1="70" y1="45" x2="102" y2="45" stroke-dasharray="3 2"/><text x="83" y="40" fill="currentColor" stroke="none" font-size="12" font-weight="800">r</text></svg>',
+      fml: 'A = &pi;r<sup>2</sup><br>C = 2&pi;r'
+    },
+    {
+      name: 'Rectangle',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 140 90" fill="none" stroke="currentColor" stroke-width="2"><rect x="28" y="20" width="80" height="48" rx="2" fill="rgba(34,163,129,0.10)"/><text x="65" y="15" fill="currentColor" stroke="none" font-size="12" font-weight="800">l</text><text x="114" y="48" fill="currentColor" stroke="none" font-size="12" font-weight="800">w</text></svg>',
+      fml: 'A = lw<br>P = 2l + 2w'
+    },
+    {
+      name: 'Triangle',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 140 90" fill="none" stroke="currentColor" stroke-width="2"><polygon points="24,72 116,72 64,16" fill="rgba(34,163,129,0.10)"/><line x1="64" y1="16" x2="64" y2="72" stroke-dasharray="3 3"/><rect x="64" y="64" width="8" height="8" stroke-width="1.5"/><text x="53" y="48" fill="currentColor" stroke="none" font-size="12" font-weight="800">h</text><text x="68" y="85" fill="currentColor" stroke="none" font-size="12" font-weight="800">b</text></svg>',
+      fml: 'A = <span class="frac"><span>1</span><span>2</span></span>bh'
+    },
+    {
+      name: 'Right Triangle',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 140 90" fill="none" stroke="currentColor" stroke-width="2"><polygon points="30,72 112,72 30,18" fill="rgba(34,163,129,0.10)"/><rect x="30" y="62" width="10" height="10" stroke-width="1.5"/><text x="17" y="48" fill="currentColor" stroke="none" font-size="12" font-weight="800">a</text><text x="68" y="85" fill="currentColor" stroke="none" font-size="12" font-weight="800">b</text><text x="76" y="40" fill="currentColor" stroke="none" font-size="12" font-weight="800">c</text></svg>',
+      fml: 'c<sup>2</sup> = a<sup>2</sup> + b<sup>2</sup>'
+    },
+    {
+      name: '30°–60°–90° Triangle',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 150 92" fill="none" stroke="currentColor" stroke-width="2"><polygon points="24,72 122,72 24,18" fill="rgba(245,184,46,0.12)"/><rect x="24" y="63" width="9" height="9" stroke-width="1.5"/><text x="12" y="49" fill="currentColor" stroke="none" font-size="11.5" font-weight="800">x</text><text x="62" y="85" fill="currentColor" stroke="none" font-size="11.5" font-weight="800">x&radic;3</text><text x="75" y="39" fill="currentColor" stroke="none" font-size="11.5" font-weight="800">2x</text><text x="28" y="34" fill="currentColor" stroke="none" font-size="9.5" font-weight="700">60°</text><text x="92" y="69" fill="currentColor" stroke="none" font-size="9.5" font-weight="700">30°</text></svg>',
+      fml: 'Sides: x : x&radic;3 : 2x'
+    },
+    {
+      name: '45°–45°–90° Triangle',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 150 92" fill="none" stroke="currentColor" stroke-width="2"><polygon points="36,72 104,72 36,14" fill="rgba(245,184,46,0.12)"/><rect x="36" y="63" width="9" height="9" stroke-width="1.5"/><text x="23" y="46" fill="currentColor" stroke="none" font-size="11.5" font-weight="800">s</text><text x="66" y="85" fill="currentColor" stroke="none" font-size="11.5" font-weight="800">s</text><text x="74" y="40" fill="currentColor" stroke="none" font-size="11.5" font-weight="800">s&radic;2</text><text x="40" y="31" fill="currentColor" stroke="none" font-size="9.5" font-weight="700">45°</text><text x="78" y="69" fill="currentColor" stroke="none" font-size="9.5" font-weight="700">45°</text></svg>',
+      fml: 'Sides: s : s : s&radic;2'
+    },
+    {
+      name: 'Rectangular Solid',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 140 90" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="24" y="32" width="64" height="40" fill="rgba(34,163,129,0.10)"/><polyline points="24,32 44,16 108,16 108,56 88,72"/><line x1="88" y1="32" x2="108" y2="16"/><text x="52" y="84" fill="currentColor" stroke="none" font-size="11" font-weight="800">l</text><text x="102" y="69" fill="currentColor" stroke="none" font-size="11" font-weight="800">w</text><text x="113" y="40" fill="currentColor" stroke="none" font-size="11" font-weight="800">h</text></svg>',
+      fml: 'V = lwh'
+    },
+    {
+      name: 'Right Cylinder',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 140 90" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="70" cy="22" rx="32" ry="10" fill="rgba(34,163,129,0.12)"/><path d="M38 22v44c0 5.5 14.3 10 32 10s32-4.5 32-10V22"/><ellipse cx="70" cy="66" rx="32" ry="10" stroke-dasharray="3 3"/><line x1="70" y1="22" x2="102" y2="22"/><text x="82" y="19" fill="currentColor" stroke="none" font-size="11" font-weight="800">r</text><text x="108" y="48" fill="currentColor" stroke="none" font-size="11" font-weight="800">h</text></svg>',
+      fml: 'V = &pi;r<sup>2</sup>h'
+    },
+    {
+      name: 'Sphere',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 140 90" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="70" cy="45" r="32" fill="rgba(34,163,129,0.10)"/><ellipse cx="70" cy="45" rx="32" ry="10" stroke-dasharray="3 3"/><circle cx="70" cy="45" r="2" fill="currentColor"/><line x1="70" y1="45" x2="102" y2="45"/><text x="83" y="41" fill="currentColor" stroke="none" font-size="11" font-weight="800">r</text></svg>',
+      fml: 'V = <span class="frac"><span>4</span><span>3</span></span>&pi;r<sup>3</sup>'
+    },
+    {
+      name: 'Right Cone',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 140 90" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="70" cy="68" rx="32" ry="10" fill="rgba(34,163,129,0.10)"/><polyline points="38,68 70,14 102,68"/><line x1="70" y1="14" x2="70" y2="68" stroke-dasharray="3 3"/><line x1="70" y1="68" x2="102" y2="68"/><text x="60" y="48" fill="currentColor" stroke="none" font-size="11" font-weight="800">h</text><text x="84" y="65" fill="currentColor" stroke="none" font-size="11" font-weight="800">r</text></svg>',
+      fml: 'V = <span class="frac"><span>1</span><span>3</span></span>&pi;r<sup>2</sup>h'
+    },
+    {
+      name: 'Rectangular Pyramid',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 140 90" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="28,70 84,70 108,54 52,54" fill="rgba(34,163,129,0.10)"/><line x1="68" y1="14" x2="28" y2="70"/><line x1="68" y1="14" x2="84" y2="70"/><line x1="68" y1="14" x2="108" y2="54"/><line x1="68" y1="14" x2="68" y2="62" stroke-dasharray="3 3"/><text x="54" y="82" fill="currentColor" stroke="none" font-size="11" font-weight="800">l</text><text x="102" y="68" fill="currentColor" stroke="none" font-size="11" font-weight="800">w</text><text x="58" y="44" fill="currentColor" stroke="none" font-size="11" font-weight="800">h</text></svg>',
+      fml: 'V = <span class="frac"><span>1</span><span>3</span></span>lwh'
+    },
+    {
+      name: 'Circle in (x, y)-Plane',
+      svg: '<svg class="sp-ref-svg" viewBox="0 0 140 90" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="74" x2="122" y2="74" opacity="0.45"/><line x1="28" y1="12" x2="28" y2="82" opacity="0.45"/><circle cx="74" cy="44" r="24" fill="rgba(245,184,46,0.12)"/><circle cx="74" cy="44" r="2.2" fill="currentColor"/><line x1="74" y1="44" x2="98" y2="44" stroke-dasharray="2 2"/><text x="52" y="57" fill="currentColor" stroke="none" font-size="10" font-weight="800">(h,k)</text><text x="83" y="40" fill="currentColor" stroke="none" font-size="10.5" font-weight="800">r</text></svg>',
+      fml: '(x &minus; h)<sup>2</sup> + (y &minus; k)<sup>2</sup> = r<sup>2</sup>'
+    }
+  ];
+
+  ov.innerHTML =
+    '<div class="sp-ref-card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1.5px dashed var(--line);gap:12px;flex-wrap:wrap">' +
+        '<div>' +
+          '<small style="color:var(--sand);font-weight:800;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:6px">' + spSvg('ruler', 14) + ' DIGITAL SAT MATH REFERENCE SHEET</small>' +
+          '<h2 style="font-size:22px;font-weight:800;margin-top:2px">Geometry &amp; Trigonometry Formulas</h2>' +
+        '</div>' +
+        '<button type="button" class="tbtn" id="spRefClose" aria-label="Close Reference Sheet">' + spSvg('x', 16) + '</button>' +
+      '</div>' +
+      '<div class="sp-ref-grid">' +
+        shapes.map(function(s) {
+          return '<div class="sp-ref-item"><b class="ref-name">' + s.name + '</b>' + s.svg + '<div class="sp-ref-fml">' + s.fml + '</div></div>';
+        }).join('') +
+      '</div>' +
+      '<div class="sp-ref-notes">' +
+        '<div class="sp-ref-note"><b style="color:var(--acc);display:flex;align-items:center;gap:6px;margin-bottom:4px">' + spSvg('compass', 14) + ' Angle &amp; Radian Facts</b>' +
+          '&bull; Circle arc measure = <b>360&deg;</b> = <b>2&pi; radians</b><br>' +
+          '&bull; Triangle interior angles sum to <b>180&deg;</b><br>' +
+          '&bull; Polygon (<i>n</i> sides) interior sum = <b>(n &minus; 2) &middot; 180&deg;</b>' +
+        '</div>' +
+        '<div class="sp-ref-note"><b style="color:var(--sand);display:flex;align-items:center;gap:6px;margin-bottom:4px">' + spSvg('geometry', 14) + ' Right Triangle Trigonometry</b>' +
+          '&bull; <b>sin(&theta;)</b> = Opposite / Hypotenuse<br>' +
+          '&bull; <b>cos(&theta;)</b> = Adjacent / Hypotenuse &nbsp;&middot;&nbsp; <b>tan(&theta;)</b> = Opp / Adj<br>' +
+          '&bull; Complementary identity: <b>sin(x&deg;) = cos(90&deg; &minus; x&deg;)</b>' +
+        '</div>' +
+        '<div class="sp-ref-note"><b style="color:var(--acc);display:flex;align-items:center;gap:6px;margin-bottom:4px">' + spSvg('target', 14) + ' Coordinate &amp; Arc Formulas</b>' +
+          '&bull; Slope: <b>m = (y<sub>2</sub> &minus; y<sub>1</sub>) / (x<sub>2</sub> &minus; x<sub>1</sub>)</b><br>' +
+          '&bull; Arc length = <b>(&theta;/360&deg;) &middot; 2&pi;r</b> (or <b>r&theta;</b> in rad)<br>' +
+          '&bull; Sector area = <b>(&theta;/360&deg;) &middot; &pi;r<sup>2</sup></b>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(ov);
+  ov.querySelector('#spRefClose').onclick = function() { ov.remove(); };
+  ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
 }
 
 var h=new Date().getHours();document.getElementById('gr').textContent=(h<5?'Good night,':h<12?'Good morning,':h<18?'Good afternoon,':'Good evening,');
@@ -1410,7 +1787,7 @@ function runQuiz(n, qs) {
     q.rw = !!n.rw;
     var modeBadge = '<span class="tag n" style="margin:0;font-size:10px">+5 PC/ans · Bonus +' + (isFirstClear ? firstReward : replayReward) + ' PC</span>';
     var wasOpen = ov.dataset.calcOpen === '1' && !n.rw;
-    ov.innerHTML = '<div id="qSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:8px"><small style="font-weight:800">' + n.type.l + ' · ' + (i + 1) + '/' + qs.length + '</small>' + modeBadge + '</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + (n.rw ? '<button id="qAddWord" class="chip" style="font-weight:700;color:var(--sand);border-color:var(--sand-line)">' + spSvg('plus', 13) + ' Add Word</button>' : '') + '<button id="qcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="qx" class="tbtn">✕</button></div></div><div class="bar" style="margin:12px 0"><div style="width:' + (i / qs.length * 100) + '%"></div></div><div id="qTextBody" style="font-size:20px;line-height:1.6;margin:18px 0">' + fx(q.q) + '</div><div id="qa"></div><div id="qf"></div></div><div id="q-panel" class="quiz-calc-pane"></div></div>';
+    ov.innerHTML = '<div id="qSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:8px"><small style="font-weight:800">' + n.type.l + ' · ' + (i + 1) + '/' + qs.length + '</small>' + modeBadge + '</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + (n.rw ? '<button id="qAddWord" class="chip" style="font-weight:700;color:var(--sand);border-color:var(--sand-line)">' + spSvg('plus', 13) + ' Add Word</button>' : '') + '' + (!n.rw ? '<button type="button" id="qref" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button>' : '') + '<button id="qcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="qx" class="tbtn">✕</button></div></div><div class="bar" style="margin:12px 0"><div style="width:' + (i / qs.length * 100) + '%"></div></div><div id="qTextBody" style="font-size:20px;line-height:1.6;margin:18px 0">' + fx(q.q) + '</div><div id="qa"></div><div id="qf"></div></div><div id="q-panel" class="quiz-calc-pane"></div></div>';
 
     var a = document.getElementById('qa'), f = document.getElementById('qf'), done = false;
     document.getElementById('qx').onclick = close;
@@ -1483,7 +1860,10 @@ function runQuiz(n, qs) {
         b.onclick = function() { fin(o) };
         a.appendChild(b);
       });
+      attachOptionEliminator(a);
     }
+    var qRefBtn = document.getElementById('qref');
+    if (qRefBtn) qRefBtn.onclick = openMathReferenceSheet;
   }
   showQ();
 }
@@ -1772,7 +2152,7 @@ function bankOpen(ti) {
     q.top = TOPS[ti];
     q.rw = false;
     var wasOpen = ov.dataset.calcOpen === '1';
-    ov.innerHTML = '<div id="bSplitWrap" class="sp-ai-stage quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_MATH_HTML + ' MATH ISLAND DRILL</small><div style="font-weight:800;font-size:16px">' + TOPS[ti] + '</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml(true) + renderStarsHtml(starsNow) + '<button id="bcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="bx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">✓ ' + ok + ' / ' + tot + ' solved · Earn ★ Mastery Stars for +15 PC</span></div><div style="font-size:20px;line-height:1.6;margin:22px 0 14px">' + rHTML(q.q) + '</div><div id="ba"></div><div id="bf"></div></div><div id="d-panel" class="quiz-calc-pane"></div>' + createSatPathAiPanelHtml() + '</div>';
+    ov.innerHTML = '<div id="bSplitWrap" class="sp-ai-stage quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_MATH_HTML + ' MATH ISLAND DRILL</small><div style="font-weight:800;font-size:16px">' + TOPS[ti] + '</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml(true) + renderStarsHtml(starsNow) + '<button type="button" id="bref" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button><button id="bcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="bx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">✓ ' + ok + ' / ' + tot + ' solved · Earn ★ Mastery Stars for +15 PC</span></div><div style="font-size:20px;line-height:1.6;margin:22px 0 14px">' + rHTML(q.q) + '</div><div id="ba"></div><div id="bf"></div></div><div id="d-panel" class="quiz-calc-pane"></div>' + createSatPathAiPanelHtml() + '</div>';
     document.getElementById('bx').onclick = close;
     bindSatPathAiEvents(ov, function() { return q; });
     var bSplitWrap = document.getElementById('bSplitWrap');
@@ -1848,7 +2228,10 @@ function bankOpen(ti) {
         b.onclick = function() { fin(o) };
         a.appendChild(b);
       });
+      attachOptionEliminator(a);
     }
+    var bRefBtn = document.getElementById('bref');
+    if (bRefBtn) bRefBtn.onclick = openMathReferenceSheet;
   }
   draw();
 }
@@ -2054,7 +2437,7 @@ function rwBankOpen(ti){
       f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'#e74c3c')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect · Saved to Mistakes. Answer: '+ans))+'</p><button class="cta-amber" id="rn">Next Waypoint →</button>';
       document.getElementById('rn').onclick = function(){ qIndex++; draw(); };
     }
-    opts.forEach(function(o,k){var b=document.createElement('button');b.className='qo';b.dataset.v=o;b.innerHTML='<b>'+'ABCD'[k]+'</b>&nbsp; '+o;b.onclick=function(){fin(o)};a.appendChild(b)});
+    opts.forEach(function(o,k){var b=document.createElement('button');b.className='qo';b.dataset.v=o;b.innerHTML='<b>'+'ABCD'[k]+'</b>&nbsp; '+o;b.onclick=function(){fin(o)};a.appendChild(b)}); attachOptionEliminator(a);
   }
   draw();
 }
@@ -2186,7 +2569,7 @@ function startBlitzRun() {
     ov.innerHTML = '<div id="bzShell" class="pt-shell' + (wasOpen ? ' calc-open' : '') + '">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);padding:12px 18px;border-radius:18px;border:1.5px solid var(--line);margin-bottom:14px">' +
       '<div style="display:flex;align-items:center;gap:10px"><span class="tag n" style="margin:0">BLITZ ' + (idx + 1) + '/10</span><b style="color:var(--sand)">' + streak + 'x Streak</b><small style="color:var(--mut)">Score: <b>' + score + '</b></small></div>' +
-      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + (!q.rw ? '<button id="bzCalcBtn" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button>' : '') + '<b id="bzTimer" style="font-size:16px;color:var(--acc);font-variant-numeric:tabular-nums">0:60</b><button class="tbtn" id="bzQuit">✕</button></div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + (!q.rw ? '<button type="button" id="bzRefBtn" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button><button id="bzCalcBtn" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button>' : '') + '<b id="bzTimer" style="font-size:16px;color:var(--acc);font-variant-numeric:tabular-nums">0:60</b><button class="tbtn" id="bzQuit">✕</button></div>' +
       '</div>' +
       '<div class="pt-split-body"><div class="qb" style="max-width:none;border-radius:26px">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="tag" style="margin:0;font-size:10.5px">' + (q.rw ? 'READING &amp; WRITING' : 'MATH') + ' · ' + bzCfg.lvl.toUpperCase() + '</span><small style="color:var(--mut);font-weight:700">' + q.top + '</small></div>' +
@@ -2273,7 +2656,10 @@ function startBlitzRun() {
         b.onclick = function() { answerBlitz(o); };
         ansBox.appendChild(b);
       });
+      attachOptionEliminator(ansBox);
     }
+    var bzRefBtn = ov.querySelector('#bzRefBtn');
+    if (bzRefBtn) bzRefBtn.onclick = openMathReferenceSheet;
 
     tmr = setInterval(function() {
       qLeft--;
@@ -2288,18 +2674,282 @@ function startBlitzRun() {
 }
 
 /* ===== DEDICATED VOCABULARY TAB & MISTAKES TAB & SUPPORT MODAL ===== */
+var SAT_CORE_STARTER_WORDS = [
+  { w: 'Corroborate', ru: 'verb', d: 'To confirm or give support to a statement, theory, or finding with new evidence.', ctx: 'Recent ice-core measurements corroborate the paleoclimatologist’s hypothesis about rapid warming.' },
+  { w: 'Mitigate', ru: 'verb', d: 'To make less severe, serious, or painful; to lessen the gravity of an effect.', ctx: 'Urban coastal wetlands help mitigate storm-surge damage during severe hurricanes.' },
+  { w: 'Ubiquitous', ru: 'adjective', d: 'Present, appearing, or found everywhere at the same time.', ctx: 'Microplastic particles have become ubiquitous across marine ecosystems.' },
+  { w: 'Ephemeral', ru: 'adjective', d: 'Lasting for a very short time; transitory and fleeting.', ctx: 'Desert wildflowers produce ephemeral blooms that vanish within days of rainfall.' },
+  { w: 'Ambiguous', ru: 'adjective', d: 'Open to more than one interpretation; not having one obvious meaning.', ctx: 'Because the treaty’s territorial clause remained ambiguous, both nations claimed the reef.' },
+  { w: 'Bolster', ru: 'verb', d: 'To support, strengthen, or prop up an argument or structure.', ctx: 'The economist cited longitudinal census data to bolster her claim about wage mobility.' },
+  { w: 'nuance', ru: 'noun', d: 'A subtle distinction or variation in meaning, expression, or tone.', ctx: 'Translating the poet’s late sonnets requires sensitivity to every lexical nuance.' },
+  { w: 'Pragmatic', ru: 'adjective', d: 'Dealing with things sensibly and realistically in a way based on practical considerations.', ctx: 'Engineers favored a pragmatic retrofit of the bridge over a costly demolition.' },
+  { w: 'Scrutinize', ru: 'verb', d: 'To examine or inspect closely and thoroughly.', ctx: 'Peer reviewers scrutinize experimental methodology before approving publication.' },
+  { w: 'Tenacious', ru: 'adjective', d: 'Tending to keep a firm hold of something; persistent and determined.', ctx: 'Lichens are tenacious organisms capable of colonizing bare volcanic basalt.' },
+  { w: 'Undermine', ru: 'verb', d: 'To weaken or erode the foundation, authority, or credibility of a claim.', ctx: 'Uncontrolled confounding variables can undermine the validity of a clinical trial.' },
+  { w: 'Vindicate', ru: 'verb', d: 'To clear of blame or suspicion, or to show to be right through evidence.', ctx: 'High-resolution telescope imagery vindicated the astronomer’s controversial orbital model.' }
+];
+
+function openVocabTrainer(initialMode) {
+  var saved = getVocabList();
+  var deck = saved.length >= 4 ? saved.slice() : saved.concat(SAT_CORE_STARTER_WORDS.filter(function(sw) {
+    return !saved.some(function(x) { return x.w.toLowerCase() === sw.w.toLowerCase(); });
+  }));
+  if (!deck.length) deck = SAT_CORE_STARTER_WORDS.slice();
+
+  var mode = initialMode || 'cards'; // 'cards' | 'quiz'
+  var filterUnmastered = false;
+  var curIdx = 0;
+  var flipped = false;
+  var sessionKnown = 0, sessionReview = 0;
+  var qScore = 0, qTotal = 0, qDone = false;
+
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:145;background:var(--bg);overflow:auto;padding:22px';
+  document.body.appendChild(ov);
+
+  function activeDeck() {
+    var d = filterUnmastered ? deck.filter(function(x) { return !x.mastered; }) : deck;
+    return d.length ? d : deck;
+  }
+
+  function closeTrainer() {
+    window.removeEventListener('keydown', onKey);
+    ov.remove();
+    buildVocabTab();
+  }
+
+  function toggleMasteredWord(wordStr, isMastered) {
+    var list = getVocabList();
+    var idx = list.findIndex(function(x) { return x.w.toLowerCase() === wordStr.toLowerCase(); });
+    if (idx >= 0) {
+      list[idx].mastered = isMastered;
+      saveVocabList(list);
+    }
+    deck.forEach(function(d) {
+      if (d.w.toLowerCase() === wordStr.toLowerCase()) d.mastered = isMastered;
+    });
+  }
+
+  function onKey(e) {
+    if (mode !== 'cards') return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      var cardEl = ov.querySelector('#spFcInner');
+      if (cardEl) { flipped = !flipped; cardEl.classList.toggle('is-flipped', flipped); }
+    } else if (e.key === 'ArrowRight') {
+      var knBtn = ov.querySelector('#fcKnowBtn');
+      if (knBtn) knBtn.click();
+    } else if (e.key === 'ArrowLeft') {
+      var rvBtn = ov.querySelector('#fcRevBtn');
+      if (rvBtn) rvBtn.click();
+    }
+  }
+  window.addEventListener('keydown', onKey);
+
+  function render() {
+    var list = activeDeck();
+    if (curIdx >= list.length) {
+      if (sessionKnown > 0 || qScore > 0) confetti();
+      ov.innerHTML = '<div class="qb" style="max-width:560px;margin:30px auto;text-align:center;border-radius:28px;border:2px solid var(--sand-line)">' +
+        '<div style="color:var(--sand);margin-bottom:10px">' + spSvg('award', 42) + '</div>' +
+        '<h2 style="font-size:26px;font-weight:800">' + (mode === 'cards' ? 'Flashcard Deck Complete!' : 'Vocabulary Quiz Complete!') + '</h2>' +
+        '<div class="big" style="color:var(--acc);margin:12px 0">' + (mode === 'cards' ? (sessionKnown + ' / ' + list.length + ' Mastered') : (qScore + ' / ' + list.length + ' Correct')) + '</div>' +
+        '<p class="sub" style="margin-bottom:22px">' + (mode === 'cards' ? ('Marked ' + sessionKnown + ' words as known and ' + sessionReview + ' for extra review.') : ('Earned +' + (qScore * 5) + ' Pathcoins from vocabulary accuracy.')) + '</p>' +
+        '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+          '<button class="cta" id="vtRestart" style="border-radius:14px">' + spSvg('refresh', 15) + ' Practice Again</button>' +
+          '<button class="cta-amber" id="vtCloseDone" style="border-radius:14px">Back to Vocabulary</button>' +
+        '</div>' +
+      '</div>';
+      ov.querySelector('#vtRestart').onclick = function() {
+        curIdx = 0; sessionKnown = 0; sessionReview = 0; qScore = 0; qTotal = 0; flipped = false;
+        render();
+      };
+      ov.querySelector('#vtCloseDone').onclick = closeTrainer;
+      return;
+    }
+
+    var item = list[curIdx];
+    var defText = (item.dict && item.dict.meanings && item.dict.meanings[0] && item.dict.meanings[0].defs[0])
+      ? item.dict.meanings[0].defs[0].d
+      : (item.d || 'High-utility SAT academic vocabulary term.');
+    var posText = (item.dict && item.dict.meanings && item.dict.meanings[0])
+      ? item.dict.meanings[0].pos
+      : (item.ru || 'SAT Term');
+    var synList = (item.dict && item.dict.meanings && item.dict.meanings[0] && item.dict.meanings[0].syn)
+      ? item.dict.meanings[0].syn
+      : [];
+
+    var topBar = '<div style="max-width:780px;margin:0 auto 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);padding:12px 18px;border-radius:20px;border:1.5px solid var(--line)">' +
+      '<div class="island-pills">' +
+        '<button type="button" class="island-pill' + (mode === 'cards' ? ' on' : '') + '" id="vtModeCards">' + spSvg('layers', 14) + ' 3D Flashcards</button>' +
+        '<button type="button" class="island-pill sand' + (mode === 'quiz' ? ' on' : '') + '" id="vtModeQuiz">' + spSvg('zap', 14) + ' 4-Choice Quiz</button>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+        miniHudHtml() +
+        '<button type="button" class="chip" id="vtShuffleBtn" title="Shuffle Deck">' + spSvg('shuffle', 13) + ' Shuffle</button>' +
+        '<button type="button" class="tbtn" id="vtExitBtn" title="Exit Trainer">' + spSvg('x', 15) + '</button>' +
+      '</div>' +
+    '</div>';
+
+    if (mode === 'cards') {
+      flipped = false;
+      ov.innerHTML = topBar +
+        '<div style="max-width:640px;margin:0 auto">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12.5px;color:var(--mut);font-weight:700">' +
+            '<span>Card ' + (curIdx + 1) + ' of ' + list.length + (saved.length < 4 ? ' (Includes SAT Core Deck)' : '') + '</span>' +
+            '<span>Known: <b style="color:var(--acc)">' + sessionKnown + '</b> &middot; Review: <b style="color:var(--sand)">' + sessionReview + '</b></span>' +
+          '</div>' +
+          '<div class="bar" style="margin:0 0 18px"><div style="width:' + Math.round((curIdx / list.length) * 100) + '%"></div></div>' +
+          '<div class="sp-fc-stage">' +
+            '<div class="sp-fc-inner" id="spFcInner">' +
+              '<div class="sp-fc-face sp-fc-front">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center">' +
+                  '<span class="tag" style="margin:0">' + lbEsc(posText) + '</span>' +
+                  '<small style="color:var(--mut);font-weight:700;display:inline-flex;align-items:center;gap:5px">' + spSvg('refresh', 13) + ' Click or press Space to flip</small>' +
+                '</div>' +
+                '<div style="text-align:center;margin:24px 0">' +
+                  '<div style="font-size:36px;font-weight:800;color:var(--sand);letter-spacing:-.02em">' + lbEsc(item.w) + '</div>' +
+                  (item.dict && item.dict.phonetic ? '<div style="color:var(--mut);font-size:14px;margin-top:6px">' + lbEsc(item.dict.phonetic) + '</div>' : '') +
+                '</div>' +
+                '<div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:12.5px;color:var(--mut);text-align:center">' +
+                  '<i>"' + lbEsc(item.ctx || ('In the SAT passage, "' + item.w + '" conveys a precise analytical meaning.')) + '"</i>' +
+                '</div>' +
+              '</div>' +
+              '<div class="sp-fc-face sp-fc-back">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center">' +
+                  '<b style="color:var(--acc);font-size:12px;text-transform:uppercase;letter-spacing:.08em">Definition &amp; Usage</b>' +
+                  '<span class="tag n" style="margin:0">' + lbEsc(item.w) + '</span>' +
+                '</div>' +
+                '<div style="margin:16px 0">' +
+                  '<div style="font-size:18px;font-weight:700;color:var(--tx);line-height:1.5">' + lbEsc(defText) + '</div>' +
+                  (synList.length ? '<div style="margin-top:10px;font-size:12.5px;color:var(--mut)"><b>Synonyms:</b> ' + lbEsc(synList.join(', ')) + '</div>' : '') +
+                '</div>' +
+                '<div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:12.5px;color:var(--mut)">' +
+                  '<b style="color:var(--tx);font-size:11px;text-transform:uppercase;display:block;margin-bottom:2px">Context Example</b>' +
+                  '<i>"' + lbEsc(item.ctx || ('The author uses "' + item.w + '" to reinforce the central claim.')) + '"</i>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px">' +
+            '<button type="button" class="card" id="fcRevBtn" style="padding:14px 18px;border-radius:18px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:800;color:var(--sand);border-color:var(--sand-line);background:var(--sand-bg)">' +
+              spSvg('refresh', 16) + ' Still Learning (←)' +
+            '</button>' +
+            '<button type="button" class="cta" id="fcKnowBtn" style="padding:14px 18px;border-radius:18px;justify-content:center;font-size:14px">' +
+              spSvg('check', 16) + ' Know It · +2 PC (→)' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+
+      var fcInner = ov.querySelector('#spFcInner');
+      fcInner.onclick = function() {
+        flipped = !flipped;
+        fcInner.classList.toggle('is-flipped', flipped);
+      };
+      ov.querySelector('#fcRevBtn').onclick = function() {
+        sessionReview++;
+        toggleMasteredWord(item.w, false);
+        curIdx++;
+        render();
+      };
+      ov.querySelector('#fcKnowBtn').onclick = function() {
+        sessionKnown++;
+        if (!item.mastered) addCoins(2, 'Word mastered: ' + item.w);
+        toggleMasteredWord(item.w, true);
+        curIdx++;
+        render();
+      };
+    } else {
+      qDone = false;
+      var distractors = deck.filter(function(x) { return x.w.toLowerCase() !== item.w.toLowerCase(); });
+      if (distractors.length < 3) {
+        distractors = distractors.concat(SAT_CORE_STARTER_WORDS.filter(function(x) { return x.w.toLowerCase() !== item.w.toLowerCase(); }));
+      }
+      var pickedDist = shuffle(distractors).slice(0, 3).map(function(x) {
+        return (x.dict && x.dict.meanings && x.dict.meanings[0] && x.dict.meanings[0].defs[0])
+          ? x.dict.meanings[0].defs[0].d
+          : x.d;
+      });
+      var opts = shuffle([defText].concat(pickedDist));
+
+      ov.innerHTML = topBar +
+        '<div class="qb" style="max-width:780px;margin:0 auto;border-radius:26px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+            '<span class="tag n" style="margin:0">VOCAB QUIZ ' + (curIdx + 1) + ' / ' + list.length + '</span>' +
+            '<small style="color:var(--mut);font-weight:700">Score: ' + qScore + ' / ' + qTotal + '</small>' +
+          '</div>' +
+          '<div class="bar" style="margin:0 0 18px"><div style="width:' + Math.round((curIdx / list.length) * 100) + '%"></div></div>' +
+          '<div style="margin:12px 0 18px">' +
+            '<small style="color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px">Select the most accurate meaning for:</small>' +
+            '<div style="font-size:28px;font-weight:800;color:var(--sand)">' + lbEsc(item.w) + ' <span class="tag" style="vertical-align:middle;font-size:11px">' + lbEsc(posText) + '</span></div>' +
+            (item.ctx ? '<div style="margin-top:8px;font-size:13.5px;color:var(--mut);font-style:italic">"' + lbEsc(item.ctx) + '"</div>' : '') +
+          '</div>' +
+          '<div id="vtQuizOpts"></div>' +
+          '<div id="vtQuizFeed"></div>' +
+        '</div>';
+
+      var optBox = ov.querySelector('#vtQuizOpts');
+      var feedBox = ov.querySelector('#vtQuizFeed');
+      opts.forEach(function(o, k) {
+        var b = document.createElement('button');
+        b.className = 'qo';
+        b.dataset.v = o;
+        b.innerHTML = '<b>' + 'ABCD'[k] + '</b>&nbsp; ' + lbEsc(o);
+        b.onclick = function() {
+          if (qDone) return;
+          qDone = true;
+          qTotal++;
+          var good = (o === defText);
+          if (good) {
+            qScore++;
+            addCoins(5);
+            toggleMasteredWord(item.w, true);
+          }
+          optBox.querySelectorAll('.qo').forEach(function(btn) {
+            btn.disabled = true;
+            if (btn.dataset.v === defText) btn.classList.add('good');
+            else if (btn.dataset.v === o) btn.classList.add('bad');
+          });
+          feedBox.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)">' +
+            '<b style="color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! +5 ' + IC_COIN_HTML) : 'Incorrect — review definition highlighted in green.') + '</b>' +
+            '<button class="cta-amber" id="vtNextQ">' + (curIdx < list.length - 1 ? 'Next Word →' : 'See Results →') + '</button>' +
+          '</div>';
+          ov.querySelector('#vtNextQ').onclick = function() { curIdx++; render(); };
+        };
+        optBox.appendChild(b);
+      });
+      attachOptionEliminator(optBox);
+    }
+
+    ov.querySelector('#vtExitBtn').onclick = closeTrainer;
+    ov.querySelector('#vtModeCards').onclick = function() { mode = 'cards'; curIdx = 0; render(); };
+    ov.querySelector('#vtModeQuiz').onclick = function() { mode = 'quiz'; curIdx = 0; render(); };
+    ov.querySelector('#vtShuffleBtn').onclick = function() {
+      deck = shuffle(deck);
+      curIdx = 0;
+      toast('Deck shuffled');
+      render();
+    };
+  }
+
+  render();
+}
+
 function buildVocabTab() {
   var el = document.getElementById('vVOC');
   if (!el) return;
   var list = getVocabList();
+  var masteredCnt = list.filter(function(x) { return !!x.mastered; }).length;
   var h = '<div class="atlas-hero" style="margin-bottom:22px">' +
     '<div>' +
-      '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + IC_BOOK_HTML + ' PERSONAL SAT LEXICON</div>' +
+      '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + IC_BOOK_HTML + ' PERSONAL SAT LEXICON &amp; TRAINER</div>' +
       '<h1>Vocabulary</h1>' +
-      '<p class="sub">Words you highlighted during Mock Exams and R&amp;W passages, complete with definitions and context examples.</p>' +
+      '<p class="sub">Highlight unfamiliar words in any R&amp;W passage or Mock Exam, then drill them with 3D Flashcards or a 4-Choice Quiz (' + masteredCnt + '/' + list.length + ' mastered).</p>' +
     '</div>' +
     '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
-      '<button class="cta-amber" id="vocTabAddBtn" style="padding:12px 20px;font-size:13.5px;border-radius:16px">' + spSvg('plus', 16) + ' Add New Word</button>' +
+      '<button class="cta-amber" id="vocStartCardsBtn" style="padding:12px 18px;font-size:13.5px;border-radius:16px">' + spSvg('layers', 16) + ' Flashcards Trainer</button>' +
+      '<button class="cta" id="vocStartQuizBtn" style="padding:12px 18px;font-size:13.5px;border-radius:16px">' + spSvg('zap', 16) + ' Vocab Quiz</button>' +
+      '<button class="chip" id="vocTabAddBtn" style="padding:11px 16px;font-size:13px;font-weight:800;color:var(--acc);border-color:var(--acc)">' + spSvg('plus', 15) + ' Add Word</button>' +
       (list.length ? '<button class="chip" id="vocTabClearBtn" style="padding:10px 14px;color:#e74c3c;border-color:#e74c3c;font-weight:700">Clear All (' + list.length + ')</button>' : '') +
     '</div>' +
   '</div>';
@@ -2307,18 +2957,22 @@ function buildVocabTab() {
   if (!list.length) {
     h += '<div class="card" style="padding:48px 24px;text-align:center;border-radius:26px">' +
       '<div style="color:var(--sand);margin-bottom:10px">' + spSvg('book', 42) + '</div>' +
-      '<h3 style="font-size:20px;font-weight:800;margin-bottom:6px">Your Vocabulary List is Empty</h3>' +
-      '<p class="sub" style="max-width:460px;margin:0 auto 18px">Click on any unfamiliar word inside a Reading &amp; Writing passage or Mock Exam to see its meaning and save it here, or add words manually.</p>' +
-      '<button class="cta-amber" id="vocEmptyAddBtn">' + spSvg('plus', 15) + ' Add First Word</button>' +
+      '<h3 style="font-size:20px;font-weight:800;margin-bottom:6px">Your Personal Vocabulary List is Empty</h3>' +
+      '<p class="sub" style="max-width:520px;margin:0 auto 20px">Click on any word inside a Reading &amp; Writing passage or Mock Exam to save it here, add your own words, or load our starter pack of High-Frequency Digital SAT words.</p>' +
+      '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">' +
+        '<button class="cta-amber" id="vocLoadStarterBtn">' + spSvg('layers', 15) + ' Load 12 Core SAT Words</button>' +
+        '<button class="cta" id="vocEmptyAddBtn" style="border-radius:16px">' + spSvg('plus', 15) + ' Add Custom Word</button>' +
+      '</div>' +
     '</div>';
   } else {
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px">';
     list.forEach(function(item, idx) {
-      h += '<div class="card" style="padding:20px;border-radius:22px;display:flex;flex-direction:column;justify-content:space-between;gap:12px">' +
+      var isM = !!item.mastered;
+      h += '<div class="card" style="padding:20px;border-radius:22px;display:flex;flex-direction:column;justify-content:space-between;gap:12px;border-color:' + (isM ? 'var(--acc)' : 'var(--line)') + '">' +
         '<div>' +
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">' +
-            '<div><b style="font-size:20px;color:var(--sand);letter-spacing:-.01em">' + lbEsc(item.w) + '</b><span class="tag" data-voc-ru style="margin-left:8px;font-size:10px">' + lbEsc(item.ru || 'SAT Term') + '</span></div>' +
-            '<button class="tbtn" data-voc-del="' + idx + '" title="Remove word" style="width:30px;height:30px;font-size:12px">✕</button>' +
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:20px;color:var(--sand);letter-spacing:-.01em">' + lbEsc(item.w) + '</b><span class="tag" data-voc-ru style="margin:0;font-size:10px">' + lbEsc(item.ru || 'SAT Term') + '</span>' + (isM ? '<span class="tag n" style="margin:0;font-size:9.5px;display:inline-flex;align-items:center;gap:3px">' + spSvg('check', 11) + ' Mastered</span>' : '') + '</div>' +
+            '<button class="tbtn" data-voc-del="' + idx + '" title="Remove word" style="width:30px;height:30px;font-size:12px">' + spSvg('x', 13) + '</button>' +
           '</div>' +
           '<div data-voc-mean="' + lbEsc(item.w) + '" style="margin-top:10px">' + vocMeaningHTML(item) + '</div>' +
         '</div>' +
@@ -2331,6 +2985,22 @@ function buildVocabTab() {
     h += '</div>';
   }
   el.innerHTML = h;
+  var scBtn = el.querySelector('#vocStartCardsBtn');
+  if (scBtn) scBtn.onclick = function() { openVocabTrainer('cards'); };
+  var sqBtn = el.querySelector('#vocStartQuizBtn');
+  if (sqBtn) sqBtn.onclick = function() { openVocabTrainer('quiz'); };
+  var stBtn = el.querySelector('#vocLoadStarterBtn');
+  if (stBtn) stBtn.onclick = function() {
+    var cur = getVocabList();
+    SAT_CORE_STARTER_WORDS.forEach(function(sw) {
+      if (!cur.some(function(x) { return x.w.toLowerCase() === sw.w.toLowerCase(); })) {
+        cur.push({ w: sw.w, ru: sw.ru, d: sw.d, ctx: sw.ctx });
+      }
+    });
+    saveVocabList(cur);
+    toast('Loaded 12 High-Frequency SAT words');
+    buildVocabTab();
+  };
   var addB = el.querySelector('#vocTabAddBtn');
   if (addB) addB.onclick = function() { openAddWordModal('', buildVocabTab); };
   var addE = el.querySelector('#vocEmptyAddBtn');
@@ -2482,7 +3152,7 @@ function startMistakesDrill(questionsList) {
           '<div style="display:flex;align-items:center;gap:8px"><span class="tag n" style="margin:0">MISTAKE DRILL ' + (idx + 1) + '/' + questionsList.length + '</span><small style="color:var(--mut);font-weight:700">' + lbEsc(q.top || '') + '</small></div>' +
           '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
             miniHudHtml(true) +
-            (!q.rw ? '<button id="mkCalcBtn" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button>' : '') +
+            (!q.rw ? '<button type="button" id="mkRefBtn" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button><button id="mkCalcBtn" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button>' : '') +
             '<button class="tbtn" id="mkQuit">✕</button>' +
           '</div>' +
         '</div>' +
@@ -2561,7 +3231,10 @@ function startMistakesDrill(questionsList) {
         b.onclick = function() { checkAns(o); };
         a.appendChild(b);
       });
+      attachOptionEliminator(a);
     }
+    var mkRefBtn = ov.querySelector('#mkRefBtn');
+    if (mkRefBtn) mkRefBtn.onclick = openMathReferenceSheet;
   }
   renderQ();
 }
@@ -3559,13 +4232,14 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     var state = cfg.savedState || {};
     var ans = Array.isArray(state.ans) ? state.ans : [];
     var flag = Array.isArray(state.flag) ? state.flag : [];
+    var elim = (state.elim && typeof state.elim === 'object') ? state.elim : {};
     var cur = typeof state.cur === 'number' ? state.cur : 0;
     var left = typeof state.left === 'number' ? state.left : cfg.min * 60;
     var ended = false, calc = null, tmr;
 
     function persistProgress() {
       if (cfg.onSaveProgress && !ended) {
-        cfg.onSaveProgress({ ans: ans, flag: flag, cur: cur, left: left });
+        cfg.onSaveProgress({ ans: ans, flag: flag, elim: elim, cur: cur, left: left });
       }
     }
 
@@ -3577,7 +4251,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
       + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
       + '<button id="ptAddWordBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--acc);border-color:var(--acc)">' + spSvg('plus', 13) + ' Add Word</button>'
       + '<button id="ptVocBtn" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700;color:var(--sand);border-color:var(--sand-line)">' + spSvg('book', 13) + ' Vocab (<span id="ptVocCnt">' + getVocabList().length + '</span>)</button>'
-      + (cfg.calc ? '<button id="ptCB" style="background:var(--acc2);color:#fff;padding:6px 14px;border-radius:99px;font-weight:700;font-size:12px">' + IC_MATH_HTML + ' Desmos Calculator</button>' : '')
+      + (cfg.calc ? '<button type="button" id="ptRefBtn" class="sp-ref-btn" style="border-radius:99px;padding:6px 13px">' + spSvg('ruler', 13) + ' Reference</button><button id="ptCB" style="background:var(--acc2);color:#fff;padding:6px 14px;border-radius:99px;font-weight:700;font-size:12px">' + IC_MATH_HTML + ' Desmos Calculator</button>' : '')
       + '<button id="ptEnd" class="chip" style="padding:6px 12px;text-transform:none;font-weight:700">Question Map</button>'
       + '<button id="ptEx" class="chip" style="padding:6px 12px;text-transform:none">Save &amp; Exit</button></div></div>'
       + '<div class="pt-split-body"><div class="qb" style="max-width:none;border-radius:24px;padding:26px 32px"><div id="ptQ"></div><div id="ptG" hidden></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:14px;border-top:1px solid var(--line)"><button class="cta" id="ptP" style="border-radius:14px">← Back</button><button class="chip" id="ptMidMap" style="font-weight:800;font-size:13px;padding:8px 16px">Question 1 of ' + qs.length + ' ▾</button><button class="cta-amber" id="ptN" style="border-radius:14px">Next →</button></div></div>'
@@ -3703,6 +4377,19 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
           });
         };
       });
+      if (!q.isGrid) {
+        var qElimMap = elim[cur] || (elim[cur] = {});
+        attachOptionEliminator(Q, {
+          elimMap: qElimMap,
+          onToggleElim: function (optIdx, isElim) {
+            if (isElim && ans[cur] === q.opts[optIdx]) {
+              ans[cur] = null;
+              Q.querySelectorAll('.qo').forEach(function (x) { x.style.cssText = ''; });
+            }
+            persistProgress();
+          }
+        });
+      }
       var inp = $('ptI');
       if (inp) {
         inp.oninput = function () {
@@ -3734,6 +4421,8 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         done(null);
       });
     };
+    var refB = $('ptRefBtn');
+    if (refB) refB.onclick = openMathReferenceSheet;
     var cb = $('ptCB'), shell = $('ptShell');
     if (cb) {
       cb.onclick = function () {
