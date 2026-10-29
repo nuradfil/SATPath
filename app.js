@@ -202,8 +202,9 @@ function createFullDesmos(el) {
       background: var(--sand-bg);
       color: var(--sand);
     }
-    .qo-elim-btn:disabled {
+    .qo-elim-btn:disabled, .qo:disabled + .qo-elim-btn {
       opacity: 0.35;
+      pointer-events: none;
       cursor: default;
     }
 
@@ -350,7 +351,7 @@ function createFullDesmos(el) {
   document.head.appendChild(st);
 })();
 
-/* Универсальный декоратор кнопок .qo для поддержки зачеркивания во всех режимах */
+/* Универсальный декоратор кнопок .qo для поддержки зачеркивания во всех режимах (без MutationObserver!) */
 function attachOptionEliminator(container, optsCfg) {
   if (!container) return;
   optsCfg = optsCfg || {};
@@ -390,15 +391,6 @@ function attachOptionEliminator(container, optsCfg) {
       if (optsCfg.onToggleElim) optsCfg.onToggleElim(idx, nowElim);
     };
   });
-
-  // Синхронизируем disabled состояние кнопки зачеркивания, когда вопрос проверен
-  var obs = new MutationObserver(function() {
-    container.querySelectorAll('.qo-row').forEach(function(r) {
-      var qb = r.querySelector('.qo'), sb = r.querySelector('.qo-elim-btn');
-      if (qb && sb) sb.disabled = !!qb.disabled;
-    });
-  });
-  obs.observe(container, { attributes: true, subtree: true, attributeFilter: ['disabled', 'class'] });
 }
 
 /* Шпаргалка по геометрии и тригонометрии (Bluebook Reference Sheet) строго на SVG */
@@ -2481,7 +2473,10 @@ function closeActiveVocabPopover() {
 }
 function bindVocabClicksOnContainer(containerEl, onUpdateCount) {
   if (!containerEl) return;
+  if (containerEl.dataset.vocBound === '1') return;
+  containerEl.dataset.vocBound = '1';
   containerEl.addEventListener('click', function(e) {
+    if (e.target.closest('.qo') || e.target.closest('.qo-elim-btn')) { closeActiveVocabPopover(); return; }
     var wEl = e.target.closest('.rw-word');
     if (!wEl) { closeActiveVocabPopover(); return; }
     e.stopPropagation();
@@ -3480,7 +3475,124 @@ function openSupportModal() {
   ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
 }
 
-/* ===== COMPREHENSIVE ANALYTICS HUB (PACING, 8-DOMAIN RADAR, RECIDIVISM, SCORE CORRIDOR) ===== */
+/* ===== COMPREHENSIVE ANALYTICS HUB (ANIMATED SVG CHARTS, 8-AXIS RADAR, PACING HISTOGRAM, 30-TOPIC TABLE) ===== */
+(function injectAnalyticsStyles() {
+  if (document.getElementById('spAnalyticsCss')) return;
+  var st = document.createElement('style');
+  st.id = 'spAnalyticsCss';
+  st.textContent = `
+    @keyframes spDrawLine {
+      from { stroke-dashoffset: 1800; }
+      to { stroke-dashoffset: 0; }
+    }
+    @keyframes spFadeScale {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes spGrowBar {
+      from { transform: scaleY(0); }
+      to { transform: scaleY(1); }
+    }
+    .an-draw-path {
+      stroke-dasharray: 1800;
+      stroke-dashoffset: 0;
+      animation: spDrawLine 1.5s cubic-bezier(.2,.8,.2,1) backwards;
+    }
+    .an-radar-poly {
+      transform-origin: center;
+      animation: spFadeScale 0.85s cubic-bezier(.2,.85,.3,1) backwards;
+    }
+    .an-hist-bar {
+      transform-origin: bottom;
+      animation: spGrowBar 0.75s cubic-bezier(.2,.85,.3,1) backwards;
+    }
+    .an-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 920px) {
+      .an-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px) {
+      .an-kpi-grid { grid-template-columns: 1fr; }
+    }
+    .an-kpi-card {
+      background: linear-gradient(155deg, var(--panel) 0%, var(--panel2) 100%);
+      border: 1.5px solid var(--line);
+      border-radius: 22px;
+      padding: 18px 20px;
+      box-shadow: 0 8px 22px -10px rgba(0,0,0,0.18), 0 3px 0 var(--line);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .an-kpi-val {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: var(--tx);
+    }
+    .an-dual-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 20px;
+      margin-bottom: 22px;
+      align-items: stretch;
+    }
+    @media (max-width: 980px) {
+      .an-dual-grid { grid-template-columns: 1fr; }
+    }
+    .an-table-wrap {
+      overflow-x: auto;
+      border: 1.5px solid var(--line);
+      border-radius: 20px;
+      background: var(--panel);
+    }
+    .an-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+    .an-table th {
+      background: var(--panel2);
+      color: var(--mut);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding: 12px 16px;
+      border-bottom: 1.5px solid var(--line);
+      white-space: nowrap;
+    }
+    .an-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+    }
+    .an-table tr:last-child td { border-bottom: 0; }
+    .an-table tr:hover td { background: var(--panel2); }
+    .an-dot-node {
+      cursor: pointer;
+      transition: r .18s, stroke-width .18s;
+    }
+    .an-dot-node:hover {
+      r: 7px;
+      stroke-width: 3px;
+    }
+  `;
+  document.head.appendChild(st);
+})();
+
+var anTargetGoal = +(spGet('satpath_goal_score') || 1500);
+var anTopicFilter = 'all'; // 'all' | 'math' | 'rw' | 'weak'
+
 function buildAnalyticsTab() {
   var el = document.getElementById('vAN');
   if (!el) return;
@@ -3491,40 +3603,117 @@ function buildAnalyticsTab() {
   var ptRes = ptLoad();
   var streak = computeStreakInfo(t);
 
-  // 1. Score Corridor & Ceiling Calculation
+  // 1. Score Calculation & Historical Trajectory Points
   var totA = 0, totC = 0;
   Object.keys(st).forEach(function(k) { totA += st[k].a || 0; totC += st[k].c || 0; });
-  var acc = totA ? Math.round(totC / totA * 100) : 65;
+  var acc = totA ? Math.round(totC / totA * 100) : 68;
   var mScore = Math.min(800, Math.round((420 + md.length * 2.5 + (acc * 1.3)) / 10) * 10);
   var rScore = Math.min(800, Math.round((420 + rd.length * 5.0 + (acc * 1.3)) / 10) * 10);
+
   var mockScores = [];
   Object.keys(ptRes).forEach(function(k) {
-    if (ptRes[k] && ptRes[k].total) mockScores.push({ t: +k, total: ptRes[k].total, r: ptRes[k].r, m: ptRes[k].m });
+    var r = ptRes[k];
+    if (!r) return;
+    var mSc = r.m ? r.m.score : mScore;
+    var rSc = r.r ? r.r.score : rScore;
+    var totSc = r.total || (mSc + rSc);
+    mockScores.push({
+      t: +k,
+      label: 'Mock 0' + k,
+      total: totSc,
+      m: mSc,
+      r: rSc,
+      mHard: r.m ? !!r.m.hard : true,
+      rHard: r.r ? !!r.r.hard : true
+    });
   });
   mockScores.sort(function(a, b) { return a.t - b.t; });
   if (mockScores.length) {
     var latest = mockScores[mockScores.length - 1];
-    if (latest.m && latest.m.score) mScore = Math.round((mScore * 0.4 + latest.m.score * 0.6) / 10) * 10;
-    if (latest.r && latest.r.score) rScore = Math.round((rScore * 0.4 + latest.r.score * 0.6) / 10) * 10;
+    mScore = Math.round((mScore * 0.35 + latest.m * 0.65) / 10) * 10;
+    rScore = Math.round((rScore * 0.35 + latest.r * 0.65) / 10) * 10;
   }
   var totalEst = mScore + rScore;
   var band = totA >= 40 ? 30 : 50;
   var lowEst = Math.max(400, totalEst - band), highEst = Math.min(1600, totalEst + band);
   var mHardUnlocked = acc >= 68 || md.length >= 35;
   var rHardUnlocked = acc >= 67 || rd.length >= 20;
+  var percentile = totalEst >= 1550 ? '99th+' : totalEst >= 1500 ? '98th' : totalEst >= 1450 ? '96th' : totalEst >= 1400 ? '93rd' : totalEst >= 1300 ? '86th' : totalEst >= 1200 ? '74th' : totalEst >= 1100 ? '58th' : '40th';
+  var gapToGoal = Math.max(0, anTargetGoal - totalEst);
 
-  // 2. Pacing & Speed Matrix
+  // Build trajectory series (combines baseline checkpoints + Mock Exams + Current Live Estimate)
+  var trajPoints = [];
+  var baseStartM = Math.max(400, mScore - Math.min(160, md.length * 2 + 50));
+  var baseStartR = Math.max(400, rScore - Math.min(160, rd.length * 4 + 50));
+  trajPoints.push({ lbl: 'Baseline', tot: baseStartM + baseStartR, m: baseStartM, r: baseStartR });
+  if (mockScores.length) {
+    mockScores.forEach(function(ms) {
+      trajPoints.push({ lbl: ms.label, tot: ms.total, m: ms.m, r: ms.r });
+    });
+  } else {
+    var mid1M = Math.round((baseStartM * 0.65 + mScore * 0.35) / 10) * 10;
+    var mid1R = Math.round((baseStartR * 0.65 + rScore * 0.35) / 10) * 10;
+    var mid2M = Math.round((baseStartM * 0.3 + mScore * 0.7) / 10) * 10;
+    var mid2R = Math.round((baseStartR * 0.3 + rScore * 0.7) / 10) * 10;
+    trajPoints.push({ lbl: 'Phase 1', tot: mid1M + mid1R, m: mid1M, r: mid1R });
+    trajPoints.push({ lbl: 'Phase 2', tot: mid2M + mid2R, m: mid2M, r: mid2R });
+  }
+  trajPoints.push({ lbl: 'Current', tot: totalEst, m: mScore, r: rScore });
+
+  // Build SVG Trajectory Curve
+  var svgW = 680, svgH = 230, padL = 44, padR = 24, padT = 22, padB = 34;
+  var plotW = svgW - padL - padR, plotH = svgH - padT - padB;
+  function yForScore(sc) {
+    var clamped = Math.max(800, Math.min(1600, sc));
+    return Math.round(padT + plotH * (1 - (clamped - 800) / 800));
+  }
+  function xForIdx(i, n) {
+    return n <= 1 ? padL + plotW / 2 : Math.round(padL + (i / (n - 1)) * plotW);
+  }
+  function smoothSvgPath(pts) {
+    if (!pts.length) return '';
+    if (pts.length === 1) return 'M ' + pts[0].x + ' ' + pts[0].y;
+    var d = 'M ' + pts[0].x + ' ' + pts[0].y;
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i], p1 = pts[i + 1];
+      var cx = Math.round((p0.x + p1.x) / 2);
+      d += ' C ' + cx + ' ' + p0.y + ', ' + cx + ' ' + p1.y + ', ' + p1.x + ' ' + p1.y;
+    }
+    return d;
+  }
+  var totCoords = trajPoints.map(function(p, i) { return { x: xForIdx(i, trajPoints.length), y: yForScore(p.tot), p: p }; });
+  var linePath = smoothSvgPath(totCoords);
+  var areaPath = linePath + ' L ' + totCoords[totCoords.length - 1].x + ' ' + (padT + plotH) + ' L ' + totCoords[0].x + ' ' + (padT + plotH) + ' Z';
+  var goalY = yForScore(anTargetGoal);
+
+  // 2. Pacing & Time Telemetry Buckets
   var pacing = t.pacing || [];
   var mathP = pacing.filter(function(x) { return !x.rw; });
   var rwP = pacing.filter(function(x) { return !!x.rw; });
-  var avgMathSec = mathP.length ? Math.round(mathP.reduce(function(s, x) { return s + x.sec; }, 0) / mathP.length) : 0;
-  var avgRwSec = rwP.length ? Math.round(rwP.reduce(function(s, x) { return s + x.sec; }, 0) / rwP.length) : 0;
-  var rushedErrs = pacing.filter(function(x) { return !x.good && x.sec < 25; }).length;
-  var optCount = pacing.filter(function(x) { return x.sec >= 25 && x.sec <= 95; }).length;
-  var sinkCount = pacing.filter(function(x) { return x.sec > 95; }).length;
+  var avgMathSec = mathP.length ? Math.round(mathP.reduce(function(s, x) { return s + x.sec; }, 0) / mathP.length) : 58;
+  var avgRwSec = rwP.length ? Math.round(rwP.reduce(function(s, x) { return s + x.sec; }, 0) / rwP.length) : 49;
 
-  // 3. 8 Official College Board Domains (4 Math + 4 R&W)
+  var buckets = [
+    { lbl: '<25s (Rushed)', min: 0, max: 24, tot: 0, ok: 0, col: 'var(--sand)' },
+    { lbl: '25–50s (Fast)', min: 25, max: 50, tot: 0, ok: 0, col: 'var(--acc)' },
+    { lbl: '51–80s (Optimal)', min: 51, max: 80, tot: 0, ok: 0, col: 'var(--acc)' },
+    { lbl: '81–105s (Slow)', min: 81, max: 105, tot: 0, ok: 0, col: 'var(--sand)' },
+    { lbl: '>105s (Time Sink)', min: 106, max: 9999, tot: 0, ok: 0, col: '#e74c3c' }
+  ];
+  pacing.forEach(function(p) {
+    for (var b = 0; b < buckets.length; b++) {
+      if (p.sec >= buckets[b].min && p.sec <= buckets[b].max) {
+        buckets[b].tot++;
+        if (p.good) buckets[b].ok++;
+        break;
+      }
+    }
+  });
+  var maxBucketTot = Math.max(1, Math.max.apply(null, buckets.map(function(b) { return b.tot; })));
+
+  // 3. 8 Official College Board Domains + 8-Axis Spider Radar SVG
   var domainRows = [];
+  var allTopicRows = [];
   if (typeof CUR !== 'undefined') {
     var mIdx = 0;
     CUR.forEach(function(dom) {
@@ -3534,14 +3723,23 @@ function buildAnalyticsTab() {
         var ti = mIdx++;
         var r = st[ti] || { a: 0, c: 0 };
         var stars = getTopicStars(ti, false, ti);
+        var pathNodes = 0;
+        for (var n = 0; n < 5; n++) if (md.indexOf(ti * 5 + n) >= 0) pathNodes++;
+        var tPct = r.a > 0 ? Math.round((r.c / r.a) * 100) : Math.round((pathNodes / 5) * 85 + (stars * 5));
+        tPct = Math.min(100, Math.max(15, tPct));
+        allTopicRows.push({
+          sec: 'MATH', dom: dName, ti: ti, name: tName, a: r.a || 0, c: r.c || 0,
+          pct: r.a > 0 ? Math.round((r.c / r.a) * 100) : tPct,
+          stars: stars, pathNodes: pathNodes, isRw: false
+        });
         aSum += r.a || 0; cSum += r.c || 0; starsSum += stars;
         var sc = stars * 30 + (r.a ? (r.c / r.a) * 10 : 0);
         if (sc < weakestScore) { weakestScore = sc; weakestTi = ti; }
       });
-      var pct = aSum > 0 ? Math.round((cSum / aSum) * 100) : Math.round((starsSum / (dTopics.length * 3)) * 100);
+      var pct = aSum > 0 ? Math.round((cSum / aSum) * 100) : Math.max(28, Math.round((starsSum / (dTopics.length * 3)) * 100));
       domainRows.push({
-        sec: 'MATH', name: dName, pct: pct, stars: starsSum, maxStars: dTopics.length * 3,
-        weakTi: weakestTi, weakName: TOPS[weakestTi], isRw: false
+        sec: 'MATH', short: dName.split(' ')[0], name: dName, pct: pct, stars: starsSum, maxStars: dTopics.length * 3,
+        weakTi: weakestTi, weakName: TOPS[weakestTi], isRw: false, solved: aSum
       });
     });
   }
@@ -3554,19 +3752,63 @@ function buildAnalyticsTab() {
         var ti = rIdx++;
         var r = st['rw_' + ti] || { a: 0, c: 0 };
         var stars = getTopicStars('rw_' + ti, true, ti);
+        var pathNodes = 0;
+        for (var n = 0; n < 5; n++) if (rd.indexOf(ti * 5 + n) >= 0) pathNodes++;
+        var tPct = r.a > 0 ? Math.round((r.c / r.a) * 100) : Math.round((pathNodes / 5) * 85 + (stars * 5));
+        tPct = Math.min(100, Math.max(15, tPct));
+        allTopicRows.push({
+          sec: 'R&W', dom: dName, ti: ti, name: tName, a: r.a || 0, c: r.c || 0,
+          pct: r.a > 0 ? Math.round((r.c / r.a) * 100) : tPct,
+          stars: stars, pathNodes: pathNodes, isRw: true
+        });
         aSum += r.a || 0; cSum += r.c || 0; starsSum += stars;
         var sc = stars * 30 + (r.a ? (r.c / r.a) * 10 : 0);
         if (sc < weakestScore) { weakestScore = sc; weakestTi = ti; }
       });
-      var pct = aSum > 0 ? Math.round((cSum / aSum) * 100) : Math.round((starsSum / (dTopics.length * 3)) * 100);
+      var pct = aSum > 0 ? Math.round((cSum / aSum) * 100) : Math.max(28, Math.round((starsSum / (dTopics.length * 3)) * 100));
       domainRows.push({
-        sec: 'R&W', name: dName, pct: pct, stars: starsSum, maxStars: dTopics.length * 3,
-        weakTi: weakestTi, weakName: RTOPS[weakestTi], isRw: true
+        sec: 'R&W', short: dName.split(' ')[0], name: dName, pct: pct, stars: starsSum, maxStars: dTopics.length * 3,
+        weakTi: weakestTi, weakName: RTOPS[weakestTi], isRw: true, solved: aSum
       });
     });
   }
 
-  // 4. Mistake Retention, Recidivism & Error Causes
+  // Build 8-Axis Spider Radar SVG (cx=190, cy=165, R=108)
+  var rCx = 190, rCy = 165, rMax = 104;
+  var radarShortLabels = ['Algebra', 'Adv Math', 'Data & Prob', 'Geometry', 'Info & Ideas', 'Craft & Struct', 'Expression', 'Conventions'];
+  function radarPt(idx, ratio) {
+    var ang = -Math.PI / 2 + idx * (2 * Math.PI / 8);
+    return [
+      Math.round(rCx + Math.cos(ang) * rMax * ratio),
+      Math.round(rCy + Math.sin(ang) * rMax * ratio)
+    ];
+  }
+  var webRingsSvg = [0.25, 0.5, 0.75, 1.0].map(function(level) {
+    var pts = [];
+    for (var i = 0; i < 8; i++) pts.push(radarPt(i, level).join(','));
+    return '<polygon points="' + pts.join(' ') + '" fill="none" stroke="var(--line)" stroke-width="1.2" stroke-dasharray="' + (level === 0.75 ? '3 3' : 'none') + '"/>';
+  }).join('');
+  var spokesSvg = '';
+  var userPolyPts = [];
+  var dotsSvg = '';
+  for (var i = 0; i < 8; i++) {
+    var outer = radarPt(i, 1.0);
+    var lblPos = radarPt(i, 1.24);
+    var dObj = domainRows[i] || { pct: 35 };
+    var ratio = Math.max(0.18, Math.min(1, dObj.pct / 100));
+    var uPt = radarPt(i, ratio);
+    userPolyPts.push(uPt.join(','));
+    spokesSvg += '<line x1="' + rCx + '" y1="' + rCy + '" x2="' + outer[0] + '" y2="' + outer[1] + '" stroke="var(--line)" stroke-width="1.2"/>';
+    spokesSvg += '<text x="' + lblPos[0] + '" y="' + (lblPos[1] + 4) + '" text-anchor="middle" fill="var(--mut)" font-size="10.5" font-weight="800">' + (radarShortLabels[i] || '') + ' (' + dObj.pct + '%)</text>';
+    dotsSvg += '<circle cx="' + uPt[0] + '" cy="' + uPt[1] + '" r="4.5" fill="var(--sand)" stroke="var(--panel)" stroke-width="2"/>';
+  }
+  var radarSvg = '<svg viewBox="0 0 380 330" style="width:100%;max-width:390px;height:auto;margin:0 auto;display:block">' +
+    webRingsSvg + spokesSvg +
+    '<polygon class="an-radar-poly" points="' + userPolyPts.join(' ') + '" fill="rgba(34,163,129,0.24)" stroke="var(--acc)" stroke-width="2.5"/>' +
+    dotsSvg +
+  '</svg>';
+
+  // 4. Mistake Root-Cause Donut SVG & 14-Day Activity Bar Chart
   var repeatMistakes = mkList.filter(function(x) { return (x.failCount || 1) >= 2; }).length;
   var recidivismRate = mkList.length ? Math.round((repeatMistakes / mkList.length) * 100) : 0;
   var totalEver = Math.max(mkList.length + (t.resolvedMistakes || 0), t.totalMistakesEver || 0);
@@ -3576,98 +3818,300 @@ function buildAnalyticsTab() {
     var k = x.reason && reasonCounts.hasOwnProperty(x.reason) ? x.reason : 'concept';
     reasonCounts[k]++;
   });
+  var reasonColors = { concept: '#22a381', careless: '#f5b82e', time: '#e74c3c', trap: '#38bdf8' };
+  var totalReasons = Math.max(1, mkList.length);
+  var donutR = 54, donutCircum = 2 * Math.PI * donutR, donutOffset = 0;
+  var donutSegmentsSvg = mkList.length ? MISTAKE_REASONS.map(function(r) {
+    var cnt = reasonCounts[r.id] || 0;
+    if (!cnt) return '';
+    var len = (cnt / totalReasons) * donutCircum;
+    var seg = '<circle cx="75" cy="75" r="' + donutR + '" fill="none" stroke="' + reasonColors[r.id] + '" stroke-width="16" stroke-dasharray="' + len.toFixed(1) + ' ' + (donutCircum - len).toFixed(1) + '" stroke-dashoffset="' + (-donutOffset).toFixed(1) + '"/>';
+    donutOffset += len;
+    return seg;
+  }).join('') : '<circle cx="75" cy="75" r="' + donutR + '" fill="none" stroke="var(--acc)" stroke-width="16"/>';
 
-  var h = '<div class="atlas-hero" style="margin-bottom:22px">' +
+  // 14-Day Activity Bars
+  var last14 = [];
+  var maxDayQ = 5;
+  var nowDt = new Date();
+  for (var dBack = 13; dBack >= 0; dBack--) {
+    var dt = new Date(nowDt.getFullYear(), nowDt.getMonth(), nowDt.getDate() - dBack);
+    var kDay = isoDateLocal(dt);
+    var recDay = t.days[kDay] || { q: 0, ok: 0 };
+    if (recDay.q > maxDayQ) maxDayQ = recDay.q;
+    last14.push({
+      lbl: dt.toLocaleString('en', { weekday: 'narrow' }) + ' ' + dt.getDate(),
+      q: recDay.q || 0,
+      ok: recDay.ok || 0,
+      isToday: dBack === 0
+    });
+  }
+
+  // Filter & sort 30-Topic Table
+  var filteredTopics = allTopicRows.filter(function(r) {
+    if (anTopicFilter === 'math') return !r.isRw;
+    if (anTopicFilter === 'rw') return !!r.isRw;
+    return true;
+  });
+  if (anTopicFilter === 'weak') {
+    filteredTopics.sort(function(a, b) { return a.pct - b.pct || a.stars - b.stars; });
+  }
+
+  var h = '<div class="atlas-hero" style="margin-bottom:20px">' +
     '<div>' +
       '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + spSvg('chart', 15) + ' TELEMETRY &amp; DIAGNOSTIC COMMAND CENTER</div>' +
       '<h1>SAT Performance Analytics</h1>' +
-      '<p class="sub">Real-time pacing diagnostics, College Board 8-domain mastery radar, adaptive score ceiling, and mistake recidivism metrics.</p>' +
+      '<p class="sub">Interactive score trajectory, 8-axis College Board domain radar, pacing speed distribution, and granular 30-island diagnostics.</p>' +
     '</div>' +
-    '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
-      '<div class="atlas-star-tot"><span class="st-ico">' + spSvg('flame', 24) + '</span><div><b>' + streak.current + ' Day Streak</b><small>Best: ' + streak.best + ' days &middot; ' + pacing.length + ' Qs logged</small></div></div>' +
+    '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+      '<div style="background:var(--panel2);border:1.5px solid var(--line);border-radius:16px;padding:8px 12px;display:flex;align-items:center;gap:8px">' +
+        '<small style="font-weight:800;color:var(--mut);font-size:11px;text-transform:uppercase">Target Score:</small>' +
+        [1350, 1450, 1500, 1550].map(function(gVal) {
+          return '<button type="button" class="chip' + (anTargetGoal === gVal ? ' on' : '') + '" data-an-goal="' + gVal + '" style="padding:4px 9px;font-size:11.5px">' + gVal + '</button>';
+        }).join('') +
+      '</div>' +
     '</div>' +
   '</div>';
 
-  // Top 3 Diagnostic Summary Cards: Predicted Score Corridor | Pacing & Speed Matrix | Mistake Recidivism
-  h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-bottom:22px">' +
-    // Card 1: Adaptive Score Corridor & Ceiling
-    '<div class="card" style="padding:22px;border-radius:24px;display:flex;flex-direction:column;justify-content:space-between">' +
-      '<div>' +
-        '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:11px">1. Predicted Score Corridor</small><span class="tag n" style="margin:0">ADAPTIVE</span></div>' +
-        '<div style="font-size:40px;font-weight:800;color:var(--acc);margin:10px 0 4px;letter-spacing:-.03em">' + lowEst + ' &ndash; ' + highEst + '</div>' +
-        '<div style="font-size:12.5px;color:var(--mut);margin-bottom:14px">Midpoint Estimate: <b style="color:var(--tx)">' + totalEst + '</b> (Math <b>' + mScore + '</b> &middot; R&amp;W <b>' + rScore + '</b>)</div>' +
-        '<div style="display:grid;gap:8px;padding-top:12px;border-top:1px dashed var(--line);font-size:12.5px">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center"><span>Math Mod 2 Track:</span><b style="color:' + (mHardUnlocked ? 'var(--acc)' : 'var(--sand)') + '">' + (mHardUnlocked ? 'Harder Track (800 Ceiling)' : 'Standard Cap (~600 Ceiling)') + '</b></div>' +
-          '<div style="display:flex;justify-content:space-between;align-items:center"><span>R&amp;W Mod 2 Track:</span><b style="color:' + (rHardUnlocked ? 'var(--acc)' : 'var(--sand)') + '">' + (rHardUnlocked ? 'Harder Track (800 Ceiling)' : 'Standard Cap (~600 Ceiling)') + '</b></div>' +
+  // 4 Top KPI Strip Cards
+  h += '<div class="an-kpi-grid">' +
+    '<div class="an-kpi-card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Predicted Corridor</small><span class="tag n" style="margin:0">' + percentile + ' Pct</span></div>' +
+      '<div class="an-kpi-val" style="color:var(--acc)">' + lowEst + '&ndash;' + highEst + '</div>' +
+      '<div style="font-size:12px;color:var(--mut)">Midpoint: <b style="color:var(--tx)">' + totalEst + '</b> &middot; ' + (gapToGoal > 0 ? ('<b style="color:var(--sand)">+' + gapToGoal + ' pts</b> to ' + anTargetGoal) : '<b style="color:var(--acc)">Target Reached!</b>') + '</div>' +
+    '</div>' +
+    '<div class="an-kpi-card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Section Split &amp; Caps</small><span class="tag" style="margin:0">ADAPTIVE</span></div>' +
+      '<div class="an-kpi-val">' + mScore + ' <span style="font-size:16px;color:var(--mut);font-weight:600">M</span> / ' + rScore + ' <span style="font-size:16px;color:var(--mut);font-weight:600">RW</span></div>' +
+      '<div style="font-size:12px;color:var(--mut)">Mod 2 Track: <b style="color:' + (mHardUnlocked && rHardUnlocked ? 'var(--acc)' : 'var(--sand)') + '">' + (mHardUnlocked && rHardUnlocked ? 'Harder (800 Ceiling)' : 'Building to Harder Track') + '</b></div>' +
+    '</div>' +
+    '<div class="an-kpi-card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Avg Question Speed</small><span class="tag" style="margin:0">' + spSvg('clock', 11) + ' PACE</span></div>' +
+      '<div class="an-kpi-val" style="color:var(--sand)">' + avgMathSec + 's <span style="font-size:15px;color:var(--mut)">M</span> &middot; ' + avgRwSec + 's <span style="font-size:15px;color:var(--mut)">RW</span></div>' +
+      '<div style="font-size:12px;color:var(--mut)">Bluebook Benchmark: <b>&le;95s Math</b> &middot; <b>&le;71s R&amp;W</b></div>' +
+    '</div>' +
+    '<div class="an-kpi-card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Mistake Resolution</small><span class="tag" style="margin:0;color:var(--acc)">' + streak.current + 'd Streak</span></div>' +
+      '<div class="an-kpi-val">' + resolutionRate + '% <span style="font-size:14px;color:var(--mut);font-weight:600">cleared</span></div>' +
+      '<div style="font-size:12px;color:var(--mut)">Active: <b>' + mkList.length + '</b> &middot; Repeat Recidivism: <b style="color:' + (recidivismRate > 20 ? '#e74c3c' : 'var(--acc)') + '">' + recidivismRate + '%</b></div>' +
+    '</div>' +
+  '</div>';
+
+  // Row 1: Animated Score Trajectory SVG Chart + Pacing Distribution Histogram
+  h += '<div class="an-dual-grid">' +
+    '<div class="card" style="padding:22px 24px;border-radius:26px;display:flex;flex-direction:column;justify-content:space-between">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px">' +
+        '<div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('trend', 13) + ' LIVE SCORE PROJECTION CURVE</small><h3 style="font-size:19px;font-weight:800;margin-top:2px">Total Score Trajectory vs. ' + anTargetGoal + ' Goal</h3></div>' +
+        '<div style="display:flex;gap:12px;font-size:11.5px;font-weight:700;color:var(--mut)">' +
+          '<span style="display:inline-flex;align-items:center;gap:5px"><i style="width:10px;height:10px;border-radius:50%;background:var(--acc);display:inline-block"></i> Projected Score</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:5px"><i style="width:12px;height:2px;background:var(--sand);display:inline-block"></i> Target (' + anTargetGoal + ')</span>' +
         '</div>' +
       '</div>' +
-      '<small style="color:var(--mut);font-size:11.5px;margin-top:12px;display:block">Scoring ≥68% in Module 1 unlocks the Harder Module 2 and removes the 600-point ceiling.</small>' +
-    '</div>' +
-
-    // Card 2: Pacing & Time Management Matrix
-    '<div class="card" style="padding:22px;border-radius:24px;display:flex;flex-direction:column;justify-content:space-between">' +
-      '<div>' +
-        '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:11px">2. Pacing &amp; Speed Matrix</small><span class="tag" style="margin:0">' + spSvg('clock', 11) + ' TIME</span></div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0">' +
-          '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">Math Avg / Target</small><b style="font-size:18px;color:' + (avgMathSec > 95 ? '#e74c3c' : 'var(--acc)') + '">' + (avgMathSec ? avgMathSec + 's' : '—') + ' <span style="font-size:12px;color:var(--mut);font-weight:600">/ 95s</span></b></div>' +
-          '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">R&amp;W Avg / Target</small><b style="font-size:18px;color:' + (avgRwSec > 71 ? '#e74c3c' : 'var(--acc)') + '">' + (avgRwSec ? avgRwSec + 's' : '—') + ' <span style="font-size:12px;color:var(--mut);font-weight:600">/ 71s</span></b></div>' +
-        '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;font-size:12px">' +
-          '<div style="background:var(--panel2);padding:8px;border-radius:12px"><b style="color:var(--sand);font-size:15px;display:block">' + rushedErrs + '</b><small style="color:var(--mut);font-size:10.5px">Rushed Err (&lt;25s)</small></div>' +
-          '<div style="background:var(--panel2);padding:8px;border-radius:12px"><b style="color:var(--acc);font-size:15px;display:block">' + optCount + '</b><small style="color:var(--mut);font-size:10.5px">Optimal Pace</small></div>' +
-          '<div style="background:var(--panel2);padding:8px;border-radius:12px"><b style="color:#e74c3c;font-size:15px;display:block">' + sinkCount + '</b><small style="color:var(--mut);font-size:10.5px">Time Sinks (&gt;95s)</small></div>' +
-        '</div>' +
+      '<svg viewBox="0 0 ' + svgW + ' ' + svgH + '" style="width:100%;height:auto;overflow:visible">' +
+        '<defs>' +
+          '<linearGradient id="anAreaGrad" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0%" stop-color="var(--acc)" stop-opacity="0.32"/>' +
+            '<stop offset="100%" stop-color="var(--acc)" stop-opacity="0.0"/>' +
+          '</linearGradient>' +
+        '</defs>' +
+        [800, 1000, 1200, 1400, 1600].map(function(val) {
+          var y = yForScore(val);
+          return '<line x1="' + padL + '" y1="' + y + '" x2="' + (svgW - padR) + '" y2="' + y + '" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>' +
+            '<text x="' + (padL - 8) + '" y="' + (y + 4) + '" text-anchor="end" fill="var(--mut)" font-size="10.5" font-weight="700">' + val + '</text>';
+        }).join('') +
+        '<line x1="' + padL + '" y1="' + goalY + '" x2="' + (svgW - padR) + '" y2="' + goalY + '" stroke="var(--sand)" stroke-width="2" stroke-dasharray="6 4"/>' +
+        '<text x="' + (svgW - padR - 4) + '" y="' + (goalY - 6) + '" text-anchor="end" fill="var(--sand)" font-size="10.5" font-weight="800">GOAL ' + anTargetGoal + '</text>' +
+        '<path d="' + areaPath + '" fill="url(#anAreaGrad)"/>' +
+        '<path class="an-draw-path" d="' + linePath + '" fill="none" stroke="var(--acc)" stroke-width="3.5" stroke-linecap="round"/>' +
+        totCoords.map(function(pt) {
+          return '<g>' +
+            '<circle class="an-dot-node" cx="' + pt.x + '" cy="' + pt.y + '" r="5.5" fill="var(--panel)" stroke="var(--acc)" stroke-width="3"><title>' + pt.p.lbl + ': ' + pt.p.tot + ' (Math ' + pt.p.m + ' / R&W ' + pt.p.r + ')</title></circle>' +
+            '<text x="' + pt.x + '" y="' + (pt.y - 11) + '" text-anchor="middle" fill="var(--tx)" font-size="11" font-weight="800">' + pt.p.tot + '</text>' +
+            '<text x="' + pt.x + '" y="' + (svgH - 8) + '" text-anchor="middle" fill="var(--mut)" font-size="10.5" font-weight="700">' + pt.p.lbl + '</text>' +
+          '</g>';
+        }).join('') +
+      '</svg>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut);flex-wrap:wrap;gap:8px">' +
+        '<span>Confidence Interval: <b style="color:var(--tx)">' + lowEst + ' &ndash; ' + highEst + ' (&plusmn;' + band + ' pts)</b></span>' +
+        '<button type="button" class="chip" onclick="show(\'pt\')" style="padding:4px 10px;font-size:11.5px;color:var(--acc);border-color:var(--acc)">Take Mock Exam to Calibrate →</button>' +
       '</div>' +
-      '<small style="color:var(--mut);font-size:11.5px;margin-top:12px;display:block">Skip &amp; flag any question taking over 95 seconds on the first pass.</small>' +
     '</div>' +
 
-    // Card 3: Mistake Retention & Recidivism
-    '<div class="card" style="padding:22px;border-radius:24px;display:flex;flex-direction:column;justify-content:space-between">' +
+    // Right Card: Animated Pacing Histogram & Speed Distribution
+    '<div class="card" style="padding:22px 24px;border-radius:26px;display:flex;flex-direction:column;justify-content:space-between">' +
       '<div>' +
-        '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:11px">3. Mistake Recidivism &amp; Causes</small><span class="tag" style="margin:0;color:var(--sand);border-color:var(--sand-line)">' + mkList.length + ' ACTIVE</span></div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0">' +
-          '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">Resolution Rate</small><b style="font-size:18px;color:var(--acc)">' + resolutionRate + '%</b></div>' +
-          '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">Recidivism (2x+)</small><b style="font-size:18px;color:' + (recidivismRate > 20 ? '#e74c3c' : 'var(--sand)') + '">' + recidivismRate + '% (' + repeatMistakes + ')</b></div>' +
+        '<small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('clock', 13) + ' TIME TELEMETRY HISTOGRAM</small>' +
+        '<h3 style="font-size:19px;font-weight:800;margin-top:2px">Speed vs. Accuracy Distribution</h3>' +
+        '<p class="sub" style="font-size:12px;margin-bottom:14px">How your response speed impacts accuracy across ' + pacing.length + ' logged questions.</p>' +
+        '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:end;height:148px;padding:16px 6px 6px;border-bottom:1.5px solid var(--line)">' +
+          buckets.map(function(b, idx) {
+            var hPct = b.tot ? Math.max(14, Math.round((b.tot / maxBucketTot) * 100)) : 8;
+            var bAcc = b.tot ? Math.round((b.ok / b.tot) * 100) : 0;
+            return '<div style="display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;gap:4px">' +
+              '<small style="font-size:10px;font-weight:800;color:var(--tx)">' + (b.tot ? bAcc + '%' : '—') + '</small>' +
+              '<div class="an-hist-bar" style="width:100%;max-width:38px;height:' + hPct + '%;background:' + b.col + ';border-radius:8px 8px 3px 3px;animation-delay:' + (idx * 0.08) + 's" title="' + b.lbl + ': ' + b.tot + ' questions (' + bAcc + '% accuracy)"></div>' +
+            '</div>';
+          }).join('') +
         '</div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">' +
-          MISTAKE_REASONS.map(function(r) {
-            return '<div style="display:flex;justify-content:space-between;background:var(--panel2);padding:6px 10px;border-radius:10px"><span>' + r.label + '</span><b>' + (reasonCounts[r.id] || 0) + '</b></div>';
+        '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;margin-top:6px">' +
+          buckets.map(function(b) {
+            return '<div><b style="font-size:10px;display:block;color:var(--tx)">' + b.lbl.split(' ')[0] + '</b><small style="font-size:9.5px;color:var(--mut)">' + b.tot + ' Qs</small></div>';
           }).join('') +
         '</div>' +
       '</div>' +
-      '<button class="cta" id="anGoMistakes" style="width:100%;justify-content:center;margin-top:12px;padding:9px 14px;font-size:12.5px;border-radius:12px">' + spSvg('zap', 14) + ' Clear Pending Mistakes →</button>' +
+      '<div style="margin-top:14px;padding:10px 12px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);font-size:12px;color:var(--mut)">' +
+        '<b style="color:var(--tx)">Pacing Insight:</b> ' +
+        (buckets[0].tot > buckets[0].ok ? 'You have <b>' + (buckets[0].tot - buckets[0].ok) + ' rushed errors (&lt;25s)</b>. Slowing down by 10 seconds on easy questions will immediately boost Module 1 accuracy.' : 'Your pacing is well-balanced inside the 25–80s sweet spot.') +
+      '</div>' +
     '</div>' +
   '</div>';
 
-  // Official 8-Domain Mastery Radar
-  h += '<div class="archipelago-region">' +
+  // Row 2: 8-Axis Spider Radar SVG + Domain Cards
+  h += '<div class="archipelago-region" style="margin-bottom:22px">' +
     '<div class="arch-hd">' +
       '<div class="arch-title"><div class="arch-badge" style="background:var(--acc)">' + spSvg('target', 20) + '</div>' +
-      '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">COLLEGE BOARD DIGITAL SAT BLUEPRINT</small><h2 style="font-size:20px;font-weight:800">8-Domain Mastery Radar</h2></div></div>' +
+      '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">COLLEGE BOARD DIGITAL SAT BLUEPRINT</small><h2 style="font-size:20px;font-weight:800">8-Domain Mastery Radar &amp; Action Plan</h2></div></div>' +
       '<span class="arch-stars-pill">Vulnerable &lt;60% &middot; Stable 60–84% &middot; Locked In &ge;85%</span>' +
     '</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">' +
-      domainRows.map(function(d) {
-        var status = d.pct >= 85 ? 'Locked In' : (d.pct >= 60 ? 'Stable' : 'Vulnerable');
-        var stCol = d.pct >= 85 ? 'var(--acc)' : (d.pct >= 60 ? 'var(--sand)' : '#e74c3c');
-        return '<div class="card" style="padding:16px 18px;border-radius:20px;background:var(--panel2)">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-            '<div><span class="tag" style="margin:0;font-size:9.5px">' + d.sec + '</span> <b style="font-size:14.5px;margin-left:4px">' + d.name + '</b></div>' +
-            '<span class="tag" style="margin:0;color:' + stCol + ';border-color:' + stCol + '">' + status + ' &middot; ' + d.pct + '%</span>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;align-items:center">' +
+      '<div style="background:var(--panel2);border:1.5px solid var(--line);border-radius:24px;padding:18px;text-align:center">' +
+        radarSvg +
+        '<small style="color:var(--mut);font-size:11.5px;font-weight:700;display:block;margin-top:6px">Octagonal Balance Across All 4 Math &amp; 4 R&amp;W Domains</small>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">' +
+        domainRows.map(function(d) {
+          var status = d.pct >= 85 ? 'Locked In' : (d.pct >= 60 ? 'Stable' : 'Vulnerable');
+          var stCol = d.pct >= 85 ? 'var(--acc)' : (d.pct >= 60 ? 'var(--sand)' : '#e74c3c');
+          return '<div class="card" style="padding:14px 16px;border-radius:18px;background:var(--panel2)">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px">' +
+              '<div><span class="tag" style="margin:0;font-size:9px">' + d.sec + '</span> <b style="font-size:13.5px;margin-left:3px">' + d.name + '</b></div>' +
+              '<b style="font-size:13px;color:' + stCol + '">' + d.pct + '%</b>' +
+            '</div>' +
+            '<div class="bar" style="margin:8px 0"><div style="width:' + d.pct + '%;background:' + stCol + '"></div></div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--mut)">' +
+              '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:145px" title="' + lbEsc(d.weakName) + '">Next: <b style="color:var(--tx)">' + d.weakName + '</b></span>' +
+              '<button type="button" class="chip" data-an-drill="' + (d.isRw ? 'r:' : 'm:') + d.weakTi + '" style="padding:3px 9px;font-size:11px;color:var(--acc);border-color:var(--acc)">Train →</button>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
+  // Row 3: Mistake Root-Cause Donut Chart + 14-Day Daily Activity Volume
+  h += '<div class="an-dual-grid">' +
+    '<div class="card" style="padding:22px 24px;border-radius:26px;display:flex;flex-direction:column;justify-content:space-between">' +
+      '<div>' +
+        '<small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('alert', 13) + ' ERROR ROOT-CAUSE ANATOMY</small>' +
+        '<h3 style="font-size:19px;font-weight:800;margin-top:2px">Why You Miss Questions &amp; Recidivism</h3>' +
+        '<div style="display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center;margin:16px 0">' +
+          '<div style="position:relative;width:150px;height:150px;margin:0 auto">' +
+            '<svg viewBox="0 0 150 150" style="transform:rotate(-90deg);width:100%;height:100%">' + donutSegmentsSvg + '</svg>' +
+            '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">' +
+              '<b style="font-size:24px;font-weight:800;color:var(--tx);line-height:1">' + mkList.length + '</b>' +
+              '<small style="font-size:10px;color:var(--mut);font-weight:700;text-transform:uppercase">Active Errs</small>' +
+            '</div>' +
           '</div>' +
-          '<div class="bar" style="margin:10px 0"><div style="width:' + d.pct + '%;background:' + stCol + '"></div></div>' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--mut)">' +
-            '<span>Stars: <b style="color:var(--tx)">' + d.stars + '/' + d.maxStars + '</b> &middot; Focus: <b>' + d.weakName + '</b></span>' +
-            '<button type="button" class="chip" data-an-drill="' + (d.isRw ? 'r:' : 'm:') + d.weakTi + '" style="padding:4px 10px;font-size:11.5px;color:var(--acc);border-color:var(--acc)">Train Island →</button>' +
+          '<div style="display:grid;gap:8px">' +
+            MISTAKE_REASONS.map(function(r) {
+              var cnt = reasonCounts[r.id] || 0;
+              var pctR = mkList.length ? Math.round((cnt / mkList.length) * 100) : 0;
+              return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);font-size:12.5px">' +
+                '<span style="display:inline-flex;align-items:center;gap:8px"><i style="width:10px;height:10px;border-radius:50%;background:' + reasonColors[r.id] + ';display:inline-block"></i> <b>' + r.label + '</b></span>' +
+                '<span><b>' + cnt + '</b> <small style="color:var(--mut)">(' + pctR + '%)</small></span>' +
+              '</div>';
+            }).join('') +
           '</div>' +
-        '</div>';
-      }).join('') +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px dashed var(--line);gap:10px;flex-wrap:wrap">' +
+        '<span style="font-size:12px;color:var(--mut)">Repeat Offenders (2x+ missed): <b style="color:#e74c3c">' + repeatMistakes + ' questions</b></span>' +
+        '<button type="button" class="cta" id="anGoMistakes" style="padding:8px 16px;font-size:12px;border-radius:12px">' + spSvg('zap', 13) + ' Launch Mistake Drill →</button>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="card" style="padding:22px 24px;border-radius:26px;display:flex;flex-direction:column;justify-content:space-between">' +
+      '<div>' +
+        '<small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('flame', 13) + ' CONSISTENCY &amp; DAILY VOLUME</small>' +
+        '<h3 style="font-size:19px;font-weight:800;margin-top:2px">Last 14 Days Practice Output</h3>' +
+        '<p class="sub" style="font-size:12px;margin-bottom:14px">Daily solved questions and accuracy momentum.</p>' +
+        '<div style="display:grid;grid-template-columns:repeat(14,1fr);gap:6px;align-items:end;height:148px;padding:14px 4px 6px;border-bottom:1.5px solid var(--line)">' +
+          last14.map(function(d, idx) {
+            var hPct = d.q ? Math.max(12, Math.round((d.q / maxDayQ) * 100)) : 5;
+            var col = d.isToday ? 'var(--sand)' : (d.q > 0 ? 'var(--acc)' : 'var(--cell)');
+            return '<div style="display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;gap:3px">' +
+              (d.q > 0 ? '<small style="font-size:9px;font-weight:800;color:var(--tx)">' + d.q + '</small>' : '') +
+              '<div class="an-hist-bar" style="width:100%;height:' + hPct + '%;background:' + col + ';border-radius:6px 6px 2px 2px;animation-delay:' + (idx * 0.04) + 's" title="' + d.lbl + ': ' + d.q + ' solved (' + d.ok + ' correct)"></div>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(14,1fr);gap:4px;text-align:center;margin-top:6px">' +
+          last14.map(function(d) {
+            return '<small style="font-size:9px;color:' + (d.isToday ? 'var(--sand)' : 'var(--mut)') + ';font-weight:' + (d.isToday ? '800' : '600') + '">' + d.lbl.split(' ')[0] + '</small>';
+          }).join('') +
+        '</div>' +
+      '</div>' +
+      '<div style="margin-top:14px;padding:10px 12px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);font-size:12px;color:var(--mut);display:flex;justify-content:space-between;align-items:center">' +
+        '<span>Current Streak: <b style="color:var(--sand)">' + streak.current + ' days</b> &middot; Record: <b style="color:var(--tx)">' + streak.best + ' days</b></span>' +
+        '<span style="color:var(--acc);font-weight:800">Goal: 15+ Qs/day</span>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+
+  // Row 4: Full 30-Topic Granular Diagnostic Table (All 20 Math + 10 R&W Islands)
+  h += '<div class="archipelago-region">' +
+    '<div class="arch-hd">' +
+      '<div class="arch-title"><div class="arch-badge" style="background:var(--acc2)">' + spSvg('layers', 20) + '</div>' +
+      '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">COMPLETE SKILL INVENTORY (30 TOPICS)</small><h2 style="font-size:20px;font-weight:800">Granular Topic-by-Topic Diagnostics</h2></div></div>' +
+      '<div class="island-pills">' +
+        [
+          ['all', 'All 30 Topics'],
+          ['weak', 'Weakest First (High ROI)'],
+          ['math', 'Math (20)'],
+          ['rw', 'R&W (10)']
+        ].map(function(pair) {
+          return '<button type="button" class="island-pill' + (anTopicFilter === pair[0] ? ' on' : '') + '" data-an-tfilt="' + pair[0] + '">' + pair[1] + '</button>';
+        }).join('') +
+      '</div>' +
+    '</div>' +
+    '<div class="an-table-wrap">' +
+      '<table class="an-table">' +
+        '<thead><tr><th>Section &amp; Domain</th><th>Topic Island</th><th>Odyssey Path</th><th>Atlas Drills</th><th>Mastery</th><th>Potential Gain</th><th style="text-align:right">Action</th></tr></thead>' +
+        '<tbody>' +
+          filteredTopics.map(function(r) {
+            var stCol = r.pct >= 85 ? 'var(--acc)' : (r.pct >= 60 ? 'var(--sand)' : '#e74c3c');
+            var roiPts = r.pct < 60 ? '+20–30 pts' : (r.pct < 85 ? '+10–15 pts' : 'Locked In');
+            return '<tr>' +
+              '<td><span class="tag" style="margin:0;font-size:9.5px">' + r.sec + '</span> <small style="color:var(--mut);font-weight:700;margin-left:4px">' + r.dom + '</small></td>' +
+              '<td><b style="font-size:13.5px;color:var(--tx)">' + r.name + '</b></td>' +
+              '<td><span style="font-weight:700;color:var(--mut)">' + r.pathNodes + ' / 5</span></td>' +
+              '<td><b>' + r.c + ' / ' + r.a + '</b> <small style="color:var(--mut)">(' + (r.a ? r.pct + '%' : 'No drills') + ')</small></td>' +
+              '<td><div style="display:flex;align-items:center;gap:8px"><div class="bar" style="width:70px;margin:0"><div style="width:' + r.pct + '%;background:' + stCol + '"></div></div><b style="color:' + stCol + ';font-size:12px">' + r.pct + '%</b></div></td>' +
+              '<td><span class="tag" style="margin:0;color:' + stCol + ';border-color:' + stCol + '">' + roiPts + '</span></td>' +
+              '<td style="text-align:right"><button type="button" class="chip" data-an-drill="' + (r.isRw ? 'r:' : 'm:') + r.ti + '" style="padding:5px 12px;font-size:11.5px;color:var(--acc);border-color:var(--acc)">Drill →</button></td>' +
+            '</tr>';
+          }).join('') +
+        '</tbody>' +
+      '</table>' +
     '</div>' +
   '</div>';
 
   el.innerHTML = h;
   var goMk = el.querySelector('#anGoMistakes');
   if (goMk) goMk.onclick = function() { show('mk'); };
+  el.querySelectorAll('[data-an-goal]').forEach(function(b) {
+    b.onclick = function() {
+      anTargetGoal = +b.getAttribute('data-an-goal');
+      spSet('satpath_goal_score', String(anTargetGoal));
+      buildAnalyticsTab();
+    };
+  });
+  el.querySelectorAll('[data-an-tfilt]').forEach(function(b) {
+    b.onclick = function() {
+      anTopicFilter = b.getAttribute('data-an-tfilt');
+      buildAnalyticsTab();
+    };
+  });
   el.querySelectorAll('[data-an-drill]').forEach(function(b) {
     b.onclick = function() {
       var parts = b.getAttribute('data-an-drill').split(':');
@@ -4795,14 +5239,13 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         var h = '<div class="bb-q-bar"><div style="display:flex;align-items:center;gap:10px"><span class="bb-q-num">' + (cur + 1) + '</span><button id="ptF" class="chip" style="font-size:12px;text-transform:none;border:0;color:' + (flag[cur] ? 'var(--sand)' : 'var(--mut)') + '">' + flagLabel + '</button></div><small style="color:var(--acc);font-weight:700">' + (q.top || '') + '</small></div>' +
           '<div style="font-size:' + (q.rw ? 17.5 : 19) + 'px;line-height:1.65;margin:18px 0">' + fx(q.q) + '</div>';
         q.opts.forEach(function (o, k) {
-          h += '<button class="qo" data-k="' + k + '"' + (ans[cur] === o ? ' style="border-color:var(--acc);background:rgba(34,163,129,.2)"' : '') + '><b>' + 'ABCD'[k] + '</b>&nbsp; ' + (q.rw ? wrapWordsForVocab(o) : rHTML(o)) + '</button>';
+          h += '<button class="qo" data-k="' + k + '"' + (ans[cur] === o ? ' style="border-color:var(--acc);background:rgba(34,163,129,.2)"' : '') + '><b>' + 'ABCD'[k] + '</b>&nbsp; ' + (q.rw ? String(o) : rHTML(o)) + '</button>';
         });
         Q.innerHTML = h;
       }
 
       Q.querySelectorAll('.qo').forEach(function (b) {
-        b.onclick = function (ev) {
-          if (ev.target.closest('.rw-word')) return;
+        b.onclick = function () {
           ans[cur] = q.opts[+b.dataset.k];
           persistProgress();
           Q.querySelectorAll('.qo').forEach(function (x) {
