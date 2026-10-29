@@ -107,7 +107,11 @@ function spSvg(name, size) {
     refresh: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
     shuffle: '<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>',
     star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
-    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    chart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    trend: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+    flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+    tag: '<path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><line x1="7" y1="7" x2="7.01" y2="7"/>'
   };
   return '<svg width="' + sz + '" height="' + sz + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px;flex:none">' + (paths[name] || paths.compass) + '</svg>';
 }
@@ -507,13 +511,126 @@ function openMathReferenceSheet() {
 }
 
 var h=new Date().getHours();document.getElementById('gr').textContent=(h<5?'Good night,':h<12?'Good morning,':h<18?'Good afternoon,':'Good evening,');
-var n=new Date(),sat=new Date(n.getFullYear()+(n.getMonth()>10?1:0),10,7);
-document.getElementById('mo').textContent=n.toLocaleString('en',{month:'long'})+' · 5 questions';
-var c=document.getElementById('cal'),x='';'MoTuWeThFrSaSu'.match(/../g).forEach(function(d){x+='<span>'+d+'</span>'});
-var first=new Date(n.getFullYear(),n.getMonth(),1),off=(first.getDay()+6)%7,dm=new Date(n.getFullYear(),n.getMonth()+1,0).getDate();
-for(var i=0;i<off;i++)x+='<i style="background:none"></i>';
-for(var d=1;d<=dm;d++)x+='<i class="'+(d==n.getDate()?'t ':'')+(d==n.getDate()-1?'l2':d==n.getDate()-2?'l1':'')+'"></i>';
-c.innerHTML=x;
+
+/* ===== TELEMETRY, PACING, ACTIVITY HEATMAP & ANALYTICS ENGINE ===== */
+var TELEMETRY_KEY = 'satpath_telemetry_v1';
+var _qStartTs = Date.now();
+function markQuestionStart() { _qStartTs = Date.now(); }
+function getQuestionElapsedSec() {
+  var s = Math.round((Date.now() - (_qStartTs || Date.now())) / 1000);
+  _qStartTs = Date.now();
+  return Math.max(1, Math.min(600, s));
+}
+
+function getTelemetry() {
+  try {
+    var t = JSON.parse(spGet(TELEMETRY_KEY)) || {};
+    return {
+      days: (t.days && typeof t.days === 'object') ? t.days : {},
+      pacing: Array.isArray(t.pacing) ? t.pacing : [],
+      resolvedMistakes: typeof t.resolvedMistakes === 'number' ? t.resolvedMistakes : 0,
+      totalMistakesEver: typeof t.totalMistakesEver === 'number' ? t.totalMistakesEver : 0,
+      bestStreak: typeof t.bestStreak === 'number' ? t.bestStreak : 0,
+      streakShields: typeof t.streakShields === 'number' ? t.streakShields : 0
+    };
+  } catch (e) {
+    return { days: {}, pacing: [], resolvedMistakes: 0, totalMistakesEver: 0, bestStreak: 0, streakShields: 0 };
+  }
+}
+
+function saveTelemetry(t) {
+  if (Array.isArray(t.pacing) && t.pacing.length > 400) {
+    t.pacing = t.pacing.slice(-400);
+  }
+  try { spSet(TELEMETRY_KEY, JSON.stringify(t)); } catch (e) {}
+}
+
+function isoDateLocal(d) {
+  var dt = d || new Date();
+  var y = dt.getFullYear();
+  var m = ('0' + (dt.getMonth() + 1)).slice(-2);
+  var day = ('0' + dt.getDate()).slice(-2);
+  return y + '-' + m + '-' + day;
+}
+
+function computeStreakInfo(tData) {
+  var t = tData || getTelemetry();
+  var days = t.days || {};
+  var cur = 0;
+  var today = new Date();
+  for (var back = 0; back < 365; back++) {
+    var d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - back);
+    var k = isoDateLocal(d);
+    var cnt = days[k] ? (days[k].q || 0) : 0;
+    if (cnt > 0) {
+      cur++;
+    } else if (back === 0) {
+      continue;
+    } else {
+      break;
+    }
+  }
+  var best = Math.max(cur, t.bestStreak || 0);
+  if (best !== t.bestStreak) {
+    t.bestStreak = best;
+    saveTelemetry(t);
+  }
+  return { current: cur, best: best };
+}
+
+function recordQuestionTelemetry(opts) {
+  opts = opts || {};
+  var t = getTelemetry();
+  var key = isoDateLocal(new Date());
+  var dayObj = t.days[key] || { q: 0, ok: 0, sec: 0 };
+  dayObj.q += 1;
+  if (opts.good) dayObj.ok += 1;
+  var sec = typeof opts.sec === 'number' ? Math.max(1, Math.min(600, Math.round(opts.sec))) : getQuestionElapsedSec();
+  dayObj.sec += sec;
+  t.days[key] = dayObj;
+
+  t.pacing.push({
+    ts: Date.now(),
+    rw: !!opts.rw,
+    top: opts.top || (opts.rw ? 'Reading & Writing' : 'SAT Math'),
+    good: !!opts.good,
+    sec: sec,
+    src: opts.src || 'Practice'
+  });
+  computeStreakInfo(t);
+  saveTelemetry(t);
+  renderActivityHeatmap();
+}
+
+function renderActivityHeatmap() {
+  var c = document.getElementById('cal');
+  var moEl = document.getElementById('mo');
+  if (!c) return;
+  var n = new Date();
+  var t = getTelemetry();
+  var streak = computeStreakInfo(t);
+  var x = '';
+  'MoTuWeThFrSaSu'.match(/../g).forEach(function(d) { x += '<span>' + d + '</span>'; });
+  var first = new Date(n.getFullYear(), n.getMonth(), 1);
+  var off = (first.getDay() + 6) % 7;
+  var dm = new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
+  for (var i = 0; i < off; i++) x += '<i style="background:none"></i>';
+  var monthTotal = 0;
+  for (var d = 1; d <= dm; d++) {
+    var key = isoDateLocal(new Date(n.getFullYear(), n.getMonth(), d));
+    var rec = t.days[key] || { q: 0, ok: 0 };
+    monthTotal += rec.q || 0;
+    var lvl = rec.q >= 25 ? 'l4' : rec.q >= 12 ? 'l3' : rec.q >= 5 ? 'l2' : rec.q >= 1 ? 'l1' : '';
+    var cls = (d === n.getDate() ? 't ' : '') + lvl;
+    var titleTxt = key + ': ' + (rec.q || 0) + ' questions (' + (rec.ok || 0) + ' correct)';
+    x += '<i class="' + cls.trim() + '" title="' + titleTxt + '"></i>';
+  }
+  c.innerHTML = x;
+  if (moEl) {
+    moEl.innerHTML = n.toLocaleString('en', { month: 'long' }) + ' &middot; <b>' + monthTotal + '</b> Qs &middot; <span style="color:var(--sand);font-weight:800">' + streak.current + 'd streak</span>';
+  }
+}
+renderActivityHeatmap();
 var t=document.getElementById('t'),tm;
 document.querySelectorAll('.soon').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();toast()})});
 
@@ -532,13 +649,22 @@ function saveMistakes(list) {
   try { spSet(MISTAKES_KEY, JSON.stringify(list)); } catch (e) {}
   updateNavBadges();
 }
-function recordMistake(qObj, userAns, sourceLabel) {
+var MISTAKE_REASONS = [
+  { id: 'concept',  label: 'Concept Gap',       ico: 'book' },
+  { id: 'careless', label: 'Misread / Careless', ico: 'alert' },
+  { id: 'time',     label: 'Time Pressure',     ico: 'clock' },
+  { id: 'trap',     label: 'Trap Option',       ico: 'target' }
+];
+
+function recordMistake(qObj, userAns, sourceLabel, secSpent) {
   if (!qObj || !qObj.q) return;
   var list = getMistakes();
   var qText = String(qObj.q).trim();
   var existingIdx = list.findIndex(function(x) { return String(x.q).trim() === qText; });
+  var prev = existingIdx >= 0 ? list[existingIdx] : null;
+  var autoReason = (typeof secSpent === 'number' && secSpent < 22) ? 'careless' : ((typeof secSpent === 'number' && secSpent > 105) ? 'time' : (prev && prev.reason ? prev.reason : 'concept'));
   var entry = {
-    id: 'mk_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+    id: prev && prev.id ? prev.id : ('mk_' + Date.now() + '_' + Math.floor(Math.random() * 10000)),
     q: qObj.q,
     ans: qObj.ans,
     opts: Array.isArray(qObj.opts) ? qObj.opts.slice() : [],
@@ -547,19 +673,74 @@ function recordMistake(qObj, userAns, sourceLabel) {
     top: qObj.top || (qObj.rw ? 'Reading & Writing' : 'SAT Math'),
     wrongAns: userAns != null ? String(userAns) : 'Unanswered',
     src: sourceLabel || 'Practice',
+    failCount: prev ? ((prev.failCount || 1) + 1) : 1,
+    reason: autoReason,
+    sec: typeof secSpent === 'number' ? secSpent : null,
     ts: Date.now()
   };
   if (existingIdx >= 0) {
     list.splice(existingIdx, 1);
+  } else {
+    var t = getTelemetry();
+    t.totalMistakesEver = (t.totalMistakesEver || 0) + 1;
+    saveTelemetry(t);
   }
   list.unshift(entry);
   if (list.length > 500) list = list.slice(0, 500);
   saveMistakes(list);
 }
+
+function setMistakeReasonByQuestion(qText, reasonId) {
+  var list = getMistakes();
+  var clean = String(qText || '').trim();
+  var changed = false;
+  list.forEach(function(x) {
+    if (String(x.q).trim() === clean) {
+      x.reason = reasonId;
+      changed = true;
+    }
+  });
+  if (changed) saveMistakes(list);
+}
+
+function renderMistakeTagPickerHtml(qText) {
+  var list = getMistakes();
+  var clean = String(qText || '').trim();
+  var item = list.filter(function(x) { return String(x.q).trim() === clean; })[0];
+  var curReason = item && item.reason ? item.reason : 'concept';
+  return '<div class="mk-tag-bar" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:10px 0;padding:8px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px">' +
+    '<small style="font-weight:800;color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-right:4px">' + spSvg('tag', 12) + ' Why did you miss this?</small>' +
+    MISTAKE_REASONS.map(function(r) {
+      var on = curReason === r.id;
+      return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-mk-tag="' + r.id + '" style="padding:4px 10px;font-size:11.5px">' + spSvg(r.ico, 12) + ' ' + r.label + '</button>';
+    }).join('') +
+  '</div>';
+}
+
+function bindMistakeTagPicker(container, qText) {
+  if (!container) return;
+  container.querySelectorAll('[data-mk-tag]').forEach(function(btn) {
+    btn.onclick = function() {
+      var rId = btn.getAttribute('data-mk-tag');
+      setMistakeReasonByQuestion(qText, rId);
+      container.querySelectorAll('[data-mk-tag]').forEach(function(b) {
+        b.classList.toggle('on', b.getAttribute('data-mk-tag') === rId);
+      });
+      toast('Mistake tagged as: ' + btn.textContent.trim());
+    };
+  });
+}
+
 function removeMistakeByQuestion(qText) {
   var list = getMistakes();
   var clean = String(qText).trim();
+  var before = list.length;
   var filtered = list.filter(function(x) { return String(x.q).trim() !== clean; });
+  if (filtered.length < before) {
+    var t = getTelemetry();
+    t.resolvedMistakes = (t.resolvedMistakes || 0) + (before - filtered.length);
+    saveTelemetry(t);
+  }
   saveMistakes(filtered);
 }
 function updateNavBadges() {
@@ -1628,7 +1809,10 @@ function ptResult(t,res){
    [x.o1,x.o2].forEach(function(o,mi){
     h+='<details style="margin-top:10px;background:var(--panel2);padding:12px 16px;border-radius:16px;border:1px solid var(--line)"><summary style="cursor:pointer;font-weight:800;color:var(--acc);font-size:14px">Module '+(mi+1)+' Question-by-Question Review ('+o.ok+'/'+o.n+' correct)</summary><div style="margin-top:10px">';
     o.qs.forEach(function(q,i){var a=o.ans[i],g=ptRight(q,a),fx=function(s){return q.rw?String(s):rHTML(s)};
-     h+='<div style="padding:12px 0;border-top:1px solid var(--line);font-size:13.5px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="color:'+(g?'var(--acc)':'#e74c3c')+'">Question '+(i+1)+' · '+(g?'✓ Correct':'✗ Incorrect')+'</b><span class="tag" style="margin:0;font-size:10px">'+q.top+'</span></div><div style="margin:8px 0;line-height:1.55">'+fx(q.q)+'</div><div style="background:var(--panel);padding:8px 12px;border-radius:10px;font-size:12.5px">Your answer: <b style="color:'+(g?'var(--acc)':'#e74c3c')+'">'+(a?fx(a):'Unanswered')+'</b> &nbsp;·&nbsp; Correct answer: <b style="color:var(--acc)">'+fx(q.ans)+'</b></div></div>'});
+     var qSec = (o.times && o.times[i]) ? o.times[i] : 0;
+     var pLbl = qSec > 105 ? 'Time Sink' : (qSec > 0 && qSec < 22 ? 'Rushed' : 'Optimal Pace');
+     var pCol = qSec > 105 ? '#e74c3c' : (qSec > 0 && qSec < 22 ? 'var(--sand)' : 'var(--acc)');
+     h+='<div style="padding:12px 0;border-top:1px solid var(--line);font-size:13.5px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b style="color:'+(g?'var(--acc)':'#e74c3c')+'">Question '+(i+1)+' · '+(g?'✓ Correct':'✗ Incorrect')+'</b><div style="display:flex;gap:6px;align-items:center">'+(qSec?'<span class="tag" style="margin:0;font-size:10px;color:'+pCol+';border-color:'+pCol+'">'+qSec+'s · '+pLbl+'</span>':'')+'<span class="tag" style="margin:0;font-size:10px">'+q.top+'</span></div></div><div style="margin:8px 0;line-height:1.55">'+fx(q.q)+'</div><div style="background:var(--panel);padding:8px 12px;border-radius:10px;font-size:12.5px">Your answer: <b style="color:'+(g?'var(--acc)':'#e74c3c')+'">'+(a?fx(a):'Unanswered')+'</b> &nbsp;·&nbsp; Correct answer: <b style="color:var(--acc)">'+fx(q.ans)+'</b></div></div>'});
     h+='</div></details>'});
    h+='</div>'});
 
@@ -1782,6 +1966,7 @@ function runQuiz(n, qs) {
       return;
     }
 
+    markQuestionStart();
     var q = qs[i];
     if (!q.top) q.top = n.topic || (n.rw ? RTOPS[n.ti] : TOPS[n.ti]);
     q.rw = !!n.rw;
@@ -1841,7 +2026,8 @@ function runQuiz(n, qs) {
       var gi = document.getElementById('qi');
       if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
 
-      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + (n.rw ? String(q.ans) : rHTML(fmtAns(q.ans))))) + '</p><button class="cta-amber" id="qn">' + (i < qs.length - 1 ? 'Next Waypoint →' : 'Finish Island') + '</button>';
+      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + (n.rw ? String(q.ans) : rHTML(fmtAns(q.ans))))) + '</p>' + (!good ? renderMistakeTagPickerHtml(q.q) : '') + '<button class="cta-amber" id="qn">' + (i < qs.length - 1 ? 'Next Waypoint →' : 'Finish Island') + '</button>';
+      if (!good) bindMistakeTagPicker(f, q.q);
       document.getElementById('qn').onclick = function() { i++; showQ(); };
     }
 
@@ -2147,6 +2333,7 @@ function bankOpen(ti) {
     buildBank();
   }
   function draw() {
+    markQuestionStart();
     var starsNow = getTopicStars(ti, false, ti);
     var q = getMathQ(ti, 'bank', R(0, 999)), done = false;
     q.top = TOPS[ti];
@@ -2207,7 +2394,8 @@ function bankOpen(ti) {
       var gi = document.getElementById('bi');
       if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
 
-      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + rHTML(fmtAns(q.ans)))) + '</p><button class="cta-amber" id="bn">Next Question →</button>';
+      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + rHTML(fmtAns(q.ans)))) + '</p>' + (!good ? renderMistakeTagPickerHtml(q.q) : '') + '<button class="cta-amber" id="bn">Next Question →</button>';
+      if (!good) bindMistakeTagPicker(f, q.q);
       var nb = document.getElementById('bn');
       nb.onclick = draw;
       setTimeout(function() { nb.focus() }, 60);
@@ -2397,6 +2585,7 @@ function rwBankOpen(ti){
       return;
     }
 
+    markQuestionStart();
     var starsNow = getTopicStars('rw_' + ti, true, ti);
     var currentItem = myPool[qIndex];
     var x = currentItem.fn(), ans = x[1], opts = shuffle(x.slice(1)), done = false;
@@ -2434,7 +2623,8 @@ function rwBankOpen(ti){
       var newStars = getTopicStars('rw_' + ti, true, ti);
       if(newStars > prevStars){confetti();addCoins(15 * (newStars - prevStars), 'Mastery Star ★ unlocked!');}
       a.querySelectorAll('button').forEach(function(b){b.disabled=true;if(b.dataset.v===ans)b.classList.add('good');else if(b.dataset.v===v)b.classList.add('bad')});
-      f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'#e74c3c')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect · Saved to Mistakes. Answer: '+ans))+'</p><button class="cta-amber" id="rn">Next Waypoint →</button>';
+      f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'#e74c3c')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect · Saved to Mistakes. Answer: '+ans))+'</p>' + (!good ? renderMistakeTagPickerHtml(x[0]) : '') + '<button class="cta-amber" id="rn">Next Waypoint →</button>';
+      if (!good) bindMistakeTagPicker(f, x[0]);
       document.getElementById('rn').onclick = function(){ qIndex++; draw(); };
     }
     opts.forEach(function(o,k){var b=document.createElement('button');b.className='qo';b.dataset.v=o;b.innerHTML='<b>'+'ABCD'[k]+'</b>&nbsp; '+o;b.onclick=function(){fin(o)};a.appendChild(b)}); attachOptionEliminator(a);
@@ -3064,19 +3254,31 @@ function buildMistakesTab() {
     h += '<div style="display:grid;gap:14px">';
     filtered.forEach(function(item, idx) {
       var fx = function(s) { return item.rw ? String(s) : rHTML(s); };
-      h += '<div class="card" style="padding:20px 22px;border-radius:22px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">' +
+      var rObj = MISTAKE_REASONS.filter(function(r) { return r.id === (item.reason || 'concept'); })[0] || MISTAKE_REASONS[0];
+      var isRepeat = (item.failCount || 1) >= 2;
+      h += '<div class="card" style="padding:20px 22px;border-radius:22px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;border-color:' + (isRepeat ? 'rgba(231,76,60,0.5)' : 'var(--line)') + '">' +
         '<div style="flex:1;min-width:260px">' +
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
             '<span class="tag n" style="margin:0">' + (item.rw ? 'R&amp;W' : 'MATH') + '</span>' +
             '<span class="tag" style="margin:0">' + lbEsc(item.top || 'SAT Topic') + '</span>' +
+            (isRepeat ? '<span class="tag" style="margin:0;color:#e74c3c;border-color:#e74c3c;background:rgba(231,76,60,0.1)">' + spSvg('alert', 11) + ' Missed ' + item.failCount + 'x (Recidivism)</span>' : '') +
+            '<span class="tag" style="margin:0;color:var(--sand);border-color:var(--sand-line);background:var(--sand-bg)">' + spSvg(rObj.ico, 11) + ' ' + rObj.label + '</span>' +
             '<small style="color:var(--mut);font-size:11.5px">' + lbEsc(item.src || '') + '</small>' +
           '</div>' +
           '<div style="font-size:15.5px;line-height:1.55;margin-bottom:10px">' + fx(item.q) + '</div>' +
-          '<div style="font-size:12.5px;color:#e74c3c;font-weight:700">Previous answer: ' + fx(item.wrongAns) + '</div>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
+            '<div style="font-size:12.5px;color:#e74c3c;font-weight:700">Previous answer: ' + fx(item.wrongAns) + '</div>' +
+            '<div style="display:inline-flex;gap:4px;flex-wrap:wrap">' +
+              MISTAKE_REASONS.map(function(r) {
+                var on = (item.reason || 'concept') === r.id;
+                return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-mk-setr="' + idx + ':' + r.id + '" style="padding:2px 8px;font-size:10.5px">' + r.label + '</button>';
+              }).join('') +
+            '</div>' +
+          '</div>' +
         '</div>' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
           '<button class="cta" data-mk-single="' + idx + '" style="padding:9px 15px;font-size:12.5px;border-radius:12px">' + spSvg('sparkles', 14) + ' Retry →</button>' +
-          '<button class="tbtn" data-mk-del="' + item.id + '" title="Remove from mistakes">✕</button>' +
+          '<button class="tbtn" data-mk-del="' + item.id + '" title="Remove from mistakes">' + spSvg('x', 13) + '</button>' +
         '</div>' +
       '</div>';
     });
@@ -3099,6 +3301,16 @@ function buildMistakesTab() {
       var list = getMistakes().filter(function(x) { return x.id !== b.dataset.mkDel; });
       saveMistakes(list);
       buildMistakesTab();
+    };
+  });
+  el.querySelectorAll('[data-mk-setr]').forEach(function(b) {
+    b.onclick = function() {
+      var parts = b.getAttribute('data-mk-setr').split(':');
+      var target = filtered[+parts[0]];
+      if (target) {
+        setMistakeReasonByQuestion(target.q, parts[1]);
+        buildMistakesTab();
+      }
     };
   });
   el.querySelectorAll('[data-mk-single]').forEach(function(b) {
@@ -3268,7 +3480,205 @@ function openSupportModal() {
   ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
 }
 
-/* Настройка сайдбара и контейнеров: кнопки Vocabulary / Mistake Log уже есть в HTML (nvVOC, nvERR) — вешаем на них обработчики */
+/* ===== COMPREHENSIVE ANALYTICS HUB (PACING, 8-DOMAIN RADAR, RECIDIVISM, SCORE CORRIDOR) ===== */
+function buildAnalyticsTab() {
+  var el = document.getElementById('vAN');
+  if (!el) return;
+  var t = getTelemetry();
+  var st = bankStats();
+  var md = getDone(), rd = getRDone();
+  var mkList = getMistakes();
+  var ptRes = ptLoad();
+  var streak = computeStreakInfo(t);
+
+  // 1. Score Corridor & Ceiling Calculation
+  var totA = 0, totC = 0;
+  Object.keys(st).forEach(function(k) { totA += st[k].a || 0; totC += st[k].c || 0; });
+  var acc = totA ? Math.round(totC / totA * 100) : 65;
+  var mScore = Math.min(800, Math.round((420 + md.length * 2.5 + (acc * 1.3)) / 10) * 10);
+  var rScore = Math.min(800, Math.round((420 + rd.length * 5.0 + (acc * 1.3)) / 10) * 10);
+  var mockScores = [];
+  Object.keys(ptRes).forEach(function(k) {
+    if (ptRes[k] && ptRes[k].total) mockScores.push({ t: +k, total: ptRes[k].total, r: ptRes[k].r, m: ptRes[k].m });
+  });
+  mockScores.sort(function(a, b) { return a.t - b.t; });
+  if (mockScores.length) {
+    var latest = mockScores[mockScores.length - 1];
+    if (latest.m && latest.m.score) mScore = Math.round((mScore * 0.4 + latest.m.score * 0.6) / 10) * 10;
+    if (latest.r && latest.r.score) rScore = Math.round((rScore * 0.4 + latest.r.score * 0.6) / 10) * 10;
+  }
+  var totalEst = mScore + rScore;
+  var band = totA >= 40 ? 30 : 50;
+  var lowEst = Math.max(400, totalEst - band), highEst = Math.min(1600, totalEst + band);
+  var mHardUnlocked = acc >= 68 || md.length >= 35;
+  var rHardUnlocked = acc >= 67 || rd.length >= 20;
+
+  // 2. Pacing & Speed Matrix
+  var pacing = t.pacing || [];
+  var mathP = pacing.filter(function(x) { return !x.rw; });
+  var rwP = pacing.filter(function(x) { return !!x.rw; });
+  var avgMathSec = mathP.length ? Math.round(mathP.reduce(function(s, x) { return s + x.sec; }, 0) / mathP.length) : 0;
+  var avgRwSec = rwP.length ? Math.round(rwP.reduce(function(s, x) { return s + x.sec; }, 0) / rwP.length) : 0;
+  var rushedErrs = pacing.filter(function(x) { return !x.good && x.sec < 25; }).length;
+  var optCount = pacing.filter(function(x) { return x.sec >= 25 && x.sec <= 95; }).length;
+  var sinkCount = pacing.filter(function(x) { return x.sec > 95; }).length;
+
+  // 3. 8 Official College Board Domains (4 Math + 4 R&W)
+  var domainRows = [];
+  if (typeof CUR !== 'undefined') {
+    var mIdx = 0;
+    CUR.forEach(function(dom) {
+      var dName = dom[0], dTopics = dom[1];
+      var aSum = 0, cSum = 0, starsSum = 0, weakestTi = mIdx, weakestScore = 999;
+      dTopics.forEach(function(tName) {
+        var ti = mIdx++;
+        var r = st[ti] || { a: 0, c: 0 };
+        var stars = getTopicStars(ti, false, ti);
+        aSum += r.a || 0; cSum += r.c || 0; starsSum += stars;
+        var sc = stars * 30 + (r.a ? (r.c / r.a) * 10 : 0);
+        if (sc < weakestScore) { weakestScore = sc; weakestTi = ti; }
+      });
+      var pct = aSum > 0 ? Math.round((cSum / aSum) * 100) : Math.round((starsSum / (dTopics.length * 3)) * 100);
+      domainRows.push({
+        sec: 'MATH', name: dName, pct: pct, stars: starsSum, maxStars: dTopics.length * 3,
+        weakTi: weakestTi, weakName: TOPS[weakestTi], isRw: false
+      });
+    });
+  }
+  if (typeof RCUR !== 'undefined') {
+    var rIdx = 0;
+    RCUR.forEach(function(dom) {
+      var dName = dom[0], dTopics = dom[1];
+      var aSum = 0, cSum = 0, starsSum = 0, weakestTi = rIdx, weakestScore = 999;
+      dTopics.forEach(function(tName) {
+        var ti = rIdx++;
+        var r = st['rw_' + ti] || { a: 0, c: 0 };
+        var stars = getTopicStars('rw_' + ti, true, ti);
+        aSum += r.a || 0; cSum += r.c || 0; starsSum += stars;
+        var sc = stars * 30 + (r.a ? (r.c / r.a) * 10 : 0);
+        if (sc < weakestScore) { weakestScore = sc; weakestTi = ti; }
+      });
+      var pct = aSum > 0 ? Math.round((cSum / aSum) * 100) : Math.round((starsSum / (dTopics.length * 3)) * 100);
+      domainRows.push({
+        sec: 'R&W', name: dName, pct: pct, stars: starsSum, maxStars: dTopics.length * 3,
+        weakTi: weakestTi, weakName: RTOPS[weakestTi], isRw: true
+      });
+    });
+  }
+
+  // 4. Mistake Retention, Recidivism & Error Causes
+  var repeatMistakes = mkList.filter(function(x) { return (x.failCount || 1) >= 2; }).length;
+  var recidivismRate = mkList.length ? Math.round((repeatMistakes / mkList.length) * 100) : 0;
+  var totalEver = Math.max(mkList.length + (t.resolvedMistakes || 0), t.totalMistakesEver || 0);
+  var resolutionRate = totalEver > 0 ? Math.round(((t.resolvedMistakes || 0) / totalEver) * 100) : 100;
+  var reasonCounts = { concept: 0, careless: 0, time: 0, trap: 0 };
+  mkList.forEach(function(x) {
+    var k = x.reason && reasonCounts.hasOwnProperty(x.reason) ? x.reason : 'concept';
+    reasonCounts[k]++;
+  });
+
+  var h = '<div class="atlas-hero" style="margin-bottom:22px">' +
+    '<div>' +
+      '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + spSvg('chart', 15) + ' TELEMETRY &amp; DIAGNOSTIC COMMAND CENTER</div>' +
+      '<h1>SAT Performance Analytics</h1>' +
+      '<p class="sub">Real-time pacing diagnostics, College Board 8-domain mastery radar, adaptive score ceiling, and mistake recidivism metrics.</p>' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
+      '<div class="atlas-star-tot"><span class="st-ico">' + spSvg('flame', 24) + '</span><div><b>' + streak.current + ' Day Streak</b><small>Best: ' + streak.best + ' days &middot; ' + pacing.length + ' Qs logged</small></div></div>' +
+    '</div>' +
+  '</div>';
+
+  // Top 3 Diagnostic Summary Cards: Predicted Score Corridor | Pacing & Speed Matrix | Mistake Recidivism
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-bottom:22px">' +
+    // Card 1: Adaptive Score Corridor & Ceiling
+    '<div class="card" style="padding:22px;border-radius:24px;display:flex;flex-direction:column;justify-content:space-between">' +
+      '<div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:11px">1. Predicted Score Corridor</small><span class="tag n" style="margin:0">ADAPTIVE</span></div>' +
+        '<div style="font-size:40px;font-weight:800;color:var(--acc);margin:10px 0 4px;letter-spacing:-.03em">' + lowEst + ' &ndash; ' + highEst + '</div>' +
+        '<div style="font-size:12.5px;color:var(--mut);margin-bottom:14px">Midpoint Estimate: <b style="color:var(--tx)">' + totalEst + '</b> (Math <b>' + mScore + '</b> &middot; R&amp;W <b>' + rScore + '</b>)</div>' +
+        '<div style="display:grid;gap:8px;padding-top:12px;border-top:1px dashed var(--line);font-size:12.5px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center"><span>Math Mod 2 Track:</span><b style="color:' + (mHardUnlocked ? 'var(--acc)' : 'var(--sand)') + '">' + (mHardUnlocked ? 'Harder Track (800 Ceiling)' : 'Standard Cap (~600 Ceiling)') + '</b></div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center"><span>R&amp;W Mod 2 Track:</span><b style="color:' + (rHardUnlocked ? 'var(--acc)' : 'var(--sand)') + '">' + (rHardUnlocked ? 'Harder Track (800 Ceiling)' : 'Standard Cap (~600 Ceiling)') + '</b></div>' +
+        '</div>' +
+      '</div>' +
+      '<small style="color:var(--mut);font-size:11.5px;margin-top:12px;display:block">Scoring ≥68% in Module 1 unlocks the Harder Module 2 and removes the 600-point ceiling.</small>' +
+    '</div>' +
+
+    // Card 2: Pacing & Time Management Matrix
+    '<div class="card" style="padding:22px;border-radius:24px;display:flex;flex-direction:column;justify-content:space-between">' +
+      '<div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:11px">2. Pacing &amp; Speed Matrix</small><span class="tag" style="margin:0">' + spSvg('clock', 11) + ' TIME</span></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0">' +
+          '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">Math Avg / Target</small><b style="font-size:18px;color:' + (avgMathSec > 95 ? '#e74c3c' : 'var(--acc)') + '">' + (avgMathSec ? avgMathSec + 's' : '—') + ' <span style="font-size:12px;color:var(--mut);font-weight:600">/ 95s</span></b></div>' +
+          '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">R&amp;W Avg / Target</small><b style="font-size:18px;color:' + (avgRwSec > 71 ? '#e74c3c' : 'var(--acc)') + '">' + (avgRwSec ? avgRwSec + 's' : '—') + ' <span style="font-size:12px;color:var(--mut);font-weight:600">/ 71s</span></b></div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;font-size:12px">' +
+          '<div style="background:var(--panel2);padding:8px;border-radius:12px"><b style="color:var(--sand);font-size:15px;display:block">' + rushedErrs + '</b><small style="color:var(--mut);font-size:10.5px">Rushed Err (&lt;25s)</small></div>' +
+          '<div style="background:var(--panel2);padding:8px;border-radius:12px"><b style="color:var(--acc);font-size:15px;display:block">' + optCount + '</b><small style="color:var(--mut);font-size:10.5px">Optimal Pace</small></div>' +
+          '<div style="background:var(--panel2);padding:8px;border-radius:12px"><b style="color:#e74c3c;font-size:15px;display:block">' + sinkCount + '</b><small style="color:var(--mut);font-size:10.5px">Time Sinks (&gt;95s)</small></div>' +
+        '</div>' +
+      '</div>' +
+      '<small style="color:var(--mut);font-size:11.5px;margin-top:12px;display:block">Skip &amp; flag any question taking over 95 seconds on the first pass.</small>' +
+    '</div>' +
+
+    // Card 3: Mistake Retention & Recidivism
+    '<div class="card" style="padding:22px;border-radius:24px;display:flex;flex-direction:column;justify-content:space-between">' +
+      '<div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:11px">3. Mistake Recidivism &amp; Causes</small><span class="tag" style="margin:0;color:var(--sand);border-color:var(--sand-line)">' + mkList.length + ' ACTIVE</span></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0">' +
+          '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">Resolution Rate</small><b style="font-size:18px;color:var(--acc)">' + resolutionRate + '%</b></div>' +
+          '<div style="background:var(--panel2);padding:10px 12px;border-radius:14px;border:1px solid var(--line)"><small style="color:var(--mut);font-size:11px;display:block">Recidivism (2x+)</small><b style="font-size:18px;color:' + (recidivismRate > 20 ? '#e74c3c' : 'var(--sand)') + '">' + recidivismRate + '% (' + repeatMistakes + ')</b></div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">' +
+          MISTAKE_REASONS.map(function(r) {
+            return '<div style="display:flex;justify-content:space-between;background:var(--panel2);padding:6px 10px;border-radius:10px"><span>' + r.label + '</span><b>' + (reasonCounts[r.id] || 0) + '</b></div>';
+          }).join('') +
+        '</div>' +
+      '</div>' +
+      '<button class="cta" id="anGoMistakes" style="width:100%;justify-content:center;margin-top:12px;padding:9px 14px;font-size:12.5px;border-radius:12px">' + spSvg('zap', 14) + ' Clear Pending Mistakes →</button>' +
+    '</div>' +
+  '</div>';
+
+  // Official 8-Domain Mastery Radar
+  h += '<div class="archipelago-region">' +
+    '<div class="arch-hd">' +
+      '<div class="arch-title"><div class="arch-badge" style="background:var(--acc)">' + spSvg('target', 20) + '</div>' +
+      '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">COLLEGE BOARD DIGITAL SAT BLUEPRINT</small><h2 style="font-size:20px;font-weight:800">8-Domain Mastery Radar</h2></div></div>' +
+      '<span class="arch-stars-pill">Vulnerable &lt;60% &middot; Stable 60–84% &middot; Locked In &ge;85%</span>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">' +
+      domainRows.map(function(d) {
+        var status = d.pct >= 85 ? 'Locked In' : (d.pct >= 60 ? 'Stable' : 'Vulnerable');
+        var stCol = d.pct >= 85 ? 'var(--acc)' : (d.pct >= 60 ? 'var(--sand)' : '#e74c3c');
+        return '<div class="card" style="padding:16px 18px;border-radius:20px;background:var(--panel2)">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+            '<div><span class="tag" style="margin:0;font-size:9.5px">' + d.sec + '</span> <b style="font-size:14.5px;margin-left:4px">' + d.name + '</b></div>' +
+            '<span class="tag" style="margin:0;color:' + stCol + ';border-color:' + stCol + '">' + status + ' &middot; ' + d.pct + '%</span>' +
+          '</div>' +
+          '<div class="bar" style="margin:10px 0"><div style="width:' + d.pct + '%;background:' + stCol + '"></div></div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--mut)">' +
+            '<span>Stars: <b style="color:var(--tx)">' + d.stars + '/' + d.maxStars + '</b> &middot; Focus: <b>' + d.weakName + '</b></span>' +
+            '<button type="button" class="chip" data-an-drill="' + (d.isRw ? 'r:' : 'm:') + d.weakTi + '" style="padding:4px 10px;font-size:11.5px;color:var(--acc);border-color:var(--acc)">Train Island →</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>' +
+  '</div>';
+
+  el.innerHTML = h;
+  var goMk = el.querySelector('#anGoMistakes');
+  if (goMk) goMk.onclick = function() { show('mk'); };
+  el.querySelectorAll('[data-an-drill]').forEach(function(b) {
+    b.onclick = function() {
+      var parts = b.getAttribute('data-an-drill').split(':');
+      show('b');
+      if (parts[0] === 'r') rwBankOpen(+parts[1]);
+      else bankOpen(+parts[1]);
+    };
+  });
+}
+
+/* Настройка сайдбара и контейнеров: кнопки Vocabulary / Mistake Log / Analytics */
 (function setupNavigationAndContainers() {
   var scBtn = document.getElementById('nvSC');
   if (scBtn) scBtn.remove();
@@ -3283,11 +3693,12 @@ function openSupportModal() {
     v.className = 'qbk';
     v.id = id;
     v.hidden = true;
-    v.style.maxWidth = '1080px';
+    v.style.maxWidth = '1180px';
     mainEl.insertBefore(v, dashEl);
   }
   ensureView('vVOC');
   ensureView('vERR');
+  ensureView('vAN');
 
   function ensureNav(id, afterId, html, target) {
     var b = document.getElementById(id);
@@ -3304,6 +3715,7 @@ function openSupportModal() {
   }
   ensureNav('nvVOC', 'nvPT', '<i data-lucide="bookmark-check"></i> Vocabulary <span class="tag" id="sideVocCnt">0</span>', 'voc');
   ensureNav('nvERR', 'nvVOC', '<i data-lucide="shield-alert"></i> Mistake Log <span class="tag" id="sideErrCnt">0</span>', 'mk');
+  ensureNav('nvAN', 'nvERR', '<i data-lucide="bar-chart-3"></i> Analytics <span class="tag n">PRO</span>', 'an');
 
   ['btnOpenSupport', 'hudSupBtn'].forEach(function(id) {
     var b = document.getElementById(id);
@@ -3327,9 +3739,10 @@ function show(w){
     pt:document.getElementById('vPT'),
     bz:document.getElementById('vBZ'),
     voc:document.getElementById('vVOC'),
-    mk:document.getElementById('vERR')
+    mk:document.getElementById('vERR'),
+    an:document.getElementById('vAN')
   };
-  var N={d:'nvD',m:'nvMP',b:'nvQB',r:'nvRW',lb:'nvLB',pt:'nvPT',bz:'nvBZ',voc:'nvVOC',mk:'nvERR'};
+  var N={d:'nvD',m:'nvMP',b:'nvQB',r:'nvRW',lb:'nvLB',pt:'nvPT',bz:'nvBZ',voc:'nvVOC',mk:'nvERR',an:'nvAN'};
   var titles={
     d:'Base Camp · Archipelago',
     m:'Math Path · Odyssey',
@@ -3339,7 +3752,8 @@ function show(w){
     pt:'Mock Exams · Expeditions',
     bz:'Blitz 10 · High-Speed Arena',
     voc:'Vocabulary · Personal Lexicon',
-    mk:'Mistakes Review · Error Correction'
+    mk:'Mistakes Review · Error Correction',
+    an:'Analytics · Diagnostic Command Center'
   };
   for(var k in V){
     if(V[k]) V[k].hidden=(k!==w);
@@ -3359,6 +3773,7 @@ function show(w){
   else if(w==='bz'){buildBlitz();scrollTo(0,0)}
   else if(w==='voc'){buildVocabTab();scrollTo(0,0)}
   else if(w==='mk'){buildMistakesTab();scrollTo(0,0)}
+  else if(w==='an'){buildAnalyticsTab();scrollTo(0,0)}
   else {scrollTo(0,0);refreshDash()}
 }
 
@@ -3418,8 +3833,11 @@ async function lbFlush(){
   lbBusy=false;
 }
 function lbSet(m,p){try{spSet('satpath_lb_'+m,JSON.stringify(p))}catch(e){}}
-function lbAdd(good,bonus){var m=monthId(),p=lbGet(m);
- if(good!==null&&good!==undefined){p.q++;if(good){p.c++;p.pts+=10}}
+function lbAdd(good,bonus,meta){var m=monthId(),p=lbGet(m);
+ if(good!==null&&good!==undefined){
+  p.q++;if(good){p.c++;p.pts+=10}
+  recordQuestionTelemetry(Object.assign({good:!!good}, meta||{}));
+ }
  if(bonus)p.pts+=bonus;lbSet(m,p);clearTimeout(lbT);lbT=setTimeout(lbFlush,60000)}
 function shortName(u){var p=(u.displayName||'Student').split(' ');return p[0]+(p[1]?' '+p[1][0]+'.':'')}
 
@@ -3502,10 +3920,13 @@ function refreshDash(){
   var acc=totA?Math.round(totC/totA*100):65;
   var mScore=Math.min(800, Math.round((420 + md.length*2.5 + (acc*1.3))/10)*10);
   var rScore=Math.min(800, Math.round((420 + rd.length*5.0 + (acc*1.3))/10)*10);
-  document.getElementById('dScore').textContent=(mScore+rScore);
+  var estTot = mScore + rScore;
+  var estBand = totA >= 40 ? 30 : 50;
+  document.getElementById('dScore').innerHTML = estTot + ' <small style="font-size:14px;color:var(--sand);font-weight:700">&plusmn;' + estBand + '</small>';
   document.getElementById('dScoreM').textContent=mScore;
   document.getElementById('dScoreR').textContent=rScore;
-  document.getElementById('dAccTxt').textContent=totA?(totC+' / '+totA+' Atlas drills correct ('+acc+'% accuracy)'):'Explore islands in the Atlas to calibrate accuracy';
+  document.getElementById('dAccTxt').innerHTML=(totA?(totC+' / '+totA+' drills ('+acc+'% acc) &middot; '):'')+'<button type="button" onclick="show(\'an\')" style="color:var(--acc);font-weight:800;text-decoration:underline">Open Full Analytics →</button>';
+  renderActivityHeatmap();
 
   var list=[];
   TOPS.forEach(function(name,idx){
@@ -4233,13 +4654,21 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     var ans = Array.isArray(state.ans) ? state.ans : [];
     var flag = Array.isArray(state.flag) ? state.flag : [];
     var elim = (state.elim && typeof state.elim === 'object') ? state.elim : {};
+    var times = Array.isArray(state.times) ? state.times : [];
     var cur = typeof state.cur === 'number' ? state.cur : 0;
     var left = typeof state.left === 'number' ? state.left : cfg.min * 60;
-    var ended = false, calc = null, tmr;
+    var ended = false, calc = null, tmr, qEnterTs = Date.now();
+
+    function accrueTime() {
+      var dt = Math.max(0, Math.round((Date.now() - qEnterTs) / 1000));
+      times[cur] = (times[cur] || 0) + dt;
+      qEnterTs = Date.now();
+    }
 
     function persistProgress() {
+      accrueTime();
       if (cfg.onSaveProgress && !ended) {
-        cfg.onSaveProgress({ ans: ans, flag: flag, elim: elim, cur: cur, left: left });
+        cfg.onSaveProgress({ ans: ans, flag: flag, elim: elim, times: times, cur: cur, left: left });
       }
     }
 
@@ -4291,18 +4720,22 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
 
     function submit() {
       if (ended) return;
+      accrueTime();
       // Не сбрасываем Fullscreen при переходе к следующему модулю!
       stop(true);
       var ok = 0;
       qs.forEach(function (q, i) {
-        if (ptRight(q, ans[i])) {
+        var g = ptRight(q, ans[i]);
+        var secSpent = times[i] || 30;
+        recordQuestionTelemetry({ good: g, rw: !!q.rw, top: q.top, sec: secSpent, src: cfg.title });
+        if (g) {
           ok++;
           removeMistakeByQuestion(q.q);
         } else {
-          recordMistake(q, ans[i], cfg.title);
+          recordMistake(q, ans[i], cfg.title, secSpent);
         }
       });
-      done({ ok: ok, n: qs.length, qs: qs, ans: ans });
+      done({ ok: ok, n: qs.length, qs: qs, ans: ans, times: times });
     }
 
     tmr = setInterval(function () {
