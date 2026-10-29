@@ -1,41 +1,80 @@
 /* ===== SATPATH CORE APPLICATION LOGIC, UI & CONTROLLERS ===== */
 window._SP_MEM = {};
-/* ===== SAFETY HELPERS (fix: quiz freezing after an answer) ===== */
-function spTry(fn, label) { try { return fn(); } catch (e) { try { console.error('[SATPath] ' + (label || 'step') + ' failed:', e); } catch (_) {} } }
-function spSafeAns(q, isRw) {
-  try { return isRw ? String(q.ans) : rHTML(fmtAns(q.ans)); } catch (e) { return String(q && q.ans); }
-}
-function spSafeGood(q, v) {
-  try { return (q.isGrid ? same(v, q.ans) : String(v) === String(q.ans)); } catch (e) { return String(v).trim() === String(q.ans).trim(); }
-}
-window.addEventListener('error', function (e) { try { console.error('[SATPath] uncaught:', e.message, e.filename, e.lineno); } catch (_) {} });
-/* ===== STORAGE CHECK: warn when the browser can't save progress ===== */
-(function spStorageCheck() {
-  var ok = true;
-  try { var k = '__sp_probe'; window.localStorage.setItem(k, '1'); if (window.localStorage.getItem(k) !== '1') ok = false; window.localStorage.removeItem(k); } catch (e) { ok = false; }
-  window._SP_STORAGE_OK = ok;
-  var inApp = /Instagram|FBAN|FBAV|TikTok|musical_ly|BytedanceWebview|Snapchat|Line\/|MicroMessenger|Telegram/i.test(navigator.userAgent || '');
-  if (ok && !inApp) return;
-  function show() {
-    if (document.getElementById('spStoreWarn')) return;
-    var d = document.createElement('div');
-    d.id = 'spStoreWarn';
-    d.style.cssText = 'position:fixed;left:10px;right:10px;top:calc(8px + env(safe-area-inset-top,0px));z-index:5000;background:#f5b82e;color:#2b1d00;padding:10px 14px;border-radius:14px;font-size:13px;font-weight:700;line-height:1.35;box-shadow:0 8px 24px rgba(0,0,0,.3);display:flex;gap:10px;align-items:flex-start';
-    d.innerHTML = '<span style="flex:1">' + (ok
-      ? 'You opened SATPath inside an in-app browser. Progress may be wiped on refresh. For safe saving open satpath.online in Safari / Chrome (⋯ → Open in browser).'
-      : 'Your browser is blocking storage (private mode or in-app browser), so progress will be lost on refresh. Open satpath.online in Safari / Chrome in normal (non-private) mode.')
-      + '</span><button type="button" style="font-size:18px;line-height:1" onclick="this.parentNode.remove()">✕</button>';
-    document.body.appendChild(d);
-  }
-  if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
-})();
 function spGet(k) {
   try { var v = window.localStorage.getItem(k); if (v !== null) return v; } catch(e) {}
   return Object.prototype.hasOwnProperty.call(window._SP_MEM, k) ? window._SP_MEM[k] : null;
 }
+
+/* ===== CLOUD SYNC OF PROGRESS (Firestore: users/{uid}.progress) =====
+ * Раньше весь прогресс жил только в localStorage -> при обновлении страницы в
+ * in-app браузерах (TikTok/Instagram/Telegram) или на другом устройстве всё пропадало.
+ * Теперь каждое сохранение (spSet) дополнительно уходит в Firestore, а при входе в аккаунт
+ * прогресс подтягивается обратно. */
+var SP_SKIP = { 'satpath_dict_v1':1, 'satpath_telemetry_v1':1, 'satpath_econ_v2':1, 'satpath_guest':1 };
+var SP_TS_KEY = 'sp_ts_map';           // не синкается (нет префикса satpath_)
+var _spDirty = {}, _spTimer = null, _spTs = null;
+function spSyncable(k) { return k.indexOf('satpath_') === 0 && !SP_SKIP[k]; }
+function spTsMap() {
+  if (_spTs) return _spTs;
+  try { _spTs = JSON.parse(spGet(SP_TS_KEY)) || {}; } catch (e) { _spTs = {}; }
+  return _spTs;
+}
 function spSet(k, v) {
-  window._SP_MEM[k] = String(v);
-  try { window.localStorage.setItem(k, String(v)); } catch(e) {}
+  v = String(v);
+  window._SP_MEM[k] = v;
+  try { window.localStorage.setItem(k, v); } catch(e) {}
+  if (spSyncable(k)) {
+    var t = spTsMap(); t[k] = Date.now();
+    window._SP_MEM[SP_TS_KEY] = JSON.stringify(t);
+    try { window.localStorage.setItem(SP_TS_KEY, JSON.stringify(t)); } catch(e) {}
+    _spDirty[k] = 1;
+    clearTimeout(_spTimer);
+    _spTimer = setTimeout(spPushCloud, 2500);
+  }
+}
+async function spPushCloud() {
+  if (typeof FB === 'undefined' || !FB || !FB.fs || typeof FBU === 'undefined' || !FBU) return;
+  var keys = Object.keys(_spDirty); if (!keys.length) return;
+  var data = {}, ts = {}, t = spTsMap();
+  keys.forEach(function(k) { data[k] = spGet(k); ts[k] = t[k] || Date.now(); });
+  _spDirty = {};
+  try {
+    var s = FB.fs;
+    await s.setDoc(s.doc(FB.db, 'users', FBU.uid), { progress: data, progressTs: ts, updatedAt: Date.now() }, { merge: true });
+  } catch (e) { keys.forEach(function(k) { _spDirty[k] = 1; }); }
+}
+async function spPullCloud() {
+  if (typeof FB === 'undefined' || !FB || !FB.fs || typeof FBU === 'undefined' || !FBU) return;
+  try {
+    var s = FB.fs, snap = await s.getDoc(s.doc(FB.db, 'users', FBU.uid));
+    var d = snap.exists() ? (snap.data() || {}) : {};
+    var cloud = d.progress || {}, cts = d.progressTs || {}, t = spTsMap(), changed = false;
+    Object.keys(cloud).forEach(function(k) {
+      if (!spSyncable(k)) return;
+      var local = spGet(k), lts = t[k] || 0, c = +cts[k] || 0;
+      if (local === null || c > lts) {
+        var val = cloud[k];
+        // списки (done, vocab, mistakes) объединяем, чтобы ничего не потерять
+        try {
+          var a = JSON.parse(local), b = JSON.parse(val);
+          if (Array.isArray(a) && Array.isArray(b)) {
+            var seen = {}, out = [];
+            a.concat(b).forEach(function(x) { var id = JSON.stringify(x); if (!seen[id]) { seen[id] = 1; out.push(x); } });
+            val = JSON.stringify(out);
+          }
+        } catch (e) {}
+        window._SP_MEM[k] = String(val);
+        try { window.localStorage.setItem(k, String(val)); } catch (e) {}
+        t[k] = c || Date.now(); changed = true;
+      } else if (lts > c) { _spDirty[k] = 1; }   // локальная версия новее -> зальём в облако
+    });
+    // всё, что есть только локально, тоже заливаем
+    try { for (var i = 0; i < localStorage.length; i++) { var lk = localStorage.key(i); if (spSyncable(lk) && !(lk in cloud)) _spDirty[lk] = 1; } } catch (e) {}
+    Object.keys(window._SP_MEM).forEach(function(lk) { if (spSyncable(lk) && !(lk in cloud)) _spDirty[lk] = 1; });
+    try { window.localStorage.setItem(SP_TS_KEY, JSON.stringify(t)); } catch (e) {}
+    if (changed && typeof spRefreshAfterPull === 'function') spRefreshAfterPull();
+    spPushCloud();
+  } catch (e) {}
 }
 
 
@@ -2028,27 +2067,27 @@ function runQuiz(n, qs) {
     };
     function fin(v) {
       if (done) return; done = true;
-      var good = spSafeGood(q, v);
-      if (good) { ok++; earnedInQuiz += 5; }
-      spTry(function() {
-        if (good) { addCoins(5); removeMistakeByQuestion(q.q); }
-        else { recordMistake(q, v, (n.rw ? 'R&W Path · ' : 'Math Path · ') + (q.top || '')); }
-      }, 'quiz bookkeeping');
-      spTry(function() { lbAdd(good); }, 'leaderboard');
-      spTry(function() {
-        a.querySelectorAll('button').forEach(function(b) {
-          b.disabled = true;
-          if (b.dataset.v === q.ans) b.classList.add('good');
-          else if (b.dataset.v === String(v)) b.classList.add('bad');
-        });
-        var gi = document.getElementById('qi');
-        if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
-      }, 'quiz ui');
+      var good = (q.isGrid ? same(v, q.ans) : String(v) === q.ans);
+      if (good) {
+        ok++;
+        earnedInQuiz += 5;
+        addCoins(5);
+        removeMistakeByQuestion(q.q);
+      } else {
+        recordMistake(q, v, (n.rw ? 'R&W Path · ' : 'Math Path · ') + (q.top || ''));
+      }
+      lbAdd(good);
+      a.querySelectorAll('button').forEach(function(b) {
+        b.disabled = true;
+        if (b.dataset.v === q.ans) b.classList.add('good');
+        else if (b.dataset.v === String(v)) b.classList.add('bad');
+      });
 
-      var tagHtml = '';
-      if (!good) tagHtml = spTry(function() { return renderMistakeTagPickerHtml(q.q); }, 'tag picker') || '';
-      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + spSafeAns(q, n.rw))) + '</p>' + tagHtml + '<button class="cta-amber" id="qn">' + (i < qs.length - 1 ? 'Next Waypoint →' : 'Finish Island') + '</button>';
-      if (!good) spTry(function() { bindMistakeTagPicker(f, q.q); }, 'tag bind');
+      var gi = document.getElementById('qi');
+      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
+
+      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + (n.rw ? String(q.ans) : rHTML(fmtAns(q.ans))))) + '</p>' + (!good ? renderMistakeTagPickerHtml(q.q) : '') + '<button class="cta-amber" id="qn">' + (i < qs.length - 1 ? 'Next Waypoint →' : 'Finish Island') + '</button>';
+      if (!good) bindMistakeTagPicker(f, q.q);
       document.getElementById('qn').onclick = function() { i++; showQ(); };
     }
 
@@ -2392,33 +2431,31 @@ function bankOpen(ti) {
     var a = document.getElementById('ba'), f = document.getElementById('bf');
     function fin(v) {
       if (done) return; done = true;
-      var good = spSafeGood(q, v);
+      var prevStars = getTopicStars(ti, false, ti);
+      var good = (q.isGrid ? same(v, q.ans) : String(v) === q.ans);
       tot++;
-      if (good) ok++;
-      var prevStars = spTry(function() { return getTopicStars(ti, false, ti); }, 'stars') || 0;
-      spTry(function() {
-        if (good) { addCoins(5); removeMistakeByQuestion(q.q); }
-        else { recordMistake(q, v, 'Atlas Math · ' + TOPS[ti]); }
-        bankSave(ti, good);
-      }, 'bank bookkeeping');
-      spTry(function() { lbAdd(good); }, 'leaderboard');
-      spTry(function() {
-        var newStars = getTopicStars(ti, false, ti);
-        if (newStars > prevStars) { confetti(); addCoins(15 * (newStars - prevStars), 'Mastery Star ★ unlocked!'); }
-      }, 'stars reward');
-      spTry(function() {
-        a.querySelectorAll('button').forEach(function(b) {
-          b.disabled = true;
-          if (b.dataset.v === q.ans) b.classList.add('good');
-          else if (b.dataset.v === String(v)) b.classList.add('bad');
-        });
-        var gi = document.getElementById('bi');
-        if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
-      }, 'bank ui');
-      var tagHtml = '';
-      if (!good) tagHtml = spTry(function() { return renderMistakeTagPickerHtml(q.q); }, 'tag picker') || '';
-      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + spSafeAns(q, false))) + '</p>' + tagHtml + '<button class="cta-amber" id="bn">Next Question →</button>';
-      if (!good) spTry(function() { bindMistakeTagPicker(f, q.q); }, 'tag bind');
+      if (good) {
+        ok++;
+        addCoins(5);
+        removeMistakeByQuestion(q.q);
+      } else {
+        recordMistake(q, v, 'Atlas Math · ' + TOPS[ti]);
+      }
+      bankSave(ti, good); lbAdd(good);
+      var newStars = getTopicStars(ti, false, ti);
+      if (newStars > prevStars) { confetti(); addCoins(15 * (newStars - prevStars), 'Mastery Star ★ unlocked!'); }
+
+      a.querySelectorAll('button').forEach(function(b) {
+        b.disabled = true;
+        if (b.dataset.v === q.ans) b.classList.add('good');
+        else if (b.dataset.v === String(v)) b.classList.add('bad');
+      });
+
+      var gi = document.getElementById('bi');
+      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
+
+      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + rHTML(fmtAns(q.ans)))) + '</p>' + (!good ? renderMistakeTagPickerHtml(q.q) : '') + '<button class="cta-amber" id="bn">Next Question →</button>';
+      if (!good) bindMistakeTagPicker(f, q.q);
       var nb = document.getElementById('bn');
       nb.onclick = draw;
       setTimeout(function() { nb.focus() }, 60);
@@ -2630,32 +2667,27 @@ function rwBankOpen(ti){
 
     function fin(v){
       if(done) return; done = true;
+      if (solvedList.indexOf(currentItem.id) === -1) {
+        solvedList.push(currentItem.id);
+        spSet(solvedKey, JSON.stringify(solvedList));
+      }
+
+      var prevStars = getTopicStars('rw_' + ti, true, ti);
       var good = (v === ans);
-      if (good) ok++;
-      spTry(function() {
-        if (solvedList.indexOf(currentItem.id) === -1) {
-          solvedList.push(currentItem.id);
-          spSet(solvedKey, JSON.stringify(solvedList));
-        }
-      }, 'rw solved list');
-      var prevStars = spTry(function() { return getTopicStars('rw_' + ti, true, ti); }, 'stars') || 0;
-      spTry(function() {
-        if (good) { addCoins(5); removeMistakeByQuestion(x[0]); }
-        else { recordMistake({ q: x[0], ans: ans, opts: opts, isGrid: false, rw: true, top: RTOPS[ti] }, v, 'Atlas R&W · ' + RTOPS[ti]); }
-        bankSave('rw_' + ti, good);
-      }, 'rw bookkeeping');
-      spTry(function() { lbAdd(good); }, 'leaderboard');
-      spTry(function() {
-        var newStars = getTopicStars('rw_' + ti, true, ti);
-        if (newStars > prevStars) { confetti(); addCoins(15 * (newStars - prevStars), 'Mastery Star ★ unlocked!'); }
-      }, 'stars reward');
-      spTry(function() {
-        a.querySelectorAll('button').forEach(function(b){b.disabled=true;if(b.dataset.v===ans)b.classList.add('good');else if(b.dataset.v===v)b.classList.add('bad')});
-      }, 'rw ui');
-      var tagHtml = '';
-      if (!good) tagHtml = spTry(function() { return renderMistakeTagPickerHtml(x[0]); }, 'tag picker') || '';
-      f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'#e74c3c')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect · Saved to Mistakes. Answer: '+ans))+'</p>' + tagHtml + '<button class="cta-amber" id="rn">Next Waypoint →</button>';
-      if (!good) spTry(function() { bindMistakeTagPicker(f, x[0]); }, 'tag bind');
+      if(good){
+        ok++;
+        addCoins(5);
+        removeMistakeByQuestion(x[0]);
+      } else {
+        recordMistake({ q: x[0], ans: ans, opts: opts, isGrid: false, rw: true, top: RTOPS[ti] }, v, 'Atlas R&W · ' + RTOPS[ti]);
+      }
+      bankSave('rw_' + ti, good);
+      lbAdd(good);
+      var newStars = getTopicStars('rw_' + ti, true, ti);
+      if(newStars > prevStars){confetti();addCoins(15 * (newStars - prevStars), 'Mastery Star ★ unlocked!');}
+      a.querySelectorAll('button').forEach(function(b){b.disabled=true;if(b.dataset.v===ans)b.classList.add('good');else if(b.dataset.v===v)b.classList.add('bad')});
+      f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'#e74c3c')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect · Saved to Mistakes. Answer: '+ans))+'</p>' + (!good ? renderMistakeTagPickerHtml(x[0]) : '') + '<button class="cta-amber" id="rn">Next Waypoint →</button>';
+      if (!good) bindMistakeTagPicker(f, x[0]);
       document.getElementById('rn').onclick = function(){ qIndex++; draw(); };
     }
     opts.forEach(function(o,k){var b=document.createElement('button');b.className='qo';b.dataset.v=o;b.innerHTML='<b>'+'ABCD'[k]+'</b>&nbsp; '+o;b.onclick=function(){fin(o)};a.appendChild(b)}); attachOptionEliminator(a);
@@ -3439,10 +3471,11 @@ function startMistakesDrill(questionsList) {
     var a = ov.querySelector('#mkAns'), f = ov.querySelector('#mkFeed');
     function checkAns(v) {
       if (done) return; done = true;
-      var good = spSafeGood(q, v);
+      var good = (q.isGrid ? same(v, q.ans) : String(v) === q.ans);
       if (good) {
         clearedCount++;
-        spTry(function() { removeMistakeByQuestion(q.q); addCoins(5, 'Mistake resolved!'); }, 'mistake bookkeeping');
+        removeMistakeByQuestion(q.q);
+        addCoins(5, 'Mistake resolved!');
       }
       a.querySelectorAll('button').forEach(function(b) {
         b.disabled = true;
@@ -3452,7 +3485,7 @@ function startMistakesDrill(questionsList) {
       var gi = ov.querySelector('#mkInp');
       if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
       f.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)">' +
-        '<b style="color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? '✓ Solved! Removed from Mistakes (+5 PC)' : '✗ Still incorrect. Correct answer: ' + spSafeAns(q, q.rw)) + '</b>' +
+        '<b style="color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? '✓ Solved! Removed from Mistakes (+5 PC)' : '✗ Still incorrect. Correct answer: ' + (q.rw ? q.ans : rHTML(fmtAns(q.ans)))) + '</b>' +
         '<button class="cta-amber" id="mkNextBtn">' + (idx < questionsList.length - 1 ? 'Next Question →' : 'Finish Drill →') + '</button>' +
       '</div>';
       ov.querySelector('#mkNextBtn').onclick = function() { idx++; renderQ(); };
@@ -4324,7 +4357,7 @@ async function fbInit(){if(!FB_CONFIG||FB)return;
  var B='https://www.gstatic.com/firebasejs/10.12.2/';
  var a=await import(B+'firebase-app.js'),au=await import(B+'firebase-auth.js'),f=await import(B+'firebase-firestore.js');
  var app=a.initializeApp(FB_CONFIG);FB={auth:au.getAuth(app),db:f.getFirestore(app),au:au,fs:f};
- au.onAuthStateChanged(FB.auth,function(u){FBU=u;paintUser();if(u){ensureUserCloudTokens(u);lbFlush();}if(!document.getElementById('vLB').hidden)buildLB()})}
+ au.onAuthStateChanged(FB.auth,function(u){FBU=u;paintUser();if(u){ensureUserCloudTokens(u);spPullCloud();lbFlush();}if(!document.getElementById('vLB').hidden)buildLB()})}
 function paintUser(){var u=FBU,soAll=document.querySelectorAll('.so');
  if(u){var p=getProfile();if(!p.name||p.name==='Explorer'||p.name==='Guest'){p.name=u.displayName||u.email.split('@')[0];saveProfile(p)}}
  applyProfileUI();
@@ -5480,3 +5513,29 @@ updateNavBadges();
 function spRenderIcons() { try { if (window.lucide) lucide.createIcons(); } catch (e) {} }
 spRenderIcons();
 window.addEventListener('load', spRenderIcons);
+
+
+/* ===== REMEMBER CURRENT SECTION (refresh no longer throws user to Base Camp) ===== */
+(function rememberView() {
+  var VALID = ['d','m','b','r','lb','pt','bz','voc','mk','an'];
+  var prev = window.show;
+  window.show = function(w) {
+    var r = prev.apply(this, arguments);
+    if (VALID.indexOf(w) >= 0) { try { sessionStorage.setItem('sp_view', w); } catch (e) {} try { localStorage.setItem('sp_view', w); } catch (e) {} spMemView = w; }
+    return r;
+  };
+  var spMemView = null;
+  function saved() {
+    var v = null;
+    try { v = sessionStorage.getItem('sp_view'); } catch (e) {}
+    if (!v) { try { v = localStorage.getItem('sp_view'); } catch (e) {} }
+    return VALID.indexOf(v) >= 0 ? v : null;
+  }
+  var v0 = saved();
+  if (v0 && v0 !== 'd') window.show(v0);
+  window.spRefreshAfterPull = function() {
+    try { applyProfileUI(); paintHud(); updateNavBadges(); initDailyChallenges(); } catch (e) {}
+    var cur = spMemView || saved() || 'd';
+    try { window.show(cur); } catch (e) {}
+  };
+})();
