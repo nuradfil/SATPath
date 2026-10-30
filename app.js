@@ -4,77 +4,9 @@ function spGet(k) {
   try { var v = window.localStorage.getItem(k); if (v !== null) return v; } catch(e) {}
   return Object.prototype.hasOwnProperty.call(window._SP_MEM, k) ? window._SP_MEM[k] : null;
 }
-
-/* ===== CLOUD SYNC OF PROGRESS (Firestore: users/{uid}.progress) =====
- * Раньше весь прогресс жил только в localStorage -> при обновлении страницы в
- * in-app браузерах (TikTok/Instagram/Telegram) или на другом устройстве всё пропадало.
- * Теперь каждое сохранение (spSet) дополнительно уходит в Firestore, а при входе в аккаунт
- * прогресс подтягивается обратно. */
-var SP_SKIP = { 'satpath_dict_v1':1, 'satpath_telemetry_v1':1, 'satpath_econ_v2':1, 'satpath_guest':1 };
-var SP_TS_KEY = 'sp_ts_map';           // не синкается (нет префикса satpath_)
-var _spDirty = {}, _spTimer = null, _spTs = null;
-function spSyncable(k) { return k.indexOf('satpath_') === 0 && !SP_SKIP[k]; }
-function spTsMap() {
-  if (_spTs) return _spTs;
-  try { _spTs = JSON.parse(spGet(SP_TS_KEY)) || {}; } catch (e) { _spTs = {}; }
-  return _spTs;
-}
 function spSet(k, v) {
-  v = String(v);
-  window._SP_MEM[k] = v;
-  try { window.localStorage.setItem(k, v); } catch(e) {}
-  if (spSyncable(k)) {
-    var t = spTsMap(); t[k] = Date.now();
-    window._SP_MEM[SP_TS_KEY] = JSON.stringify(t);
-    try { window.localStorage.setItem(SP_TS_KEY, JSON.stringify(t)); } catch(e) {}
-    _spDirty[k] = 1;
-    clearTimeout(_spTimer);
-    _spTimer = setTimeout(spPushCloud, 2500);
-  }
-}
-async function spPushCloud() {
-  if (typeof FB === 'undefined' || !FB || !FB.fs || typeof FBU === 'undefined' || !FBU) return;
-  var keys = Object.keys(_spDirty); if (!keys.length) return;
-  var data = {}, ts = {}, t = spTsMap();
-  keys.forEach(function(k) { data[k] = spGet(k); ts[k] = t[k] || Date.now(); });
-  _spDirty = {};
-  try {
-    var s = FB.fs;
-    await s.setDoc(s.doc(FB.db, 'users', FBU.uid), { progress: data, progressTs: ts, updatedAt: Date.now() }, { merge: true });
-  } catch (e) { keys.forEach(function(k) { _spDirty[k] = 1; }); }
-}
-async function spPullCloud() {
-  if (typeof FB === 'undefined' || !FB || !FB.fs || typeof FBU === 'undefined' || !FBU) return;
-  try {
-    var s = FB.fs, snap = await s.getDoc(s.doc(FB.db, 'users', FBU.uid));
-    var d = snap.exists() ? (snap.data() || {}) : {};
-    var cloud = d.progress || {}, cts = d.progressTs || {}, t = spTsMap(), changed = false;
-    Object.keys(cloud).forEach(function(k) {
-      if (!spSyncable(k)) return;
-      var local = spGet(k), lts = t[k] || 0, c = +cts[k] || 0;
-      if (local === null || c > lts) {
-        var val = cloud[k];
-        // списки (done, vocab, mistakes) объединяем, чтобы ничего не потерять
-        try {
-          var a = JSON.parse(local), b = JSON.parse(val);
-          if (Array.isArray(a) && Array.isArray(b)) {
-            var seen = {}, out = [];
-            a.concat(b).forEach(function(x) { var id = JSON.stringify(x); if (!seen[id]) { seen[id] = 1; out.push(x); } });
-            val = JSON.stringify(out);
-          }
-        } catch (e) {}
-        window._SP_MEM[k] = String(val);
-        try { window.localStorage.setItem(k, String(val)); } catch (e) {}
-        t[k] = c || Date.now(); changed = true;
-      } else if (lts > c) { _spDirty[k] = 1; }   // локальная версия новее -> зальём в облако
-    });
-    // всё, что есть только локально, тоже заливаем
-    try { for (var i = 0; i < localStorage.length; i++) { var lk = localStorage.key(i); if (spSyncable(lk) && !(lk in cloud)) _spDirty[lk] = 1; } } catch (e) {}
-    Object.keys(window._SP_MEM).forEach(function(lk) { if (spSyncable(lk) && !(lk in cloud)) _spDirty[lk] = 1; });
-    try { window.localStorage.setItem(SP_TS_KEY, JSON.stringify(t)); } catch (e) {}
-    if (changed && typeof spRefreshAfterPull === 'function') spRefreshAfterPull();
-    spPushCloud();
-  } catch (e) {}
+  window._SP_MEM[k] = String(v);
+  try { window.localStorage.setItem(k, String(v)); } catch(e) {}
 }
 
 
@@ -694,7 +626,7 @@ renderActivityHeatmap();
 var t=document.getElementById('t'),tm;
 document.querySelectorAll('.soon').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();toast()})});
 
-function confetti(){for(var i=0;i<60;i++){var p=document.createElement('i'),c=['#22a381','#f5b82e','#2b7f9c','#e74c3c','#fff'][i%5],a=Math.random()*Math.PI*2,d=150+Math.random()*350;
+function confetti(){for(var i=0;i<60;i++){var p=document.createElement('i'),c=['#22a381','#f5b82e','#38bdf8','#14b8a6','#fff'][i%5],a=Math.random()*Math.PI*2,d=150+Math.random()*350;
  p.style.cssText='position:fixed;left:50%;top:40%;width:9px;height:14px;background:'+c+';z-index:200;border-radius:2px;pointer-events:none';
  document.body.appendChild(p);
  p.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:'translate('+Math.cos(a)*d+'px,'+(Math.sin(a)*d+300)+'px) rotate('+Math.random()*720+'deg)',opacity:0}],{duration:1200+Math.random()*800,easing:'cubic-bezier(.2,.8,.4,1)'}).onfinish=p.remove.bind(p)}}
@@ -1184,7 +1116,7 @@ function openVocabDrawer() {
       '<div><small style="color:var(--sand);font-weight:800;letter-spacing:.08em;text-transform:uppercase">PERSONAL LEXICON</small><h2 style="font-size:22px;font-weight:800">Saved SAT Vocabulary (' + list.length + ')</h2></div>' +
       '<div style="display:flex;gap:8px;align-items:center"><button class="cta-amber" id="vocAddCustom" style="padding:8px 14px;font-size:12px;border-radius:12px">' + spSvg('plus', 14) + ' Add Word</button><button class="tbtn" id="vocClose">✕</button></div></div>' +
       '<div style="display:grid;gap:10px">' + rows + '</div>' +
-      (list.length ? '<div style="margin-top:16px;text-align:right"><button class="chip" id="vocClearAll" style="color:#e74c3c;border-color:#e74c3c">Clear All Words</button></div>' : '') +
+      (list.length ? '<div style="margin-top:16px;text-align:right"><button class="chip" id="vocClearAll" style="color:var(--sand);border-color:var(--sand)">Clear All Words</button></div>' : '') +
       '</div>';
     ov.querySelector('#vocClose').onclick = function() { ov.remove(); };
     ov.querySelector('#vocAddCustom').onclick = function() { openAddWordModal('', render); };
@@ -1478,7 +1410,7 @@ var SKIN_ITEMS = [
   { id: 'default',  name: 'Emerald Atoll (Default)', color: '#22a381', cost: 0 },
   { id: 'lagoon',   name: 'Sunlit Amber Lagoon',     color: '#d97706', cost: 250 },
   { id: 'trench',   name: 'Deep Ocean Trench',       color: '#0284c7', cost: 300 },
-  { id: 'volcanic', name: 'Volcanic Obsidian',       color: '#e11d48', cost: 350 },
+  { id: 'volcanic', name: 'Astral Sapphire',         color: '#0ea5e9', cost: 350 },
   { id: 'biolum',   name: 'Bioluminescent Reef',     color: '#0d9488', cost: 400 },
   { id: 'sovereign',name: 'Royal Sovereign',         color: '#7c3aed', cost: 500 }
 ];
@@ -1799,7 +1731,7 @@ var MOCK_EXPEDITIONS = [
   { t: 5, roman: 'V',    code: 'Mock 05 · Sunken Caldera',  sub: 'Deep Trench Expedition · Static Form E',    reward: 150, accent: '#2fa59f' },
   { t: 6, roman: 'VI',   code: 'Mock 06 · Obsidian Peak',   sub: 'Summit Spire Expedition · Static Form F',   reward: 180, accent: '#3f8f7a' },
   { t: 7, roman: 'VII',  code: 'Mock 07 · Celestial Spire', sub: 'November Predictions · Static Form G',      reward: 200, accent: '#6366f1' },
-  { t: 8, roman: 'VIII', code: 'Mock 08 · Astral Sanctum',  sub: 'December Master Finale · Static Form H',    reward: 220, accent: '#ec4899' }
+  { t: 8, roman: 'VIII', code: 'Mock 08 · Astral Sanctum',  sub: 'December Master Finale · Static Form H',    reward: 220, accent: '#0ea5e9' }
 ];
 var ptRouteFilter = 'rm';
 
@@ -1871,8 +1803,8 @@ function ptResult(t,res){
     o.qs.forEach(function(q,i){var a=o.ans[i],g=ptRight(q,a),fx=function(s){return q.rw?String(s):rHTML(s)};
      var qSec = (o.times && o.times[i]) ? o.times[i] : 0;
      var pLbl = qSec > 105 ? 'Time Sink' : (qSec > 0 && qSec < 22 ? 'Rushed' : 'Optimal Pace');
-     var pCol = qSec > 105 ? '#e74c3c' : (qSec > 0 && qSec < 22 ? 'var(--sand)' : 'var(--acc)');
-     h+='<div style="padding:12px 0;border-top:1px solid var(--line);font-size:13.5px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b style="color:'+(g?'var(--acc)':'#e74c3c')+'">Question '+(i+1)+' · '+(g?'✓ Correct':'✗ Incorrect')+'</b><div style="display:flex;gap:6px;align-items:center">'+(qSec?'<span class="tag" style="margin:0;font-size:10px;color:'+pCol+';border-color:'+pCol+'">'+qSec+'s · '+pLbl+'</span>':'')+'<span class="tag" style="margin:0;font-size:10px">'+q.top+'</span></div></div><div style="margin:8px 0;line-height:1.55">'+fx(q.q)+'</div><div style="background:var(--panel);padding:8px 12px;border-radius:10px;font-size:12.5px">Your answer: <b style="color:'+(g?'var(--acc)':'#e74c3c')+'">'+(a?fx(a):'Unanswered')+'</b> &nbsp;·&nbsp; Correct answer: <b style="color:var(--acc)">'+fx(q.ans)+'</b></div></div>'});
+     var pCol = qSec > 105 ? 'var(--sand)' : (qSec > 0 && qSec < 22 ? 'var(--sand)' : 'var(--acc)');
+     h+='<div style="padding:12px 0;border-top:1px solid var(--line);font-size:13.5px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><b style="color:'+(g?'var(--acc)':'var(--sand)')+'">Question '+(i+1)+' · '+(g?'✓ Correct':'✗ Incorrect')+'</b><div style="display:flex;gap:6px;align-items:center">'+(qSec?'<span class="tag" style="margin:0;font-size:10px;color:'+pCol+';border-color:'+pCol+'">'+qSec+'s · '+pLbl+'</span>':'')+'<span class="tag" style="margin:0;font-size:10px">'+q.top+'</span></div></div><div style="margin:8px 0;line-height:1.55">'+fx(q.q)+'</div><div style="background:var(--panel);padding:8px 12px;border-radius:10px;font-size:12.5px">Your answer: <b style="color:'+(g?'var(--acc)':'var(--sand)')+'">'+(a?fx(a):'Unanswered')+'</b> &nbsp;·&nbsp; Correct answer: <b style="color:var(--acc)">'+fx(q.ans)+'</b></div></div>'});
     h+='</div></details>'});
    h+='</div>'});
 
@@ -2013,7 +1945,7 @@ function runQuiz(n, qs) {
       var totalEarned = earnedInQuiz + bonusGiven;
       var rewardText = pass
         ? (' · <b style="color:var(--sand)">' + IC_COIN_HTML + ' +' + totalEarned + ' Pathcoins (' + earnedInQuiz + ' Qs + ' + bonusGiven + ' Bonus)</b>')
-        : (' · <b style="color:var(--sand)">' + IC_COIN_HTML + ' +' + earnedInQuiz + ' PC</b> · <small style="color:#e74c3c">Need ' + (n.min||80) + '% for clear bonus</small>');
+        : (' · <b style="color:var(--sand)">' + IC_COIN_HTML + ' +' + earnedInQuiz + ' PC</b> · <small style="color:var(--sand)">Need ' + (n.min||80) + '% for clear bonus</small>');
       ov.innerHTML = '<div class="qb" style="text-align:center;border-radius:26px"><div>' + IC_ART_LG_HTML + '</div><h2>' + (pass ? (isFirstClear ? 'Island Conquered!' : 'Island Practice Complete!') : 'Keep Exploring') + '</h2><div class="big" style="color:var(--sand)">' + pct + '%</div><p>' + ok + ' / ' + qs.length + ' correct' + rewardText + '</p><button class="cta-amber" id="qe" style="margin-top:16px">Back to Island Map</button></div>';
       var bn = ov.querySelector('.big'), t0 = performance.now();
       (function s(t) {
@@ -2032,7 +1964,7 @@ function runQuiz(n, qs) {
     q.rw = !!n.rw;
     var modeBadge = '<span class="tag n" style="margin:0;font-size:10px">+5 PC/ans · Bonus +' + (isFirstClear ? firstReward : replayReward) + ' PC</span>';
     var wasOpen = ov.dataset.calcOpen === '1' && !n.rw;
-    ov.innerHTML = '<div id="qSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:8px"><small style="font-weight:800">' + n.type.l + ' · ' + (i + 1) + '/' + qs.length + '</small>' + modeBadge + '</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + (n.rw ? '<button id="qAddWord" class="chip" style="font-weight:700;color:var(--sand);border-color:var(--sand-line)">' + spSvg('plus', 13) + ' Add Word</button>' : '') + '' + (!n.rw ? '<button type="button" id="qref" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button>' : '') + '<button id="qcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="qx" class="tbtn">✕</button></div></div><div class="bar" style="margin:12px 0"><div style="width:' + (i / qs.length * 100) + '%"></div></div><div id="qTextBody" style="font-size:20px;line-height:1.6;margin:18px 0">' + fx(q.q) + '</div><div id="qa"></div><div id="qf"></div></div><div id="q-panel" class="quiz-calc-pane"></div></div>';
+    ov.innerHTML = '<div id="qSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:8px"><small style="font-weight:800">' + n.type.l + ' · ' + (i + 1) + '/' + qs.length + '</small>' + modeBadge + '</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + (n.rw ? '<button id="qAddWord" class="chip" style="font-weight:700;color:var(--sand);border-color:var(--sand-line)">' + spSvg('plus', 13) + ' Add Word</button>' : '') + '' + (!n.rw ? '<button type="button" id="qref" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button>' : '') + '<button id="qcalc" style="background:' + (wasOpen ? 'var(--acc2)' : 'var(--acc)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="qx" class="tbtn">✕</button></div></div><div class="bar" style="margin:12px 0"><div style="width:' + (i / qs.length * 100) + '%"></div></div><div id="qTextBody" style="font-size:20px;line-height:1.6;margin:18px 0">' + fx(q.q) + '</div><div id="qa"></div><div id="qf"></div></div><div id="q-panel" class="quiz-calc-pane"></div></div>';
 
     var a = document.getElementById('qa'), f = document.getElementById('qf'), done = false;
     document.getElementById('qx').onclick = close;
@@ -2055,7 +1987,7 @@ function runQuiz(n, qs) {
       if (!qSplitWrap.classList.contains('calc-open')) {
         qSplitWrap.classList.add('calc-open');
         ov.dataset.calcOpen = '1';
-        qCalcBtn.style.background = '#e74c3c';
+        qCalcBtn.style.background = 'var(--acc2)';
         qCalcBtn.innerHTML = '✕ Close Calculator';
         mountQCalc();
       } else {
@@ -2084,9 +2016,9 @@ function runQuiz(n, qs) {
       });
 
       var gi = document.getElementById('qi');
-      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
+      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : 'var(--sand)'; }
 
-      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + (n.rw ? String(q.ans) : rHTML(fmtAns(q.ans))))) + '</p>' + (!good ? renderMistakeTagPickerHtml(q.q) : '') + '<button class="cta-amber" id="qn">' + (i < qs.length - 1 ? 'Next Waypoint →' : 'Finish Island') + '</button>';
+      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : 'var(--sand)') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + (n.rw ? String(q.ans) : rHTML(fmtAns(q.ans))))) + '</p>' + (!good ? renderMistakeTagPickerHtml(q.q) : '') + '<button class="cta-amber" id="qn">' + (i < qs.length - 1 ? 'Next Waypoint →' : 'Finish Island') + '</button>';
       if (!good) bindMistakeTagPicker(f, q.q);
       document.getElementById('qn').onclick = function() { i++; showQ(); };
     }
@@ -2399,7 +2331,7 @@ function bankOpen(ti) {
     q.top = TOPS[ti];
     q.rw = false;
     var wasOpen = ov.dataset.calcOpen === '1';
-    ov.innerHTML = '<div id="bSplitWrap" class="sp-ai-stage quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_MATH_HTML + ' MATH ISLAND DRILL</small><div style="font-weight:800;font-size:16px">' + TOPS[ti] + '</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml(true) + renderStarsHtml(starsNow) + '<button type="button" id="bref" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button><button id="bcalc" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="bx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">✓ ' + ok + ' / ' + tot + ' solved · Earn ★ Mastery Stars for +15 PC</span></div><div style="font-size:20px;line-height:1.6;margin:22px 0 14px">' + rHTML(q.q) + '</div><div id="ba"></div><div id="bf"></div></div><div id="d-panel" class="quiz-calc-pane"></div>' + createSatPathAiPanelHtml() + '</div>';
+    ov.innerHTML = '<div id="bSplitWrap" class="sp-ai-stage quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '"><div class="qb" style="border-radius:26px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + IC_MATH_HTML + ' MATH ISLAND DRILL</small><div style="font-weight:800;font-size:16px">' + TOPS[ti] + '</div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml(true) + renderStarsHtml(starsNow) + '<button type="button" id="bref" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button><button id="bcalc" style="background:' + (wasOpen ? 'var(--acc2)' : 'var(--acc)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:bold;font-size:12px;">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button><button id="bx" class="tbtn">✕</button></div></div><div class="chips"><span class="sc" style="margin-left:0">✓ ' + ok + ' / ' + tot + ' solved · Earn ★ Mastery Stars for +15 PC</span></div><div style="font-size:20px;line-height:1.6;margin:22px 0 14px">' + rHTML(q.q) + '</div><div id="ba"></div><div id="bf"></div></div><div id="d-panel" class="quiz-calc-pane"></div>' + createSatPathAiPanelHtml() + '</div>';
     document.getElementById('bx').onclick = close;
     bindSatPathAiEvents(ov, function() { return q; });
     var bSplitWrap = document.getElementById('bSplitWrap');
@@ -2417,7 +2349,7 @@ function bankOpen(ti) {
       if (!bSplitWrap.classList.contains('calc-open')) {
         bSplitWrap.classList.add('calc-open');
         ov.dataset.calcOpen = '1';
-        calcBtn.style.background = '#e74c3c';
+        calcBtn.style.background = 'var(--acc2)';
         calcBtn.innerHTML = '✕ Close Calculator';
         mountBCalc();
       } else {
@@ -2452,9 +2384,9 @@ function bankOpen(ti) {
       });
 
       var gi = document.getElementById('bi');
-      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
+      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : 'var(--sand)'; }
 
-      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + rHTML(fmtAns(q.ans)))) + '</p>' + (!good ? renderMistakeTagPickerHtml(q.q) : '') + '<button class="cta-amber" id="bn">Next Question →</button>';
+      f.innerHTML = '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : 'var(--sand)') + '">' + (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + rHTML(fmtAns(q.ans)))) + '</p>' + (!good ? renderMistakeTagPickerHtml(q.q) : '') + '<button class="cta-amber" id="bn">Next Question →</button>';
       if (!good) bindMistakeTagPicker(f, q.q);
       var nb = document.getElementById('bn');
       nb.onclick = draw;
@@ -2686,7 +2618,7 @@ function rwBankOpen(ti){
       var newStars = getTopicStars('rw_' + ti, true, ti);
       if(newStars > prevStars){confetti();addCoins(15 * (newStars - prevStars), 'Mastery Star ★ unlocked!');}
       a.querySelectorAll('button').forEach(function(b){b.disabled=true;if(b.dataset.v===ans)b.classList.add('good');else if(b.dataset.v===v)b.classList.add('bad')});
-      f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'#e74c3c')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect · Saved to Mistakes. Answer: '+ans))+'</p>' + (!good ? renderMistakeTagPickerHtml(x[0]) : '') + '<button class="cta-amber" id="rn">Next Waypoint →</button>';
+      f.innerHTML='<p style="margin:14px 0;font-weight:700;color:'+(good?'var(--acc)':'var(--sand)')+'">'+(good?('Correct! ✓ (+5 ' + IC_COIN_HTML + ')'):('Incorrect · Saved to Mistakes. Answer: '+ans))+'</p>' + (!good ? renderMistakeTagPickerHtml(x[0]) : '') + '<button class="cta-amber" id="rn">Next Waypoint →</button>';
       if (!good) bindMistakeTagPicker(f, x[0]);
       document.getElementById('rn').onclick = function(){ qIndex++; draw(); };
     }
@@ -2822,7 +2754,7 @@ function startBlitzRun() {
     ov.innerHTML = '<div id="bzShell" class="pt-shell' + (wasOpen ? ' calc-open' : '') + '">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);padding:12px 18px;border-radius:18px;border:1.5px solid var(--line);margin-bottom:14px">' +
       '<div style="display:flex;align-items:center;gap:10px"><span class="tag n" style="margin:0">BLITZ ' + (idx + 1) + '/10</span><b style="color:var(--sand)">' + streak + 'x Streak</b><small style="color:var(--mut)">Score: <b>' + score + '</b></small></div>' +
-      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + (!q.rw ? '<button type="button" id="bzRefBtn" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button><button id="bzCalcBtn" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button>' : '') + '<b id="bzTimer" style="font-size:16px;color:var(--acc);font-variant-numeric:tabular-nums">0:60</b><button class="tbtn" id="bzQuit">✕</button></div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' + miniHudHtml() + (!q.rw ? '<button type="button" id="bzRefBtn" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button><button id="bzCalcBtn" style="background:' + (wasOpen ? 'var(--acc2)' : 'var(--acc)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button>' : '') + '<b id="bzTimer" style="font-size:16px;color:var(--acc);font-variant-numeric:tabular-nums">0:60</b><button class="tbtn" id="bzQuit">✕</button></div>' +
       '</div>' +
       '<div class="pt-split-body"><div class="qb" style="max-width:none;border-radius:26px">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="tag" style="margin:0;font-size:10.5px">' + (q.rw ? 'READING &amp; WRITING' : 'MATH') + ' · ' + bzCfg.lvl.toUpperCase() + '</span><small style="color:var(--mut);font-weight:700">' + q.top + '</small></div>' +
@@ -2848,7 +2780,7 @@ function startBlitzRun() {
           bzShell.classList.add('calc-open');
           bzCP.style.display = 'block';
           ov.dataset.calcOpen = '1';
-          bzCalcBtn.style.background = '#e74c3c';
+          bzCalcBtn.style.background = 'var(--acc2)';
           bzCalcBtn.innerHTML = '✕ Close Calculator';
           mountBzCalc();
         } else {
@@ -2887,9 +2819,9 @@ function startBlitzRun() {
         else if (b.dataset.v === String(val)) b.classList.add('bad');
       });
       var gi = ov.querySelector('#bzGridInp');
-      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
+      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : 'var(--sand)'; }
       feedBox.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)">' +
-        '<b style="color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? 'Correct! +' + Math.round((100 + qLeft * 2 + streak * 25) * mult) + ' pts (+5 ' + IC_COIN_HTML + ')' : 'Incorrect · Saved to Mistakes. Answer: ' + (q.rw ? q.ans : rHTML(fmtAns(q.ans)))) + '</b>' +
+        '<b style="color:' + (good ? 'var(--acc)' : 'var(--sand)') + '">' + (good ? 'Correct! +' + Math.round((100 + qLeft * 2 + streak * 25) * mult) + ' pts (+5 ' + IC_COIN_HTML + ')' : 'Incorrect · Saved to Mistakes. Answer: ' + (q.rw ? q.ans : rHTML(fmtAns(q.ans)))) + '</b>' +
         '<button class="cta-amber" id="bzNextBtn">' + (idx < 9 ? 'Next Blitz →' : 'See Results →') + '</button></div>';
       ov.querySelector('#bzNextBtn').onclick = function() { idx++; renderStep(); };
     }
@@ -3089,7 +3021,7 @@ function openVocabTrainer(initialMode) {
               spSvg('refresh', 16) + ' Still Learning (←)' +
             '</button>' +
             '<button type="button" class="cta" id="fcKnowBtn" style="padding:14px 18px;border-radius:18px;justify-content:center;font-size:14px">' +
-              spSvg('check', 16) + ' Know It · +2 PC (→)' +
+              spSvg('check', 16) + ' Know It (→)' +
             '</button>' +
           '</div>' +
         '</div>';
@@ -3107,7 +3039,6 @@ function openVocabTrainer(initialMode) {
       };
       ov.querySelector('#fcKnowBtn').onclick = function() {
         sessionKnown++;
-        if (!item.mastered) addCoins(2, 'Word mastered: ' + item.w);
         toggleMasteredWord(item.w, true);
         curIdx++;
         render();
@@ -3164,7 +3095,7 @@ function openVocabTrainer(initialMode) {
             else if (btn.dataset.v === o) btn.classList.add('bad');
           });
           feedBox.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)">' +
-            '<b style="color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? ('Correct! +5 ' + IC_COIN_HTML) : 'Incorrect — review definition highlighted in green.') + '</b>' +
+            '<b style="color:' + (good ? 'var(--acc)' : 'var(--sand)') + '">' + (good ? ('Correct! +5 ' + IC_COIN_HTML) : 'Incorrect — review definition highlighted in green.') + '</b>' +
             '<button class="cta-amber" id="vtNextQ">' + (curIdx < list.length - 1 ? 'Next Word →' : 'See Results →') + '</button>' +
           '</div>';
           ov.querySelector('#vtNextQ').onclick = function() { curIdx++; render(); };
@@ -3203,7 +3134,7 @@ function buildVocabTab() {
       '<button class="cta-amber" id="vocStartCardsBtn" style="padding:12px 18px;font-size:13.5px;border-radius:16px">' + spSvg('layers', 16) + ' Flashcards Trainer</button>' +
       '<button class="cta" id="vocStartQuizBtn" style="padding:12px 18px;font-size:13.5px;border-radius:16px">' + spSvg('zap', 16) + ' Vocab Quiz</button>' +
       '<button class="chip" id="vocTabAddBtn" style="padding:11px 16px;font-size:13px;font-weight:800;color:var(--acc);border-color:var(--acc)">' + spSvg('plus', 15) + ' Add Word</button>' +
-      (list.length ? '<button class="chip" id="vocTabClearBtn" style="padding:10px 14px;color:#e74c3c;border-color:#e74c3c;font-weight:700">Clear All (' + list.length + ')</button>' : '') +
+      (list.length ? '<button class="chip" id="vocTabClearBtn" style="padding:10px 14px;color:var(--sand);border-color:var(--sand);font-weight:700">Clear All (' + list.length + ')</button>' : '') +
     '</div>' +
   '</div>';
 
@@ -3304,7 +3235,7 @@ function buildMistakesTab() {
       '<button class="island-pill' + (mkFilter === 'math' ? ' on' : '') + '" data-mkf="math">' + IC_MATH_HTML + ' Math (' + all.filter(function(x){return !x.rw}).length + ')</button>' +
       '<button class="island-pill' + (mkFilter === 'rw' ? ' on' : '') + '" data-mkf="rw">' + IC_BOOK_HTML + ' R&amp;W (' + all.filter(function(x){return !!x.rw}).length + ')</button>' +
     '</div>' +
-    (all.length ? '<button class="chip" id="mkClearAllBtn" style="color:#e74c3c;border-color:#e74c3c;font-weight:700">Clear All Mistakes</button>' : '') +
+    (all.length ? '<button class="chip" id="mkClearAllBtn" style="color:var(--sand);border-color:var(--sand);font-weight:700">Clear All Mistakes</button>' : '') +
   '</div>';
 
   if (!filtered.length) {
@@ -3319,18 +3250,18 @@ function buildMistakesTab() {
       var fx = function(s) { return item.rw ? String(s) : rHTML(s); };
       var rObj = MISTAKE_REASONS.filter(function(r) { return r.id === (item.reason || 'concept'); })[0] || MISTAKE_REASONS[0];
       var isRepeat = (item.failCount || 1) >= 2;
-      h += '<div class="card" style="padding:20px 22px;border-radius:22px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;border-color:' + (isRepeat ? 'rgba(231,76,60,0.5)' : 'var(--line)') + '">' +
+      h += '<div class="card" style="padding:20px 22px;border-radius:22px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;border-color:' + (isRepeat ? 'var(--sand-line)' : 'var(--line)') + '">' +
         '<div style="flex:1;min-width:260px">' +
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
             '<span class="tag n" style="margin:0">' + (item.rw ? 'R&amp;W' : 'MATH') + '</span>' +
             '<span class="tag" style="margin:0">' + lbEsc(item.top || 'SAT Topic') + '</span>' +
-            (isRepeat ? '<span class="tag" style="margin:0;color:#e74c3c;border-color:#e74c3c;background:rgba(231,76,60,0.1)">' + spSvg('alert', 11) + ' Missed ' + item.failCount + 'x (Recidivism)</span>' : '') +
+            (isRepeat ? '<span class="tag" style="margin:0;color:var(--sand);border-color:var(--sand);background:var(--sand-bg)">' + spSvg('alert', 11) + ' Missed ' + item.failCount + 'x (Recidivism)</span>' : '') +
             '<span class="tag" style="margin:0;color:var(--sand);border-color:var(--sand-line);background:var(--sand-bg)">' + spSvg(rObj.ico, 11) + ' ' + rObj.label + '</span>' +
             '<small style="color:var(--mut);font-size:11.5px">' + lbEsc(item.src || '') + '</small>' +
           '</div>' +
           '<div style="font-size:15.5px;line-height:1.55;margin-bottom:10px">' + fx(item.q) + '</div>' +
           '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">' +
-            '<div style="font-size:12.5px;color:#e74c3c;font-weight:700">Previous answer: ' + fx(item.wrongAns) + '</div>' +
+            '<div style="font-size:12.5px;color:var(--sand);font-weight:700">Previous answer: ' + fx(item.wrongAns) + '</div>' +
             '<div style="display:inline-flex;gap:4px;flex-wrap:wrap">' +
               MISTAKE_REASONS.map(function(r) {
                 var on = (item.reason || 'concept') === r.id;
@@ -3427,7 +3358,7 @@ function startMistakesDrill(questionsList) {
           '<div style="display:flex;align-items:center;gap:8px"><span class="tag n" style="margin:0">MISTAKE DRILL ' + (idx + 1) + '/' + questionsList.length + '</span><small style="color:var(--mut);font-weight:700">' + lbEsc(q.top || '') + '</small></div>' +
           '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
             miniHudHtml(true) +
-            (!q.rw ? '<button type="button" id="mkRefBtn" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button><button id="mkCalcBtn" style="background:' + (wasOpen ? '#e74c3c' : 'var(--acc2)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button>' : '') +
+            (!q.rw ? '<button type="button" id="mkRefBtn" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button><button id="mkCalcBtn" style="background:' + (wasOpen ? 'var(--acc2)' : 'var(--acc)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos Calculator')) + '</button>' : '') +
             '<button class="tbtn" id="mkQuit">✕</button>' +
           '</div>' +
         '</div>' +
@@ -3456,7 +3387,7 @@ function startMistakesDrill(questionsList) {
         if (!mkSplitWrap.classList.contains('calc-open')) {
           mkSplitWrap.classList.add('calc-open');
           ov.dataset.calcOpen = '1';
-          mkCalcBtn.style.background = '#e74c3c';
+          mkCalcBtn.style.background = 'var(--acc2)';
           mkCalcBtn.innerHTML = '✕ Close Calculator';
           mountMkCalc();
         } else {
@@ -3483,9 +3414,9 @@ function startMistakesDrill(questionsList) {
         else if (b.dataset.v === String(v)) b.classList.add('bad');
       });
       var gi = ov.querySelector('#mkInp');
-      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : '#e74c3c'; }
+      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : 'var(--sand)'; }
       f.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)">' +
-        '<b style="color:' + (good ? 'var(--acc)' : '#e74c3c') + '">' + (good ? '✓ Solved! Removed from Mistakes (+5 PC)' : '✗ Still incorrect. Correct answer: ' + (q.rw ? q.ans : rHTML(fmtAns(q.ans)))) + '</b>' +
+        '<b style="color:' + (good ? 'var(--acc)' : 'var(--sand)') + '">' + (good ? '✓ Solved! Removed from Mistakes (+5 PC)' : '✗ Still incorrect. Correct answer: ' + (q.rw ? q.ans : rHTML(fmtAns(q.ans)))) + '</b>' +
         '<button class="cta-amber" id="mkNextBtn">' + (idx < questionsList.length - 1 ? 'Next Question →' : 'Finish Drill →') + '</button>' +
       '</div>';
       ov.querySelector('#mkNextBtn').onclick = function() { idx++; renderQ(); };
@@ -3543,7 +3474,7 @@ function openSupportModal() {
   ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
 }
 
-/* ===== COMPREHENSIVE ANALYTICS HUB (ANIMATED SVG CHARTS, 8-AXIS RADAR, PACING HISTOGRAM, 30-TOPIC TABLE) ===== */
+/* ===== COMPREHENSIVE ANALYTICS & WEAKNESS DIAGNOSTIC HUB (ZERO RED, CUSTOM GOAL, REAL ACCURACY, STYLED DRILL BUTTONS) ===== */
 (function injectAnalyticsStyles() {
   if (document.getElementById('spAnalyticsCss')) return;
   var st = document.createElement('style');
@@ -3564,15 +3495,15 @@ function openSupportModal() {
     .an-draw-path {
       stroke-dasharray: 1800;
       stroke-dashoffset: 0;
-      animation: spDrawLine 1.5s cubic-bezier(.2,.8,.2,1) backwards;
+      animation: spDrawLine 1.4s cubic-bezier(.2,.8,.2,1) backwards;
     }
     .an-radar-poly {
       transform-origin: center;
-      animation: spFadeScale 0.85s cubic-bezier(.2,.85,.3,1) backwards;
+      animation: spFadeScale 0.75s cubic-bezier(.2,.85,.3,1) backwards;
     }
     .an-hist-bar {
       transform-origin: bottom;
-      animation: spGrowBar 0.75s cubic-bezier(.2,.85,.3,1) backwards;
+      animation: spGrowBar 0.7s cubic-bezier(.2,.85,.3,1) backwards;
     }
     .an-kpi-grid {
       display: grid;
@@ -3591,7 +3522,7 @@ function openSupportModal() {
       border: 1.5px solid var(--line);
       border-radius: 22px;
       padding: 18px 20px;
-      box-shadow: 0 8px 22px -10px rgba(0,0,0,0.18), 0 3px 0 var(--line);
+      box-shadow: 0 8px 22px -10px rgba(0,0,0,0.16), 0 3px 0 var(--line);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -3600,7 +3531,7 @@ function openSupportModal() {
       overflow: hidden;
     }
     .an-kpi-val {
-      font-size: 30px;
+      font-size: 29px;
       font-weight: 800;
       letter-spacing: -0.03em;
       line-height: 1.1;
@@ -3615,6 +3546,107 @@ function openSupportModal() {
     }
     @media (max-width: 980px) {
       .an-dual-grid { grid-template-columns: 1fr; }
+    }
+    .an-weak-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .an-weak-card {
+      background: linear-gradient(155deg, var(--panel2) 0%, var(--panel) 100%);
+      border: 1.5px solid var(--line);
+      border-radius: 20px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 4px 0 var(--line);
+      transition: transform .18s, border-color .18s, box-shadow .18s;
+    }
+    .an-weak-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--acc);
+      box-shadow: 0 7px 0 var(--acc2), 0 12px 24px rgba(0,0,0,0.14);
+    }
+    .an-weak-card.priority-amber {
+      border-color: var(--sand-line);
+      box-shadow: 0 4px 0 rgba(229, 154, 22, 0.28);
+    }
+    .an-weak-card.priority-amber:hover {
+      border-color: var(--sand);
+      box-shadow: 0 7px 0 var(--sand-deep), 0 12px 24px rgba(245, 184, 46, 0.18);
+    }
+    .an-drill-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 15px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      background: linear-gradient(180deg, var(--acc) 0%, var(--acc2) 100%);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 3px 0 var(--acc2);
+      transition: transform .16s, box-shadow .16s, filter .16s;
+      cursor: pointer;
+    }
+    .an-drill-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 0 var(--acc2), 0 8px 16px rgba(34,163,129,0.28);
+      filter: brightness(1.06);
+    }
+    .an-drill-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 0 var(--acc2);
+    }
+    .an-drill-btn.amber {
+      background: linear-gradient(180deg, var(--sand-bright) 0%, var(--sand) 100%);
+      color: var(--sand-tx);
+      box-shadow: 0 3px 0 var(--sand-deep);
+      border-color: rgba(255,255,255,0.25);
+    }
+    .an-drill-btn.amber:hover {
+      box-shadow: 0 5px 0 var(--sand-deep), 0 8px 16px rgba(245,184,46,0.28);
+    }
+    .an-goal-box {
+      background: linear-gradient(145deg, var(--panel2) 0%, var(--panel) 100%);
+      border: 1.5px solid var(--sand-line);
+      border-radius: 20px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 280px;
+      box-shadow: 0 4px 0 var(--line);
+    }
+    .an-goal-inp {
+      width: 78px;
+      padding: 5px 8px;
+      border-radius: 10px;
+      border: 1.5px solid var(--sand-line);
+      background: var(--panel);
+      color: var(--sand);
+      font-weight: 800;
+      font-size: 15px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      outline: none;
+    }
+    .an-goal-inp:focus {
+      border-color: var(--acc);
+      color: var(--tx);
+    }
+    .an-goal-slider {
+      width: 100%;
+      accent-color: var(--acc);
+      cursor: pointer;
+      height: 6px;
+      border-radius: 99px;
     }
     .an-table-wrap {
       overflow-x: auto;
@@ -3658,8 +3690,8 @@ function openSupportModal() {
   document.head.appendChild(st);
 })();
 
-var anTargetGoal = +(spGet('satpath_goal_score') || 1500);
-var anTopicFilter = 'all'; // 'all' | 'math' | 'rw' | 'weak'
+var anTargetGoal = Math.max(400, Math.min(1600, Math.round((+(spGet('satpath_goal_score') || 1500)) / 10) * 10));
+var anTopicFilter = 'weak'; // Default to 'weak' so user immediately sees weak spots first!
 
 function buildAnalyticsTab() {
   var el = document.getElementById('vAN');
@@ -3671,19 +3703,55 @@ function buildAnalyticsTab() {
   var ptRes = ptLoad();
   var streak = computeStreakInfo(t);
 
-  // 1. Score Calculation & Historical Trajectory Points
-  var totA = 0, totC = 0;
-  Object.keys(st).forEach(function(k) { totA += st[k].a || 0; totC += st[k].c || 0; });
-  var acc = totA ? Math.round(totC / totA * 100) : 68;
-  var mScore = Math.min(800, Math.round((420 + md.length * 2.5 + (acc * 1.3)) / 10) * 10);
-  var rScore = Math.min(800, Math.round((420 + rd.length * 5.0 + (acc * 1.3)) / 10) * 10);
+  // Count active mistakes per topic name for exact weakness detection
+  var mistakesByTopic = {};
+  var repeatMistakesByTopic = {};
+  mkList.forEach(function(m) {
+    var topKey = String(m.top || '').trim();
+    if (!topKey) return;
+    mistakesByTopic[topKey] = (mistakesByTopic[topKey] || 0) + 1;
+    if ((m.failCount || 1) >= 2) {
+      repeatMistakesByTopic[topKey] = (repeatMistakesByTopic[topKey] || 0) + 1;
+    }
+  });
+
+  // Separate Math vs R&W accuracy from real solved questions
+  var mAtt = 0, mCor = 0, rAtt = 0, rCor = 0;
+  Object.keys(st).forEach(function(k) {
+    var rec = st[k] || { a: 0, c: 0 };
+    if (String(k).indexOf('rw_') === 0) {
+      rAtt += rec.a || 0;
+      rCor += rec.c || 0;
+    } else {
+      mAtt += rec.a || 0;
+      mCor += rec.c || 0;
+    }
+  });
+  // Also include telemetry pacing history if bankStats is sparse
+  var pacing = t.pacing || [];
+  var mathP = pacing.filter(function(x) { return !x.rw; });
+  var rwP = pacing.filter(function(x) { return !!x.rw; });
+  var totA = mAtt + rAtt;
+  var totC = mCor + rCor;
+  var overallAcc = totA > 0 ? Math.round((totC / totA) * 100) : (pacing.length > 0 ? Math.round((pacing.filter(function(x){return x.good}).length / pacing.length) * 100) : 0);
+
+  var mAccRatio = mAtt > 0 ? (mCor / mAtt) : (mathP.length > 0 ? (mathP.filter(function(x){return x.good}).length / mathP.length) : 0);
+  var rAccRatio = rAtt > 0 ? (rCor / rAtt) : (rwP.length > 0 ? (rwP.filter(function(x){return x.good}).length / rwP.length) : 0);
+
+  // Honest, accurate score projection: starts at 400 per section if untouched, scales with real accuracy + islands + mocks
+  var mPracticeScore = (mAtt === 0 && md.length === 0 && mathP.length === 0)
+    ? 400
+    : Math.min(800, Math.max(200, Math.round((360 + md.length * 2.2 + mAccRatio * 220 + Math.min(40, mAtt * 0.5)) / 10) * 10));
+  var rPracticeScore = (rAtt === 0 && rd.length === 0 && rwP.length === 0)
+    ? 400
+    : Math.min(800, Math.max(200, Math.round((360 + rd.length * 4.4 + rAccRatio * 220 + Math.min(40, rAtt * 0.5)) / 10) * 10));
 
   var mockScores = [];
   Object.keys(ptRes).forEach(function(k) {
     var r = ptRes[k];
     if (!r) return;
-    var mSc = r.m ? r.m.score : mScore;
-    var rSc = r.r ? r.r.score : rScore;
+    var mSc = r.m ? r.m.score : mPracticeScore;
+    var rSc = r.r ? r.r.score : rPracticeScore;
     var totSc = r.total || (mSc + rSc);
     mockScores.push({
       t: +k,
@@ -3691,49 +3759,49 @@ function buildAnalyticsTab() {
       total: totSc,
       m: mSc,
       r: rSc,
-      mHard: r.m ? !!r.m.hard : true,
-      rHard: r.r ? !!r.r.hard : true
+      mHard: r.m ? !!r.m.hard : false,
+      rHard: r.r ? !!r.r.hard : false
     });
   });
   mockScores.sort(function(a, b) { return a.t - b.t; });
+
+  var mScore = mPracticeScore;
+  var rScore = rPracticeScore;
   if (mockScores.length) {
     var latest = mockScores[mockScores.length - 1];
-    mScore = Math.round((mScore * 0.35 + latest.m * 0.65) / 10) * 10;
-    rScore = Math.round((rScore * 0.35 + latest.r * 0.65) / 10) * 10;
+    mScore = mAtt + md.length > 0 ? Math.round((mPracticeScore * 0.35 + latest.m * 0.65) / 10) * 10 : latest.m;
+    rScore = rAtt + rd.length > 0 ? Math.round((rPracticeScore * 0.35 + latest.r * 0.65) / 10) * 10 : latest.r;
   }
   var totalEst = mScore + rScore;
-  var band = totA >= 40 ? 30 : 50;
+  var totalEvidence = totA + md.length * 5 + rd.length * 5 + mockScores.length * 50;
+  var band = totalEvidence >= 120 ? 20 : (totalEvidence >= 40 ? 30 : (totalEvidence >= 10 ? 50 : 70));
   var lowEst = Math.max(400, totalEst - band), highEst = Math.min(1600, totalEst + band);
-  var mHardUnlocked = acc >= 68 || md.length >= 35;
-  var rHardUnlocked = acc >= 67 || rd.length >= 20;
-  var percentile = totalEst >= 1550 ? '99th+' : totalEst >= 1500 ? '98th' : totalEst >= 1450 ? '96th' : totalEst >= 1400 ? '93rd' : totalEst >= 1300 ? '86th' : totalEst >= 1200 ? '74th' : totalEst >= 1100 ? '58th' : '40th';
+  var mHardUnlocked = (mAtt >= 10 && mAccRatio >= 0.68) || md.length >= 30 || (mockScores.length && mockScores[mockScores.length - 1].mHard);
+  var rHardUnlocked = (rAtt >= 10 && rAccRatio >= 0.68) || rd.length >= 18 || (mockScores.length && mockScores[mockScores.length - 1].rHard);
+  var percentile = totalEst >= 1550 ? '99th+' : totalEst >= 1500 ? '98th' : totalEst >= 1450 ? '96th' : totalEst >= 1400 ? '93rd' : totalEst >= 1300 ? '86th' : totalEst >= 1200 ? '74th' : totalEst >= 1100 ? '58th' : totalEst >= 950 ? '38th' : 'Baseline';
   var gapToGoal = Math.max(0, anTargetGoal - totalEst);
 
-  // Build trajectory series (combines baseline checkpoints + Mock Exams + Current Live Estimate)
+  // Build trajectory points from real data
   var trajPoints = [];
-  var baseStartM = Math.max(400, mScore - Math.min(160, md.length * 2 + 50));
-  var baseStartR = Math.max(400, rScore - Math.min(160, rd.length * 4 + 50));
-  trajPoints.push({ lbl: 'Baseline', tot: baseStartM + baseStartR, m: baseStartM, r: baseStartR });
+  var startScore = 800;
+  trajPoints.push({ lbl: 'Start', tot: startScore, m: 400, r: 400 });
   if (mockScores.length) {
     mockScores.forEach(function(ms) {
       trajPoints.push({ lbl: ms.label, tot: ms.total, m: ms.m, r: ms.r });
     });
-  } else {
-    var mid1M = Math.round((baseStartM * 0.65 + mScore * 0.35) / 10) * 10;
-    var mid1R = Math.round((baseStartR * 0.65 + rScore * 0.35) / 10) * 10;
-    var mid2M = Math.round((baseStartM * 0.3 + mScore * 0.7) / 10) * 10;
-    var mid2R = Math.round((baseStartR * 0.3 + rScore * 0.7) / 10) * 10;
-    trajPoints.push({ lbl: 'Phase 1', tot: mid1M + mid1R, m: mid1M, r: mid1R });
-    trajPoints.push({ lbl: 'Phase 2', tot: mid2M + mid2R, m: mid2M, r: mid2R });
+  } else if (totalEvidence > 0) {
+    var midM = Math.round(((400 + mScore) / 2) / 10) * 10;
+    var midR = Math.round(((400 + rScore) / 2) / 10) * 10;
+    trajPoints.push({ lbl: 'Midpoint', tot: midM + midR, m: midM, r: midR });
   }
-  trajPoints.push({ lbl: 'Current', tot: totalEst, m: mScore, r: rScore });
+  trajPoints.push({ lbl: 'Now', tot: totalEst, m: mScore, r: rScore });
 
-  // Build SVG Trajectory Curve
-  var svgW = 680, svgH = 230, padL = 44, padR = 24, padT = 22, padB = 34;
+  var svgW = 680, svgH = 230, padL = 46, padR = 26, padT = 24, padB = 34;
   var plotW = svgW - padL - padR, plotH = svgH - padT - padB;
+  var minChartScore = Math.min(700, Math.floor(Math.min(totalEst, anTargetGoal, 800) / 100) * 100);
   function yForScore(sc) {
-    var clamped = Math.max(800, Math.min(1600, sc));
-    return Math.round(padT + plotH * (1 - (clamped - 800) / 800));
+    var clamped = Math.max(minChartScore, Math.min(1600, sc));
+    return Math.round(padT + plotH * (1 - (clamped - minChartScore) / (1600 - minChartScore)));
   }
   function xForIdx(i, n) {
     return n <= 1 ? padL + plotW / 2 : Math.round(padL + (i / (n - 1)) * plotW);
@@ -3754,19 +3822,16 @@ function buildAnalyticsTab() {
   var areaPath = linePath + ' L ' + totCoords[totCoords.length - 1].x + ' ' + (padT + plotH) + ' L ' + totCoords[0].x + ' ' + (padT + plotH) + ' Z';
   var goalY = yForScore(anTargetGoal);
 
-  // 2. Pacing & Time Telemetry Buckets
-  var pacing = t.pacing || [];
-  var mathP = pacing.filter(function(x) { return !x.rw; });
-  var rwP = pacing.filter(function(x) { return !!x.rw; });
-  var avgMathSec = mathP.length ? Math.round(mathP.reduce(function(s, x) { return s + x.sec; }, 0) / mathP.length) : 58;
-  var avgRwSec = rwP.length ? Math.round(rwP.reduce(function(s, x) { return s + x.sec; }, 0) / rwP.length) : 49;
+  // 2. Pacing & Time Telemetry Buckets (Harmonious teal/cyan/amber palette — NO RED)
+  var avgMathSec = mathP.length ? Math.round(mathP.reduce(function(s, x) { return s + x.sec; }, 0) / mathP.length) : null;
+  var avgRwSec = rwP.length ? Math.round(rwP.reduce(function(s, x) { return s + x.sec; }, 0) / rwP.length) : null;
 
   var buckets = [
-    { lbl: '<25s (Rushed)', min: 0, max: 24, tot: 0, ok: 0, col: 'var(--sand)' },
-    { lbl: '25–50s (Fast)', min: 25, max: 50, tot: 0, ok: 0, col: 'var(--acc)' },
-    { lbl: '51–80s (Optimal)', min: 51, max: 80, tot: 0, ok: 0, col: 'var(--acc)' },
-    { lbl: '81–105s (Slow)', min: 81, max: 105, tot: 0, ok: 0, col: 'var(--sand)' },
-    { lbl: '>105s (Time Sink)', min: 106, max: 9999, tot: 0, ok: 0, col: '#e74c3c' }
+    { lbl: '<25s (Rushed)', min: 0, max: 24, tot: 0, ok: 0, col: '#f5b82e' },
+    { lbl: '25–50s (Fast)', min: 25, max: 50, tot: 0, ok: 0, col: '#22a381' },
+    { lbl: '51–80s (Optimal)', min: 51, max: 80, tot: 0, ok: 0, col: '#14b8a6' },
+    { lbl: '81–105s (Careful)', min: 81, max: 105, tot: 0, ok: 0, col: '#38bdf8' },
+    { lbl: '>105s (Overtime)', min: 106, max: 9999, tot: 0, ok: 0, col: '#d97706' }
   ];
   pacing.forEach(function(p) {
     for (var b = 0; b < buckets.length; b++) {
@@ -3779,35 +3844,78 @@ function buildAnalyticsTab() {
   });
   var maxBucketTot = Math.max(1, Math.max.apply(null, buckets.map(function(b) { return b.tot; })));
 
-  // 3. 8 Official College Board Domains + 8-Axis Spider Radar SVG
+  // 3. 8 Official College Board Domains & 30 Topic Diagnostics (Real Mastery Calculation)
   var domainRows = [];
   var allTopicRows = [];
+  function computeTopicDiagnostic(sec, domName, ti, tName, isRw) {
+    var stKey = isRw ? ('rw_' + ti) : ti;
+    var r = st[stKey] || { a: 0, c: 0 };
+    var stars = getTopicStars(stKey, isRw, ti);
+    var pathDone = isRw ? rd : md;
+    var pathNodes = 0;
+    for (var n = 0; n < 5; n++) if (pathDone.indexOf(ti * 5 + n) >= 0) pathNodes++;
+    var errCnt = mistakesByTopic[tName] || 0;
+    var repErrCnt = repeatMistakesByTopic[tName] || 0;
+
+    // Exact Mastery: if user has drilled, weight real drill accuracy (75%) + path completion (25%), minus penalty for active unresolved mistakes
+    var hasActivity = (r.a > 0 || pathNodes > 0 || errCnt > 0);
+    var rawPct = 0;
+    if (r.a > 0 && pathNodes > 0) {
+      rawPct = Math.round((r.c / r.a) * 78 + (pathNodes / 5) * 22);
+    } else if (r.a > 0) {
+      rawPct = Math.round((r.c / r.a) * 100);
+    } else if (pathNodes > 0) {
+      rawPct = Math.round((pathNodes / 5) * 90);
+    } else {
+      rawPct = 0;
+    }
+    if (errCnt > 0 && rawPct > 0) {
+      rawPct = Math.max(12, rawPct - Math.min(30, errCnt * 6 + repErrCnt * 5));
+    }
+
+    // Weakness Priority Score (higher = needs more urgent attention)
+    var wrongDrills = Math.max(0, (r.a || 0) - (r.c || 0));
+    var weaknessSeverity = (errCnt * 28) + (repErrCnt * 20) + (wrongDrills * 9) + (hasActivity ? Math.max(0, 88 - rawPct) : 35);
+    var potentialGain = !hasActivity ? 20 : Math.max(5, Math.round((100 - rawPct) * 0.35 + errCnt * 5));
+
+    return {
+      sec: sec,
+      dom: domName,
+      ti: ti,
+      name: tName,
+      a: r.a || 0,
+      c: r.c || 0,
+      wrong: wrongDrills,
+      errCnt: errCnt,
+      repErrCnt: repErrCnt,
+      hasActivity: hasActivity,
+      pct: rawPct,
+      stars: stars,
+      pathNodes: pathNodes,
+      isRw: isRw,
+      weaknessSeverity: weaknessSeverity,
+      potentialGain: potentialGain
+    };
+  }
+
   if (typeof CUR !== 'undefined') {
     var mIdx = 0;
     CUR.forEach(function(dom) {
       var dName = dom[0], dTopics = dom[1];
-      var aSum = 0, cSum = 0, starsSum = 0, weakestTi = mIdx, weakestScore = 999;
+      var aSum = 0, cSum = 0, starsSum = 0, pctSum = 0, activeCnt = 0, errSum = 0;
+      var weakestTi = mIdx, highestWeakSev = -1;
       dTopics.forEach(function(tName) {
         var ti = mIdx++;
-        var r = st[ti] || { a: 0, c: 0 };
-        var stars = getTopicStars(ti, false, ti);
-        var pathNodes = 0;
-        for (var n = 0; n < 5; n++) if (md.indexOf(ti * 5 + n) >= 0) pathNodes++;
-        var tPct = r.a > 0 ? Math.round((r.c / r.a) * 100) : Math.round((pathNodes / 5) * 85 + (stars * 5));
-        tPct = Math.min(100, Math.max(15, tPct));
-        allTopicRows.push({
-          sec: 'MATH', dom: dName, ti: ti, name: tName, a: r.a || 0, c: r.c || 0,
-          pct: r.a > 0 ? Math.round((r.c / r.a) * 100) : tPct,
-          stars: stars, pathNodes: pathNodes, isRw: false
-        });
-        aSum += r.a || 0; cSum += r.c || 0; starsSum += stars;
-        var sc = stars * 30 + (r.a ? (r.c / r.a) * 10 : 0);
-        if (sc < weakestScore) { weakestScore = sc; weakestTi = ti; }
+        var row = computeTopicDiagnostic('MATH', dName, ti, tName, false);
+        allTopicRows.push(row);
+        aSum += row.a; cSum += row.c; starsSum += row.stars; errSum += row.errCnt;
+        if (row.hasActivity) { pctSum += row.pct; activeCnt++; }
+        if (row.weaknessSeverity > highestWeakSev) { highestWeakSev = row.weaknessSeverity; weakestTi = ti; }
       });
-      var pct = aSum > 0 ? Math.round((cSum / aSum) * 100) : Math.max(28, Math.round((starsSum / (dTopics.length * 3)) * 100));
+      var domPct = aSum > 0 ? Math.round((cSum / aSum) * 100) : (activeCnt > 0 ? Math.round(pctSum / dTopics.length) : 0);
       domainRows.push({
-        sec: 'MATH', short: dName.split(' ')[0], name: dName, pct: pct, stars: starsSum, maxStars: dTopics.length * 3,
-        weakTi: weakestTi, weakName: TOPS[weakestTi], isRw: false, solved: aSum
+        sec: 'MATH', short: dName.split(' ')[0], name: dName, pct: domPct, stars: starsSum, maxStars: dTopics.length * 3,
+        weakTi: weakestTi, weakName: TOPS[weakestTi], isRw: false, solved: aSum, errSum: errSum
       });
     });
   }
@@ -3815,34 +3923,34 @@ function buildAnalyticsTab() {
     var rIdx = 0;
     RCUR.forEach(function(dom) {
       var dName = dom[0], dTopics = dom[1];
-      var aSum = 0, cSum = 0, starsSum = 0, weakestTi = rIdx, weakestScore = 999;
+      var aSum = 0, cSum = 0, starsSum = 0, pctSum = 0, activeCnt = 0, errSum = 0;
+      var weakestTi = rIdx, highestWeakSev = -1;
       dTopics.forEach(function(tName) {
         var ti = rIdx++;
-        var r = st['rw_' + ti] || { a: 0, c: 0 };
-        var stars = getTopicStars('rw_' + ti, true, ti);
-        var pathNodes = 0;
-        for (var n = 0; n < 5; n++) if (rd.indexOf(ti * 5 + n) >= 0) pathNodes++;
-        var tPct = r.a > 0 ? Math.round((r.c / r.a) * 100) : Math.round((pathNodes / 5) * 85 + (stars * 5));
-        tPct = Math.min(100, Math.max(15, tPct));
-        allTopicRows.push({
-          sec: 'R&W', dom: dName, ti: ti, name: tName, a: r.a || 0, c: r.c || 0,
-          pct: r.a > 0 ? Math.round((r.c / r.a) * 100) : tPct,
-          stars: stars, pathNodes: pathNodes, isRw: true
-        });
-        aSum += r.a || 0; cSum += r.c || 0; starsSum += stars;
-        var sc = stars * 30 + (r.a ? (r.c / r.a) * 10 : 0);
-        if (sc < weakestScore) { weakestScore = sc; weakestTi = ti; }
+        var row = computeTopicDiagnostic('R&W', dName, ti, tName, true);
+        allTopicRows.push(row);
+        aSum += row.a; cSum += row.c; starsSum += row.stars; errSum += row.errCnt;
+        if (row.hasActivity) { pctSum += row.pct; activeCnt++; }
+        if (row.weaknessSeverity > highestWeakSev) { highestWeakSev = row.weaknessSeverity; weakestTi = ti; }
       });
-      var pct = aSum > 0 ? Math.round((cSum / aSum) * 100) : Math.max(28, Math.round((starsSum / (dTopics.length * 3)) * 100));
+      var domPct = aSum > 0 ? Math.round((cSum / aSum) * 100) : (activeCnt > 0 ? Math.round(pctSum / dTopics.length) : 0);
       domainRows.push({
-        sec: 'R&W', short: dName.split(' ')[0], name: dName, pct: pct, stars: starsSum, maxStars: dTopics.length * 3,
-        weakTi: weakestTi, weakName: RTOPS[weakestTi], isRw: true, solved: aSum
+        sec: 'R&W', short: dName.split(' ')[0], name: dName, pct: domPct, stars: starsSum, maxStars: dTopics.length * 3,
+        weakTi: weakestTi, weakName: RTOPS[weakestTi], isRw: true, solved: aSum, errSum: errSum
       });
     });
   }
 
-  // Build 8-Axis Spider Radar SVG (cx=190, cy=165, R=108)
-  var rCx = 190, rCy = 165, rMax = 104;
+  // Identify Top Weak Spots (Priority Weaknesses Radar)
+  var priorityWeakList = allTopicRows.slice().sort(function(a, b) {
+    var aHasErr = (a.errCnt > 0 || a.wrong > 0) ? 1 : 0;
+    var bHasErr = (b.errCnt > 0 || b.wrong > 0) ? 1 : 0;
+    if (aHasErr !== bHasErr) return bHasErr - aHasErr;
+    return b.weaknessSeverity - a.weaknessSeverity || a.pct - b.pct;
+  }).slice(0, 6);
+
+  // Build 8-Axis Spider Radar SVG (cx=190, cy=165, R=104)
+  var rCx = 190, rCy = 165, rMax = 102;
   var radarShortLabels = ['Algebra', 'Adv Math', 'Data & Prob', 'Geometry', 'Info & Ideas', 'Craft & Struct', 'Expression', 'Conventions'];
   function radarPt(idx, ratio) {
     var ang = -Math.PI / 2 + idx * (2 * Math.PI / 8);
@@ -3861,9 +3969,9 @@ function buildAnalyticsTab() {
   var dotsSvg = '';
   for (var i = 0; i < 8; i++) {
     var outer = radarPt(i, 1.0);
-    var lblPos = radarPt(i, 1.24);
-    var dObj = domainRows[i] || { pct: 35 };
-    var ratio = Math.max(0.18, Math.min(1, dObj.pct / 100));
+    var lblPos = radarPt(i, 1.25);
+    var dObj = domainRows[i] || { pct: 0 };
+    var ratio = Math.max(0.12, Math.min(1, dObj.pct / 100));
     var uPt = radarPt(i, ratio);
     userPolyPts.push(uPt.join(','));
     spokesSvg += '<line x1="' + rCx + '" y1="' + rCy + '" x2="' + outer[0] + '" y2="' + outer[1] + '" stroke="var(--line)" stroke-width="1.2"/>';
@@ -3872,11 +3980,11 @@ function buildAnalyticsTab() {
   }
   var radarSvg = '<svg viewBox="0 0 380 330" style="width:100%;max-width:390px;height:auto;margin:0 auto;display:block">' +
     webRingsSvg + spokesSvg +
-    '<polygon class="an-radar-poly" points="' + userPolyPts.join(' ') + '" fill="rgba(34,163,129,0.24)" stroke="var(--acc)" stroke-width="2.5"/>' +
+    '<polygon class="an-radar-poly" points="' + userPolyPts.join(' ') + '" fill="rgba(34,163,129,0.22)" stroke="var(--acc)" stroke-width="2.5"/>' +
     dotsSvg +
   '</svg>';
 
-  // 4. Mistake Root-Cause Donut SVG & 14-Day Activity Bar Chart
+  // 4. Mistake Root-Cause Donut SVG (Cohesive Palette — Zero Red)
   var repeatMistakes = mkList.filter(function(x) { return (x.failCount || 1) >= 2; }).length;
   var recidivismRate = mkList.length ? Math.round((repeatMistakes / mkList.length) * 100) : 0;
   var totalEver = Math.max(mkList.length + (t.resolvedMistakes || 0), t.totalMistakesEver || 0);
@@ -3886,7 +3994,7 @@ function buildAnalyticsTab() {
     var k = x.reason && reasonCounts.hasOwnProperty(x.reason) ? x.reason : 'concept';
     reasonCounts[k]++;
   });
-  var reasonColors = { concept: '#22a381', careless: '#f5b82e', time: '#e74c3c', trap: '#38bdf8' };
+  var reasonColors = { concept: '#22a381', careless: '#f5b82e', time: '#d97706', trap: '#38bdf8' };
   var totalReasons = Math.max(1, mkList.length);
   var donutR = 54, donutCircum = 2 * Math.PI * donutR, donutOffset = 0;
   var donutSegmentsSvg = mkList.length ? MISTAKE_REASONS.map(function(r) {
@@ -3922,21 +4030,35 @@ function buildAnalyticsTab() {
     return true;
   });
   if (anTopicFilter === 'weak') {
-    filteredTopics.sort(function(a, b) { return a.pct - b.pct || a.stars - b.stars; });
+    filteredTopics.sort(function(a, b) {
+      var aHasErr = (a.errCnt > 0 || a.wrong > 0) ? 1 : 0;
+      var bHasErr = (b.errCnt > 0 || b.wrong > 0) ? 1 : 0;
+      if (aHasErr !== bHasErr) return bHasErr - aHasErr;
+      return b.weaknessSeverity - a.weaknessSeverity || a.pct - b.pct;
+    });
   }
 
   var h = '<div class="atlas-hero" style="margin-bottom:20px">' +
-    '<div>' +
-      '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + spSvg('chart', 15) + ' TELEMETRY &amp; DIAGNOSTIC COMMAND CENTER</div>' +
+    '<div style="max-width:620px">' +
+      '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + spSvg('chart', 15) + ' DIAGNOSTIC &amp; WEAKNESS COMMAND CENTER</div>' +
       '<h1>SAT Performance Analytics</h1>' +
-      '<p class="sub">Interactive score trajectory, 8-axis College Board domain radar, pacing speed distribution, and granular 30-island diagnostics.</p>' +
+      '<p class="sub">Pinpoint your exact weak spots across all 30 SAT topics, customize your personal target score, and launch targeted drills to gain points fastest.</p>' +
     '</div>' +
-    '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
-      '<div style="background:var(--panel2);border:1.5px solid var(--line);border-radius:16px;padding:8px 12px;display:flex;align-items:center;gap:8px">' +
-        '<small style="font-weight:800;color:var(--mut);font-size:11px;text-transform:uppercase">Target Score:</small>' +
-        [1350, 1450, 1500, 1550].map(function(gVal) {
-          return '<button type="button" class="chip' + (anTargetGoal === gVal ? ' on' : '') + '" data-an-goal="' + gVal + '" style="padding:4px 9px;font-size:11.5px">' + gVal + '</button>';
-        }).join('') +
+    '<div class="an-goal-box">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">' +
+        '<div>' +
+          '<small style="font-weight:800;color:var(--mut);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;display:block">Your Custom Target Score</small>' +
+          '<span style="font-size:12px;color:var(--mut)">Type or slide any score (400–1600)</span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:4px">' +
+          '<button type="button" class="tbtn" id="anGoalMinus" title="-10 pts" style="width:28px;height:28px;font-weight:800">&minus;</button>' +
+          '<input type="number" id="anGoalInput" class="an-goal-inp" min="400" max="1600" step="10" value="' + anTargetGoal + '">' +
+          '<button type="button" class="tbtn" id="anGoalPlus" title="+10 pts" style="width:28px;height:28px;font-weight:800">+</button>' +
+        '</div>' +
+      '</div>' +
+      '<input type="range" id="anGoalSlider" class="an-goal-slider" min="800" max="1600" step="10" value="' + Math.max(800, anTargetGoal) + '">' +
+      '<div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;color:var(--mut)">' +
+        '<span>800</span><span>1000</span><span>1200</span><span>1400</span><span style="color:var(--sand)">1600 Max</span>' +
       '</div>' +
     '</div>' +
   '</div>';
@@ -3944,35 +4066,79 @@ function buildAnalyticsTab() {
   // 4 Top KPI Strip Cards
   h += '<div class="an-kpi-grid">' +
     '<div class="an-kpi-card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Predicted Corridor</small><span class="tag n" style="margin:0">' + percentile + ' Pct</span></div>' +
-      '<div class="an-kpi-val" style="color:var(--acc)">' + lowEst + '&ndash;' + highEst + '</div>' +
-      '<div style="font-size:12px;color:var(--mut)">Midpoint: <b style="color:var(--tx)">' + totalEst + '</b> &middot; ' + (gapToGoal > 0 ? ('<b style="color:var(--sand)">+' + gapToGoal + ' pts</b> to ' + anTargetGoal) : '<b style="color:var(--acc)">Target Reached!</b>') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Estimated Score</small><span class="tag n" style="margin:0">' + percentile + '</span></div>' +
+      '<div class="an-kpi-val" style="color:var(--acc)">' + totalEst + ' <span style="font-size:15px;color:var(--mut);font-weight:700">&plusmn;' + band + '</span></div>' +
+      '<div style="font-size:12px;color:var(--mut)">Range: <b style="color:var(--tx)">' + lowEst + '&ndash;' + highEst + '</b> &middot; ' + (gapToGoal > 0 ? ('Need <b style="color:var(--sand)">+' + gapToGoal + ' pts</b> for ' + anTargetGoal) : '<b style="color:var(--acc)">Goal ' + anTargetGoal + ' Reached!</b>') + '</div>' +
     '</div>' +
     '<div class="an-kpi-card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Section Split &amp; Caps</small><span class="tag" style="margin:0">ADAPTIVE</span></div>' +
-      '<div class="an-kpi-val">' + mScore + ' <span style="font-size:16px;color:var(--mut);font-weight:600">M</span> / ' + rScore + ' <span style="font-size:16px;color:var(--mut);font-weight:600">RW</span></div>' +
-      '<div style="font-size:12px;color:var(--mut)">Mod 2 Track: <b style="color:' + (mHardUnlocked && rHardUnlocked ? 'var(--acc)' : 'var(--sand)') + '">' + (mHardUnlocked && rHardUnlocked ? 'Harder (800 Ceiling)' : 'Building to Harder Track') + '</b></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Section Breakdown</small><span class="tag" style="margin:0">' + overallAcc + '% ACC</span></div>' +
+      '<div class="an-kpi-val">' + mScore + ' <span style="font-size:15px;color:var(--mut);font-weight:600">Math</span> / ' + rScore + ' <span style="font-size:15px;color:var(--mut);font-weight:600">R&amp;W</span></div>' +
+      '<div style="font-size:12px;color:var(--mut)">Solved: <b>' + mAtt + ' Math</b> &middot; <b>' + rAtt + ' R&amp;W</b> &middot; <b>' + mockScores.length + ' Mocks</b></div>' +
     '</div>' +
     '<div class="an-kpi-card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Avg Question Speed</small><span class="tag" style="margin:0">' + spSvg('clock', 11) + ' PACE</span></div>' +
-      '<div class="an-kpi-val" style="color:var(--sand)">' + avgMathSec + 's <span style="font-size:15px;color:var(--mut)">M</span> &middot; ' + avgRwSec + 's <span style="font-size:15px;color:var(--mut)">RW</span></div>' +
-      '<div style="font-size:12px;color:var(--mut)">Bluebook Benchmark: <b>&le;95s Math</b> &middot; <b>&le;71s R&amp;W</b></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Pacing Speed</small><span class="tag" style="margin:0">' + spSvg('clock', 11) + ' PACE</span></div>' +
+      '<div class="an-kpi-val" style="color:var(--sand)">' + (avgMathSec !== null ? avgMathSec + 's' : '—') + ' <span style="font-size:15px;color:var(--mut)">M</span> &middot; ' + (avgRwSec !== null ? avgRwSec + 's' : '—') + ' <span style="font-size:15px;color:var(--mut)">RW</span></div>' +
+      '<div style="font-size:12px;color:var(--mut)">Target Pace: <b>&le;95s Math</b> &middot; <b>&le;71s R&amp;W</b></div>' +
     '</div>' +
     '<div class="an-kpi-card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Mistake Resolution</small><span class="tag" style="margin:0;color:var(--acc)">' + streak.current + 'd Streak</span></div>' +
-      '<div class="an-kpi-val">' + resolutionRate + '% <span style="font-size:14px;color:var(--mut);font-weight:600">cleared</span></div>' +
-      '<div style="font-size:12px;color:var(--mut)">Active: <b>' + mkList.length + '</b> &middot; Repeat Recidivism: <b style="color:' + (recidivismRate > 20 ? '#e74c3c' : 'var(--acc)') + '">' + recidivismRate + '%</b></div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Weakness Recovery</small><span class="tag" style="margin:0;color:var(--acc)">' + streak.current + 'd Streak</span></div>' +
+      '<div class="an-kpi-val">' + resolutionRate + '% <span style="font-size:14px;color:var(--mut);font-weight:600">fixed</span></div>' +
+      '<div style="font-size:12px;color:var(--mut)">Unresolved Mistakes: <b style="color:var(--sand)">' + mkList.length + '</b> &middot; Fixed: <b style="color:var(--acc)">' + (t.resolvedMistakes || 0) + '</b></div>' +
+    '</div>' +
+  '</div>';
+
+  // NEW SECTION: Priority Weak Spots & High-Yield Focus Areas (Answers "where are my weak spots?")
+  h += '<div class="archipelago-region" style="margin-bottom:22px;border-color:var(--sand-line)">' +
+    '<div class="arch-hd">' +
+      '<div class="arch-title"><div class="arch-badge" style="background:linear-gradient(145deg, var(--sand), var(--sand-deep));color:var(--sand-tx)">' + spSvg('target', 20) + '</div>' +
+      '<div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">WEAKNESS DIAGNOSTIC &amp; SCORE BOOSTER</small><h2 style="font-size:20px;font-weight:800">Your Top Weak Spots &amp; Fastest Point Gains</h2></div></div>' +
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+        (mkList.length > 0 ? '<button type="button" class="an-drill-btn amber" id="anTopMistakeBtn">' + spSvg('zap', 14) + ' Fix ' + mkList.length + ' Active Mistake' + (mkList.length === 1 ? '' : 's') + ' →</button>' : '<span class="arch-stars-pill">Sorted by point-gain potential</span>') +
+      '</div>' +
+    '</div>' +
+    '<div class="an-weak-grid">' +
+      priorityWeakList.map(function(w, idx) {
+        var hasIssues = w.errCnt > 0 || w.wrong > 0;
+        var badgeTxt = w.errCnt > 0
+          ? (w.errCnt + ' unresolved mistake' + (w.errCnt > 1 ? 's' : ''))
+          : (w.a > 0 ? (w.c + '/' + w.a + ' correct (' + w.pct + '%)') : 'Not practiced yet · High ROI');
+        var barCol = w.pct >= 80 ? 'var(--acc)' : (w.pct >= 50 ? '#38bdf8' : 'var(--sand)');
+        return '<div class="an-weak-card' + (idx < 3 ? ' priority-amber' : '') + '">' +
+          '<div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">' +
+              '<div style="display:flex;align-items:center;gap:6px">' +
+                '<span class="tag" style="margin:0;font-size:9.5px;background:' + (w.isRw ? 'var(--acc2)' : 'var(--acc)') + ';color:#fff;border:0">' + w.sec + '</span>' +
+                '<small style="color:var(--mut);font-weight:700;font-size:11px">' + lbEsc(w.dom) + '</small>' +
+              '</div>' +
+              '<span class="tag" style="margin:0;color:var(--sand);border-color:var(--sand-line);background:var(--sand-bg);font-size:10.5px">+' + w.potentialGain + ' pts potential</span>' +
+            '</div>' +
+            '<div style="font-size:15.5px;font-weight:800;color:var(--tx);line-height:1.35;margin-bottom:6px">' + lbEsc(w.name) + '</div>' +
+            '<div style="font-size:12px;color:' + (hasIssues ? 'var(--sand)' : 'var(--mut)') + ';font-weight:700">' + badgeTxt + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-bottom:5px">' +
+              '<span>Current Mastery</span><b style="color:var(--tx)">' + w.pct + '%</b>' +
+            '</div>' +
+            '<div class="bar" style="margin:0 0 12px;height:6px"><div style="width:' + Math.max(6, w.pct) + '%;background:' + barCol + '"></div></div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+              '<small style="font-size:11px;color:var(--mut);font-weight:600">Path: ' + w.pathNodes + '/5 &middot; ' + ('★'.repeat(w.stars) + '☆'.repeat(3 - w.stars)) + '</small>' +
+              '<button type="button" class="an-drill-btn' + (idx < 2 ? ' amber' : '') + '" data-an-drill="' + (w.isRw ? 'r:' : 'm:') + w.ti + '">' + spSvg('zap', 13) + ' Drill Topic →</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
     '</div>' +
   '</div>';
 
   // Row 1: Animated Score Trajectory SVG Chart + Pacing Distribution Histogram
+  var yTicks = [800, 1000, 1200, 1400, 1600].filter(function(v) { return v >= minChartScore; });
   h += '<div class="an-dual-grid">' +
     '<div class="card" style="padding:22px 24px;border-radius:26px;display:flex;flex-direction:column;justify-content:space-between">' +
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px">' +
-        '<div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('trend', 13) + ' LIVE SCORE PROJECTION CURVE</small><h3 style="font-size:19px;font-weight:800;margin-top:2px">Total Score Trajectory vs. ' + anTargetGoal + ' Goal</h3></div>' +
+        '<div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('trend', 13) + ' LIVE SCORE PROJECTION CURVE</small><h3 style="font-size:19px;font-weight:800;margin-top:2px">Score Trajectory vs. Your ' + anTargetGoal + ' Goal</h3></div>' +
         '<div style="display:flex;gap:12px;font-size:11.5px;font-weight:700;color:var(--mut)">' +
-          '<span style="display:inline-flex;align-items:center;gap:5px"><i style="width:10px;height:10px;border-radius:50%;background:var(--acc);display:inline-block"></i> Projected Score</span>' +
-          '<span style="display:inline-flex;align-items:center;gap:5px"><i style="width:12px;height:2px;background:var(--sand);display:inline-block"></i> Target (' + anTargetGoal + ')</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:5px"><i style="width:10px;height:10px;border-radius:50%;background:var(--acc);display:inline-block"></i> Your Score</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:5px"><i style="width:12px;height:2px;background:var(--sand);display:inline-block"></i> Goal (' + anTargetGoal + ')</span>' +
         '</div>' +
       '</div>' +
       '<svg viewBox="0 0 ' + svgW + ' ' + svgH + '" style="width:100%;height:auto;overflow:visible">' +
@@ -3982,13 +4148,13 @@ function buildAnalyticsTab() {
             '<stop offset="100%" stop-color="var(--acc)" stop-opacity="0.0"/>' +
           '</linearGradient>' +
         '</defs>' +
-        [800, 1000, 1200, 1400, 1600].map(function(val) {
+        yTicks.map(function(val) {
           var y = yForScore(val);
           return '<line x1="' + padL + '" y1="' + y + '" x2="' + (svgW - padR) + '" y2="' + y + '" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>' +
             '<text x="' + (padL - 8) + '" y="' + (y + 4) + '" text-anchor="end" fill="var(--mut)" font-size="10.5" font-weight="700">' + val + '</text>';
         }).join('') +
         '<line x1="' + padL + '" y1="' + goalY + '" x2="' + (svgW - padR) + '" y2="' + goalY + '" stroke="var(--sand)" stroke-width="2" stroke-dasharray="6 4"/>' +
-        '<text x="' + (svgW - padR - 4) + '" y="' + (goalY - 6) + '" text-anchor="end" fill="var(--sand)" font-size="10.5" font-weight="800">GOAL ' + anTargetGoal + '</text>' +
+        '<text x="' + (svgW - padR - 4) + '" y="' + Math.max(14, goalY - 6) + '" text-anchor="end" fill="var(--sand)" font-size="10.5" font-weight="800">TARGET ' + anTargetGoal + '</text>' +
         '<path d="' + areaPath + '" fill="url(#anAreaGrad)"/>' +
         '<path class="an-draw-path" d="' + linePath + '" fill="none" stroke="var(--acc)" stroke-width="3.5" stroke-linecap="round"/>' +
         totCoords.map(function(pt) {
@@ -4001,7 +4167,7 @@ function buildAnalyticsTab() {
       '</svg>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut);flex-wrap:wrap;gap:8px">' +
         '<span>Confidence Interval: <b style="color:var(--tx)">' + lowEst + ' &ndash; ' + highEst + ' (&plusmn;' + band + ' pts)</b></span>' +
-        '<button type="button" class="chip" onclick="show(\'pt\')" style="padding:4px 10px;font-size:11.5px;color:var(--acc);border-color:var(--acc)">Take Mock Exam to Calibrate →</button>' +
+        '<button type="button" class="an-drill-btn" onclick="show('pt')" style="padding:6px 13px;font-size:11.5px">' + spSvg('compass', 13) + ' Take Mock Exam →</button>' +
       '</div>' +
     '</div>' +
 
@@ -4010,7 +4176,7 @@ function buildAnalyticsTab() {
       '<div>' +
         '<small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('clock', 13) + ' TIME TELEMETRY HISTOGRAM</small>' +
         '<h3 style="font-size:19px;font-weight:800;margin-top:2px">Speed vs. Accuracy Distribution</h3>' +
-        '<p class="sub" style="font-size:12px;margin-bottom:14px">How your response speed impacts accuracy across ' + pacing.length + ' logged questions.</p>' +
+        '<p class="sub" style="font-size:12px;margin-bottom:14px">Accuracy by time spent across ' + pacing.length + ' recorded answers.</p>' +
         '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:end;height:148px;padding:16px 6px 6px;border-bottom:1.5px solid var(--line)">' +
           buckets.map(function(b, idx) {
             var hPct = b.tot ? Math.max(14, Math.round((b.tot / maxBucketTot) * 100)) : 8;
@@ -4029,7 +4195,7 @@ function buildAnalyticsTab() {
       '</div>' +
       '<div style="margin-top:14px;padding:10px 12px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);font-size:12px;color:var(--mut)">' +
         '<b style="color:var(--tx)">Pacing Insight:</b> ' +
-        (buckets[0].tot > buckets[0].ok ? 'You have <b>' + (buckets[0].tot - buckets[0].ok) + ' rushed errors (&lt;25s)</b>. Slowing down by 10 seconds on easy questions will immediately boost Module 1 accuracy.' : 'Your pacing is well-balanced inside the 25–80s sweet spot.') +
+        (buckets[0].tot > buckets[0].ok ? 'You missed <b>' + (buckets[0].tot - buckets[0].ok) + ' fast questions (&lt;25s)</b>. Taking an extra 10 seconds to verify the question stem will prevent careless traps.' : 'Your pacing is well-balanced inside the 25–80s sweet spot.') +
       '</div>' +
     '</div>' +
   '</div>';
@@ -4037,9 +4203,9 @@ function buildAnalyticsTab() {
   // Row 2: 8-Axis Spider Radar SVG + Domain Cards
   h += '<div class="archipelago-region" style="margin-bottom:22px">' +
     '<div class="arch-hd">' +
-      '<div class="arch-title"><div class="arch-badge" style="background:var(--acc)">' + spSvg('target', 20) + '</div>' +
-      '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">COLLEGE BOARD DIGITAL SAT BLUEPRINT</small><h2 style="font-size:20px;font-weight:800">8-Domain Mastery Radar &amp; Action Plan</h2></div></div>' +
-      '<span class="arch-stars-pill">Vulnerable &lt;60% &middot; Stable 60–84% &middot; Locked In &ge;85%</span>' +
+      '<div class="arch-title"><div class="arch-badge" style="background:var(--acc)">' + spSvg('compass', 20) + '</div>' +
+      '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">COLLEGE BOARD DIGITAL SAT BLUEPRINT</small><h2 style="font-size:20px;font-weight:800">8-Domain Mastery Radar &amp; Domain Breakdown</h2></div></div>' +
+      '<span class="arch-stars-pill">Needs Focus &lt;60% &middot; Developing 60–84% &middot; Mastered &ge;85%</span>' +
     '</div>' +
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;align-items:center">' +
       '<div style="background:var(--panel2);border:1.5px solid var(--line);border-radius:24px;padding:18px;text-align:center">' +
@@ -4048,17 +4214,16 @@ function buildAnalyticsTab() {
       '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">' +
         domainRows.map(function(d) {
-          var status = d.pct >= 85 ? 'Locked In' : (d.pct >= 60 ? 'Stable' : 'Vulnerable');
-          var stCol = d.pct >= 85 ? 'var(--acc)' : (d.pct >= 60 ? 'var(--sand)' : '#e74c3c');
+          var stCol = d.pct >= 85 ? 'var(--acc)' : (d.pct >= 60 ? '#38bdf8' : 'var(--sand)');
           return '<div class="card" style="padding:14px 16px;border-radius:18px;background:var(--panel2)">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px">' +
               '<div><span class="tag" style="margin:0;font-size:9px">' + d.sec + '</span> <b style="font-size:13.5px;margin-left:3px">' + d.name + '</b></div>' +
               '<b style="font-size:13px;color:' + stCol + '">' + d.pct + '%</b>' +
             '</div>' +
-            '<div class="bar" style="margin:8px 0"><div style="width:' + d.pct + '%;background:' + stCol + '"></div></div>' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--mut)">' +
-              '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:145px" title="' + lbEsc(d.weakName) + '">Next: <b style="color:var(--tx)">' + d.weakName + '</b></span>' +
-              '<button type="button" class="chip" data-an-drill="' + (d.isRw ? 'r:' : 'm:') + d.weakTi + '" style="padding:3px 9px;font-size:11px;color:var(--acc);border-color:var(--acc)">Train →</button>' +
+            '<div class="bar" style="margin:8px 0"><div style="width:' + Math.max(5, d.pct) + '%;background:' + stCol + '"></div></div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11.5px;color:var(--mut)">' +
+              '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px" title="Focus: ' + lbEsc(d.weakName) + '">Focus: <b style="color:var(--tx)">' + d.weakName + '</b></span>' +
+              '<button type="button" class="an-drill-btn" data-an-drill="' + (d.isRw ? 'r:' : 'm:') + d.weakTi + '" style="padding:5px 11px;font-size:11px">Drill →</button>' +
             '</div>' +
           '</div>';
         }).join('') +
@@ -4071,7 +4236,7 @@ function buildAnalyticsTab() {
     '<div class="card" style="padding:22px 24px;border-radius:26px;display:flex;flex-direction:column;justify-content:space-between">' +
       '<div>' +
         '<small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('alert', 13) + ' ERROR ROOT-CAUSE ANATOMY</small>' +
-        '<h3 style="font-size:19px;font-weight:800;margin-top:2px">Why You Miss Questions &amp; Recidivism</h3>' +
+        '<h3 style="font-size:19px;font-weight:800;margin-top:2px">Why You Miss Questions</h3>' +
         '<div style="display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center;margin:16px 0">' +
           '<div style="position:relative;width:150px;height:150px;margin:0 auto">' +
             '<svg viewBox="0 0 150 150" style="transform:rotate(-90deg);width:100%;height:100%">' + donutSegmentsSvg + '</svg>' +
@@ -4093,8 +4258,8 @@ function buildAnalyticsTab() {
         '</div>' +
       '</div>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px dashed var(--line);gap:10px;flex-wrap:wrap">' +
-        '<span style="font-size:12px;color:var(--mut)">Repeat Offenders (2x+ missed): <b style="color:#e74c3c">' + repeatMistakes + ' questions</b></span>' +
-        '<button type="button" class="cta" id="anGoMistakes" style="padding:8px 16px;font-size:12px;border-radius:12px">' + spSvg('zap', 13) + ' Launch Mistake Drill →</button>' +
+        '<span style="font-size:12px;color:var(--mut)">Repeat Mistakes (2x+ missed): <b style="color:var(--sand)">' + repeatMistakes + ' questions</b></span>' +
+        '<button type="button" class="an-drill-btn amber" id="anGoMistakes">' + spSvg('zap', 13) + ' Open Mistake Drill →</button>' +
       '</div>' +
     '</div>' +
 
@@ -4130,11 +4295,11 @@ function buildAnalyticsTab() {
   h += '<div class="archipelago-region">' +
     '<div class="arch-hd">' +
       '<div class="arch-title"><div class="arch-badge" style="background:var(--acc2)">' + spSvg('layers', 20) + '</div>' +
-      '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">COMPLETE SKILL INVENTORY (30 TOPICS)</small><h2 style="font-size:20px;font-weight:800">Granular Topic-by-Topic Diagnostics</h2></div></div>' +
+      '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">COMPLETE SKILL INVENTORY (30 TOPICS)</small><h2 style="font-size:20px;font-weight:800">Topic-by-Topic Weakness &amp; Mastery Table</h2></div></div>' +
       '<div class="island-pills">' +
         [
-          ['all', 'All 30 Topics'],
           ['weak', 'Weakest First (High ROI)'],
+          ['all', 'All 30 Topics'],
           ['math', 'Math (20)'],
           ['rw', 'R&W (10)']
         ].map(function(pair) {
@@ -4144,19 +4309,20 @@ function buildAnalyticsTab() {
     '</div>' +
     '<div class="an-table-wrap">' +
       '<table class="an-table">' +
-        '<thead><tr><th>Section &amp; Domain</th><th>Topic Island</th><th>Odyssey Path</th><th>Atlas Drills</th><th>Mastery</th><th>Potential Gain</th><th style="text-align:right">Action</th></tr></thead>' +
+        '<thead><tr><th>Section &amp; Domain</th><th>Topic Island</th><th>Odyssey Path</th><th>Atlas Drills</th><th>Active Mistakes</th><th>Mastery</th><th>Potential Gain</th><th style="text-align:right">Action</th></tr></thead>' +
         '<tbody>' +
           filteredTopics.map(function(r) {
-            var stCol = r.pct >= 85 ? 'var(--acc)' : (r.pct >= 60 ? 'var(--sand)' : '#e74c3c');
-            var roiPts = r.pct < 60 ? '+20–30 pts' : (r.pct < 85 ? '+10–15 pts' : 'Locked In');
+            var stCol = r.pct >= 85 ? 'var(--acc)' : (r.pct >= 60 ? '#38bdf8' : 'var(--sand)');
+            var roiPts = r.pct >= 85 && r.errCnt === 0 ? 'Mastered ✓' : ('+' + r.potentialGain + ' pts');
             return '<tr>' +
               '<td><span class="tag" style="margin:0;font-size:9.5px">' + r.sec + '</span> <small style="color:var(--mut);font-weight:700;margin-left:4px">' + r.dom + '</small></td>' +
               '<td><b style="font-size:13.5px;color:var(--tx)">' + r.name + '</b></td>' +
               '<td><span style="font-weight:700;color:var(--mut)">' + r.pathNodes + ' / 5</span></td>' +
-              '<td><b>' + r.c + ' / ' + r.a + '</b> <small style="color:var(--mut)">(' + (r.a ? r.pct + '%' : 'No drills') + ')</small></td>' +
-              '<td><div style="display:flex;align-items:center;gap:8px"><div class="bar" style="width:70px;margin:0"><div style="width:' + r.pct + '%;background:' + stCol + '"></div></div><b style="color:' + stCol + ';font-size:12px">' + r.pct + '%</b></div></td>' +
+              '<td><b>' + r.c + ' / ' + r.a + '</b> <small style="color:var(--mut)">(' + (r.a ? Math.round((r.c / r.a) * 100) + '%' : 'Untested') + ')</small></td>' +
+              '<td>' + (r.errCnt > 0 ? '<span class="tag" style="margin:0;color:var(--sand);border-color:var(--sand-line);background:var(--sand-bg)">' + r.errCnt + ' to fix</span>' : '<small style="color:var(--mut)">0</small>') + '</td>' +
+              '<td><div style="display:flex;align-items:center;gap:8px"><div class="bar" style="width:74px;margin:0"><div style="width:' + Math.max(4, r.pct) + '%;background:' + stCol + '"></div></div><b style="color:' + stCol + ';font-size:12px">' + r.pct + '%</b></div></td>' +
               '<td><span class="tag" style="margin:0;color:' + stCol + ';border-color:' + stCol + '">' + roiPts + '</span></td>' +
-              '<td style="text-align:right"><button type="button" class="chip" data-an-drill="' + (r.isRw ? 'r:' : 'm:') + r.ti + '" style="padding:5px 12px;font-size:11.5px;color:var(--acc);border-color:var(--acc)">Drill →</button></td>' +
+              '<td style="text-align:right"><button type="button" class="an-drill-btn' + (r.errCnt > 0 ? ' amber' : '') + '" data-an-drill="' + (r.isRw ? 'r:' : 'm:') + r.ti + '" style="padding:6px 14px;font-size:11.5px">' + spSvg('zap', 12) + ' Drill →</button></td>' +
             '</tr>';
           }).join('') +
         '</tbody>' +
@@ -4165,15 +4331,37 @@ function buildAnalyticsTab() {
   '</div>';
 
   el.innerHTML = h;
+
+  function updateCustomGoal(val) {
+    var clean = Math.max(400, Math.min(1600, Math.round((+val || 1500) / 10) * 10));
+    anTargetGoal = clean;
+    spSet('satpath_goal_score', String(anTargetGoal));
+    buildAnalyticsTab();
+  }
+
+  var gInp = el.querySelector('#anGoalInput');
+  var gSlid = el.querySelector('#anGoalSlider');
+  var gMin = el.querySelector('#anGoalMinus');
+  var gPls = el.querySelector('#anGoalPlus');
+
+  if (gInp) {
+    gInp.onchange = function() { updateCustomGoal(gInp.value); };
+    gInp.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); updateCustomGoal(gInp.value); } };
+  }
+  if (gSlid) {
+    gSlid.oninput = function() {
+      if (gInp) gInp.value = gSlid.value;
+    };
+    gSlid.onchange = function() { updateCustomGoal(gSlid.value); };
+  }
+  if (gMin) gMin.onclick = function() { updateCustomGoal(anTargetGoal - 10); };
+  if (gPls) gPls.onclick = function() { updateCustomGoal(anTargetGoal + 10); };
+
   var goMk = el.querySelector('#anGoMistakes');
   if (goMk) goMk.onclick = function() { show('mk'); };
-  el.querySelectorAll('[data-an-goal]').forEach(function(b) {
-    b.onclick = function() {
-      anTargetGoal = +b.getAttribute('data-an-goal');
-      spSet('satpath_goal_score', String(anTargetGoal));
-      buildAnalyticsTab();
-    };
-  });
+  var topMk = el.querySelector('#anTopMistakeBtn');
+  if (topMk) topMk.onclick = function() { show('mk'); };
+
   el.querySelectorAll('[data-an-tfilt]').forEach(function(b) {
     b.onclick = function() {
       anTopicFilter = b.getAttribute('data-an-tfilt');
@@ -4357,7 +4545,7 @@ async function fbInit(){if(!FB_CONFIG||FB)return;
  var B='https://www.gstatic.com/firebasejs/10.12.2/';
  var a=await import(B+'firebase-app.js'),au=await import(B+'firebase-auth.js'),f=await import(B+'firebase-firestore.js');
  var app=a.initializeApp(FB_CONFIG);FB={auth:au.getAuth(app),db:f.getFirestore(app),au:au,fs:f};
- au.onAuthStateChanged(FB.auth,function(u){FBU=u;paintUser();if(u){ensureUserCloudTokens(u);spPullCloud();lbFlush();}if(!document.getElementById('vLB').hidden)buildLB()})}
+ au.onAuthStateChanged(FB.auth,function(u){FBU=u;paintUser();if(u){ensureUserCloudTokens(u);lbFlush();}if(!document.getElementById('vLB').hidden)buildLB()})}
 function paintUser(){var u=FBU,soAll=document.querySelectorAll('.so');
  if(u){var p=getProfile();if(!p.name||p.name==='Explorer'||p.name==='Guest'){p.name=u.displayName||u.email.split('@')[0];saveProfile(p)}}
  applyProfileUI();
@@ -4427,13 +4615,26 @@ function refreshDash(){
   document.getElementById('dRwStep').textContent='Waypoint '+(rCur%5+1)+'/5 · '+TYPES[rCur%5].l;
   var rTr=document.getElementById('dRwTrail'); if(rTr) rTr.innerHTML=renderFiveWaypoints(rCur);
 
-  var totA=0, totC=0;
-  Object.keys(st).forEach(function(k){totA+=st[k].a||0; totC+=st[k].c||0});
-  var acc=totA?Math.round(totC/totA*100):65;
-  var mScore=Math.min(800, Math.round((420 + md.length*2.5 + (acc*1.3))/10)*10);
-  var rScore=Math.min(800, Math.round((420 + rd.length*5.0 + (acc*1.3))/10)*10);
+  var mAtt=0, mCor=0, rAtt=0, rCor=0;
+  Object.keys(st).forEach(function(k){
+    var rec=st[k]||{a:0,c:0};
+    if(String(k).indexOf('rw_')===0){rAtt+=rec.a||0;rCor+=rec.c||0;}
+    else{mAtt+=rec.a||0;mCor+=rec.c||0;}
+  });
+  var totA=mAtt+rAtt, totC=mCor+rCor;
+  var acc=totA?Math.round(totC/totA*100):0;
+  var mRatio=mAtt>0?(mCor/mAtt):0, rRatio=rAtt>0?(rCor/rAtt):0;
+  var mScore=(mAtt===0&&md.length===0)?400:Math.min(800,Math.max(200,Math.round((360+md.length*2.2+mRatio*220+Math.min(40,mAtt*0.5))/10)*10));
+  var rScore=(rAtt===0&&rd.length===0)?400:Math.min(800,Math.max(200,Math.round((360+rd.length*4.4+rRatio*220+Math.min(40,rAtt*0.5))/10)*10));
+  var ptRes=ptLoad(), mockKeys=Object.keys(ptRes);
+  if(mockKeys.length){
+    mockKeys.sort(function(a,b){return (+a)-(+b)});
+    var lastM=ptRes[mockKeys[mockKeys.length-1]];
+    if(lastM&&lastM.m) mScore=(mAtt+md.length>0)?Math.round((mScore*0.35+lastM.m.score*0.65)/10)*10:lastM.m.score;
+    if(lastM&&lastM.r) rScore=(rAtt+rd.length>0)?Math.round((rScore*0.35+lastM.r.score*0.65)/10)*10:lastM.r.score;
+  }
   var estTot = mScore + rScore;
-  var estBand = totA >= 40 ? 30 : 50;
+  var estBand = (totA + md.length*5 + rd.length*5) >= 40 ? 30 : 50;
   document.getElementById('dScore').innerHTML = estTot + ' <small style="font-size:14px;color:var(--sand);font-weight:700">&plusmn;' + estBand + '</small>';
   document.getElementById('dScoreM').textContent=mScore;
   document.getElementById('dScoreR').textContent=rScore;
@@ -4539,7 +4740,7 @@ function renderDailyWidget(type, data, storageKey) {
         addCoins(3);
       } else {
         b.classList.add('bad');
-        msgBox.style.color = '#e74c3c';
+        msgBox.style.color = 'var(--sand)';
         msgBox.innerHTML = '✗ Answer: ' + (type === 'Rw' ? item.ans : rHTML(item.ans));
         recordMistake({ q: item.q, ans: item.ans, opts: item.opts, isGrid: false, rw: type === 'Rw', top: item.top }, o, 'Daily Challenge');
       }
@@ -4587,7 +4788,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     .sp-inp-ico { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--mut); opacity:.8; pointer-events:none; display:flex; align-items:center; }
     .sp-submit { width:100%; padding:12px 18px; border-radius:16px; background:linear-gradient(180deg, var(--sand-bright) 0%, var(--sand) 100%); color:var(--sand-tx); font-weight:800; font-size:14px; text-align:center; box-shadow:0 4px 0 var(--sand-deep); transition:.18s; margin-top:4px; cursor:pointer; }
     .sp-submit:hover { transform:translateY(-2px); box-shadow:0 6px 0 var(--sand-deep); filter:brightness(1.04); }
-    .sp-auth-err { color:#e74c3c; font-size:12px; font-weight:600; margin:6px 0; min-height:16px; }
+    .sp-auth-err { color:var(--sand); font-size:12px; font-weight:600; margin:6px 0; min-height:16px; }
 
     /* Правая карточка в стиле островов SATPath */
     .sp-auth-art { border-radius:24px; background:linear-gradient(155deg, var(--acc2) 0%, var(--acc) 100%); position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; padding:28px; color:#fff; box-shadow:0 10px 30px rgba(0,0,0,0.18); border:1.5px solid rgba(255,255,255,0.22); min-height:440px; }
@@ -4609,11 +4810,11 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
       --sand-deep: #0c4a6e;
     }
     :root[data-skin="volcanic"] {
-      --acc: #e11d48;
-      --acc2: #9f1239;
-      --sand: #fb7185;
-      --sand-bright: #fecdd3;
-      --sand-deep: #881337;
+      --acc: #0ea5e9;
+      --acc2: #0369a1;
+      --sand: #38bdf8;
+      --sand-bright: #bae6fd;
+      --sand-deep: #0c4a6e;
     }
     :root[data-skin="biolum"] {
       --acc: #0d9488;
@@ -5372,7 +5573,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
       cb.onclick = function () {
         var p = $('ptCP');
         if (!shell.classList.contains('calc-open')) {
-          shell.classList.add('calc-open'); p.style.display = 'block'; cb.style.background = '#e74c3c'; cb.textContent = '✕ Close Calculator';
+          shell.classList.add('calc-open'); p.style.display = 'block'; cb.style.background = 'var(--acc2)'; cb.textContent = '✕ Close Calculator';
           if (!calc && window.Desmos) calc = createFullDesmos(p);
           if (calc) setTimeout(function () { calc.resize(); }, 35);
         } else {
@@ -5513,29 +5714,3 @@ updateNavBadges();
 function spRenderIcons() { try { if (window.lucide) lucide.createIcons(); } catch (e) {} }
 spRenderIcons();
 window.addEventListener('load', spRenderIcons);
-
-
-/* ===== REMEMBER CURRENT SECTION (refresh no longer throws user to Base Camp) ===== */
-(function rememberView() {
-  var VALID = ['d','m','b','r','lb','pt','bz','voc','mk','an'];
-  var prev = window.show;
-  window.show = function(w) {
-    var r = prev.apply(this, arguments);
-    if (VALID.indexOf(w) >= 0) { try { sessionStorage.setItem('sp_view', w); } catch (e) {} try { localStorage.setItem('sp_view', w); } catch (e) {} spMemView = w; }
-    return r;
-  };
-  var spMemView = null;
-  function saved() {
-    var v = null;
-    try { v = sessionStorage.getItem('sp_view'); } catch (e) {}
-    if (!v) { try { v = localStorage.getItem('sp_view'); } catch (e) {} }
-    return VALID.indexOf(v) >= 0 ? v : null;
-  }
-  var v0 = saved();
-  if (v0 && v0 !== 'd') window.show(v0);
-  window.spRefreshAfterPull = function() {
-    try { applyProfileUI(); paintHud(); updateNavBadges(); initDailyChallenges(); } catch (e) {}
-    var cur = spMemView || saved() || 'd';
-    try { window.show(cur); } catch (e) {}
-  };
-})();
