@@ -1,13 +1,232 @@
 /* ===== SATPATH CORE APPLICATION LOGIC, UI & CONTROLLERS ===== */
+/* ===== CLOUD SYNC (Firestore autosave) =====
+ * Любая запись через spSet() для ключей satpath_* автоматически уходит в
+ * Firestore: users/{uid}/sync/{key}. При входе на другом устройстве данные
+ * подтягиваются и объединяются (mistakes, vocab, прогресс, статистика и т.д.). */
 window._SP_MEM = {};
-function spGet(k) {
+function _spRawGet(k) {
   try { var v = window.localStorage.getItem(k); if (v !== null) return v; } catch(e) {}
   return Object.prototype.hasOwnProperty.call(window._SP_MEM, k) ? window._SP_MEM[k] : null;
 }
-function spSet(k, v) {
+function _spRawSet(k, v) {
   window._SP_MEM[k] = String(v);
   try { window.localStorage.setItem(k, String(v)); } catch(e) {}
 }
+function spGet(k) { return _spRawGet(k); }
+function spSet(k, v) {
+  _spRawSet(k, v);
+  if (!SP_SYNC.applying && spSyncable(k)) spSyncTouch(k);
+}
+
+var SP_SYNC = { on: false, uid: null, unsub: null, applying: false, first: true, ready: false,
+  trusted: false, changed: false, liveChanged: false, dirty: {}, timer: null, retry: null,
+  meta: null, warned: false, flushing: false };
+var SP_SYNC_META_KEY = 'satpath_sync_meta_v1', SP_SYNC_UID_KEY = 'satpath_sync_uid_v1';
+var SP_SYNC_SKIP = { 'satpath_dict_v1': 1 };   // кэш словаря — не синхронизируем
+
+function spSyncable(k) {
+  return typeof k === 'string' && k.indexOf('satpath_') === 0 &&
+    k.indexOf('satpath_sync_') !== 0 && k.indexOf('satpath_lb_') !== 0 && !SP_SYNC_SKIP[k];
+}
+function spMeta() {
+  if (!SP_SYNC.meta) { try { SP_SYNC.meta = JSON.parse(_spRawGet(SP_SYNC_META_KEY)) || {}; } catch(e) { SP_SYNC.meta = {}; } }
+  return SP_SYNC.meta;
+}
+function spMetaSave() { try { _spRawSet(SP_SYNC_META_KEY, JSON.stringify(spMeta())); } catch(e) {} }
+function spMetaSet(k, t, d) { spMeta()[k] = { t: t, d: d ? 1 : 0 }; spMetaSave(); }
+
+function spSyncTouch(k) {
+  spMetaSet(k, Date.now(), 1);
+  if (SP_SYNC.on) { SP_SYNC.dirty[k] = 1; spSyncSchedule(2500); }
+}
+function spSyncSchedule(ms) {
+  clearTimeout(SP_SYNC.timer);
+  SP_SYNC.timer = setTimeout(spSyncFlush, ms);
+}
+
+/* ---------- PUSH ---------- */
+async function spSyncFlush() {
+  if (!SP_SYNC.on || !SP_SYNC.ready || SP_SYNC.flushing) return;
+  if (typeof FB === 'undefined' || !FB || !FB.fs || typeof FBU === 'undefined' || !FBU) return;
+  var keys = Object.keys(SP_SYNC.dirty);
+  if (!keys.length) return;
+  SP_SYNC.flushing = true;
+  SP_SYNC.dirty = {};
+  var s = FB.fs, uid = SP_SYNC.uid, failed = false;
+  await Promise.all(keys.map(async function(k) {
+    var v = spGet(k);
+    if (v === null) return;
+    if (v.length > 900000) { console.warn('SATPath sync: value too large, skipped', k); return; }
+    var m = spMeta()[k] || { t: Date.now() }, t = m.t || Date.now();
+    try {
+      await s.setDoc(s.doc(FB.db, 'users', uid, 'sync', k), { k: k, v: v, ts: t, updatedAt: Date.now() });
+      var cur = spMeta()[k];
+      if (cur && cur.t === t) { cur.d = 0; }
+    } catch (e) {
+      failed = true; SP_SYNC.dirty[k] = 1;
+      if (!SP_SYNC.warned) { SP_SYNC.warned = true; console.warn('SATPath sync write failed', e); }
+    }
+  }));
+  spMetaSave();
+  SP_SYNC.flushing = false;
+  if (failed || Object.keys(SP_SYNC.dirty).length) spSyncSchedule(failed ? 15000 : 1500);
+}
+
+/* ---------- MERGE ---------- */
+function _spIsObj(x) { return x && typeof x === 'object' && !Array.isArray(x); }
+function _spItemKey(o) {
+  if (o === null || typeof o !== 'object') return 'p:' + String(o);
+  if (o.q != null) return 'q:' + String(o.q).trim();
+  if (o.w != null) return 'w:' + String(o.w).toLowerCase();
+  if (o.id != null) return 'id:' + o.id;
+  return 'j:' + JSON.stringify(o);
+}
+function _spMergeArr(a, b, k) {
+  var map = {}, order = [];
+  a.concat(b).forEach(function(it, i) {
+    var key = _spItemKey(it);
+    if (!(key in map)) { map[key] = it; order.push(key); return; }
+    var old = map[key];
+    if (old && it && typeof old === 'object' && typeof it === 'object') {
+      var merged = _spMergeVal(old, it);
+      if ((it.ts || 0) >= (old.ts || 0)) merged = Object.assign({}, merged, it);
+      map[key] = merged;
+    }
+  });
+  var out = order.map(function(x) { return map[x]; });
+  if (k === 'satpath_mistakes_v1') {
+    out.sort(function(x, y) { return (y.ts || 0) - (x.ts || 0); });
+    if (out.length > 500) out = out.slice(0, 500);
+  }
+  return out;
+}
+function _spMergeVal(a, b, k) {
+  if (a === undefined) return b;
+  if (b === undefined) return a;
+  if (Array.isArray(a) && Array.isArray(b)) return _spMergeArr(a, b, k);
+  if (_spIsObj(a) && _spIsObj(b)) {
+    var o = {};
+    Object.keys(a).concat(Object.keys(b)).forEach(function(x) {
+      if (x in o) return;
+      o[x] = _spMergeVal(a[x], b[x]);
+    });
+    return o;
+  }
+  if (typeof a === 'number' && typeof b === 'number') return Math.max(a, b);
+  if (typeof a === 'boolean' && typeof b === 'boolean') return a || b;
+  if (typeof b === 'string' && b === '') return a;
+  return b;
+}
+function _spMergeJson(k, lv, rv) {
+  try {
+    var a = JSON.parse(lv), b = JSON.parse(rv);
+    if (a && b && typeof a === 'object' && typeof b === 'object') return JSON.stringify(_spMergeVal(a, b, k));
+  } catch (e) {}
+  return null;
+}
+
+/* ---------- PULL ---------- */
+function spSyncApply(k, val, ts, dirty) {
+  SP_SYNC.applying = true;
+  try { spSet(k, val); } finally { SP_SYNC.applying = false; }
+  spMetaSet(k, ts, dirty);
+  if (dirty) { SP_SYNC.dirty[k] = 1; spSyncSchedule(1200); }
+  if (SP_SYNC.first) SP_SYNC.changed = true; else SP_SYNC.liveChanged = true;
+}
+function spSyncHandle(k, d) {
+  var rv = d && d.v, rts = +(d && d.ts) || 0;
+  if (typeof rv !== 'string') return;
+  var lv = spGet(k);
+  var m = SP_SYNC.trusted ? (spMeta()[k] || { t: 0, d: 0 }) : { t: 0, d: 1 };
+  if (lv === rv) { spMetaSet(k, Math.max(m.t || 0, rts) || rts, 0); return; }
+  if (lv === null) { spSyncApply(k, rv, rts, false); return; }
+  if (m.d) {                                   // у нас есть несинхронизированные изменения → объединяем
+    var merged = _spMergeJson(k, lv, rv);
+    if (merged !== null) {
+      if (merged === rv) spSyncApply(k, rv, rts, false); else spSyncApply(k, merged, Date.now(), true);
+    } else if (!SP_SYNC.trusted || rts > m.t) spSyncApply(k, rv, rts, false);
+    else { SP_SYNC.dirty[k] = 1; spSyncSchedule(1200); }
+    return;
+  }
+  if (rts > m.t) spSyncApply(k, rv, rts, false);        // в облаке новее
+  else if (m.t > rts) { SP_SYNC.dirty[k] = 1; spSyncSchedule(1200); }
+}
+function spSyncLocalKeys() {
+  var seen = {}, out = [];
+  try { for (var i = 0; i < window.localStorage.length; i++) { var k = window.localStorage.key(i); if (spSyncable(k) && !seen[k]) { seen[k] = 1; out.push(k); } } } catch(e) {}
+  Object.keys(window._SP_MEM).forEach(function(k) { if (spSyncable(k) && !seen[k]) { seen[k] = 1; out.push(k); } });
+  return out;
+}
+function spSyncWipeLocal() {
+  spSyncLocalKeys().forEach(function(k) { try { window.localStorage.removeItem(k); } catch(e) {} delete window._SP_MEM[k]; });
+  SP_SYNC.meta = {}; spMetaSave();
+  SP_SYNC.changed = true;
+}
+function spSyncRefreshUI() {
+  try { updateNavBadges(); } catch(e) {}
+  try { paintHud(); } catch(e) {}
+  try { applyProfileUI(); } catch(e) {}
+}
+
+function spSyncStart(u) {
+  spSyncStop();
+  if (!u || typeof FB === 'undefined' || !FB || !FB.fs) return;
+  var s = FB.fs;
+  SP_SYNC.uid = u.uid; SP_SYNC.on = true; SP_SYNC.first = true; SP_SYNC.ready = false;
+  SP_SYNC.changed = false; SP_SYNC.liveChanged = false;
+  var prev = _spRawGet(SP_SYNC_UID_KEY);
+  if (prev && prev !== u.uid) spSyncWipeLocal();       // другой аккаунт на этом устройстве — не смешиваем данные
+  SP_SYNC.trusted = (prev === u.uid);
+  var seenRemote = {};
+  try {
+    SP_SYNC.unsub = s.onSnapshot(s.collection(FB.db, 'users', u.uid, 'sync'), function(snap) {
+      if (SP_SYNC.first && snap.metadata.fromCache) return;     // ждём ответ сервера
+      snap.docChanges().forEach(function(ch) {
+        if (ch.type === 'removed' || ch.doc.metadata.hasPendingWrites) return;
+        var k = ch.doc.id;
+        if (!spSyncable(k)) return;
+        seenRemote[k] = 1;
+        spSyncHandle(k, ch.doc.data());
+      });
+      if (SP_SYNC.first) {
+        SP_SYNC.first = false;
+        spSyncLocalKeys().forEach(function(k) {            // локальные данные, которых нет в облаке → отправляем
+          if (!seenRemote[k]) { var m = spMeta()[k]; spMetaSet(k, (m && m.t) || Date.now(), 1); SP_SYNC.dirty[k] = 1; }
+        });
+        _spRawSet(SP_SYNC_UID_KEY, u.uid);
+        SP_SYNC.trusted = true; SP_SYNC.ready = true;
+        spSyncFlush();
+        if (SP_SYNC.changed) {
+          var last = 0; try { last = +(sessionStorage.getItem('sp_sync_rl') || 0); } catch(e) {}
+          if (Date.now() - last > 30000) {
+            try { sessionStorage.setItem('sp_sync_rl', String(Date.now())); } catch(e) {}
+            try { toast('☁ Progress restored from your account…'); } catch(e) {}
+            setTimeout(function() { location.reload(); }, 900);
+          } else spSyncRefreshUI();
+        }
+      } else if (SP_SYNC.liveChanged) {
+        SP_SYNC.liveChanged = false;
+        spSyncRefreshUI();
+        try { toast('☁ Synced from another device'); } catch(e) {}
+      }
+    }, function(err) {
+      console.warn('SATPath sync listener error', err);
+      if (!SP_SYNC.warned) { SP_SYNC.warned = true; try { toast('Cloud sync blocked — check Firestore rules for users/{uid}/sync'); } catch(e) {} }
+    });
+  } catch (e) { console.warn('SATPath sync start failed', e); }
+}
+function spSyncStop() {
+  if (SP_SYNC.unsub) { try { SP_SYNC.unsub(); } catch(e) {} }
+  SP_SYNC.unsub = null; SP_SYNC.on = false; SP_SYNC.ready = false; SP_SYNC.first = true; SP_SYNC.dirty = {};
+  clearTimeout(SP_SYNC.timer);
+}
+async function spSyncSignOut() {
+  try { await spSyncFlush(); } catch(e) {}
+  return FB.au.signOut(FB.auth);
+}
+document.addEventListener('visibilitychange', function() { if (document.hidden) spSyncFlush(); });
+window.addEventListener('pagehide', function() { spSyncFlush(); });
+window.addEventListener('online', function() { spSyncFlush(); });
 
 
 /* ===== MOCK EXAM CORE HELPERS (fallbacks) =====
@@ -4545,7 +4764,7 @@ async function fbInit(){if(!FB_CONFIG||FB)return;
  var B='https://www.gstatic.com/firebasejs/10.12.2/';
  var a=await import(B+'firebase-app.js'),au=await import(B+'firebase-auth.js'),f=await import(B+'firebase-firestore.js');
  var app=a.initializeApp(FB_CONFIG);FB={auth:au.getAuth(app),db:f.getFirestore(app),au:au,fs:f};
- au.onAuthStateChanged(FB.auth,function(u){FBU=u;paintUser();if(u){ensureUserCloudTokens(u);lbFlush();}if(!document.getElementById('vLB').hidden)buildLB()})}
+ au.onAuthStateChanged(FB.auth,function(u){FBU=u;paintUser();if(u){ensureUserCloudTokens(u);lbFlush();spSyncStart(u);}else{spSyncStop();}if(!document.getElementById('vLB').hidden)buildLB()})}
 function paintUser(){var u=FBU,soAll=document.querySelectorAll('.so');
  if(u){var p=getProfile();if(!p.name||p.name==='Explorer'||p.name==='Guest'){p.name=u.displayName||u.email.split('@')[0];saveProfile(p)}}
  applyProfileUI();
@@ -4553,7 +4772,7 @@ function paintUser(){var u=FBU,soAll=document.querySelectorAll('.so');
  if(lastSo) lastSo.textContent = u ? 'Sign Out' : 'Sign in with Google';
 }
 function lbSign(){if(!FB_CONFIG)return toast('Leaderboard is not configured yet');
- fbInit().then(function(){FBU?FB.au.signOut(FB.auth):FB.au.signInWithPopup(FB.auth,new FB.au.GoogleAuthProvider()).catch(function(e){console.error(e);toast('Sign-in failed: '+(e.code||e.message))})})}
+ fbInit().then(function(){FBU?spSyncSignOut():FB.au.signInWithPopup(FB.auth,new FB.au.GoogleAuthProvider()).catch(function(e){console.error(e);toast('Sign-in failed: '+(e.code||e.message))})})}
 function lbRow(r,i,max,mine){var acc=r.q?Math.round(r.c/r.q*100):0,ok=r.photo&&/^https:\/\//.test(r.photo);
  return'<div class="lbr'+(mine?' me':'')+'"><span class="rk">'+(i+1)+'</span>'+(ok?'<img class="pa" referrerpolicy="no-referrer" src="'+encodeURI(r.photo)+'" alt="">':'<span class="pa">'+lbEsc((r.name||'?')[0])+'</span>')+'<b>'+lbEsc(r.name||'Student')+'</b><span class="bw"><i style="width:'+Math.round(r.pts/(max||1)*100)+'%"></i></span><span class="n">'+r.pts.toLocaleString()+'</span><span class="n s">'+r.q.toLocaleString()+'</span><span class="n s">'+acc+'%</span></div>'}
 async function buildLB(){var el=document.getElementById('vLB');
@@ -5033,7 +5252,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
   if (signBtn) {
     signBtn.onclick = function() {
       if (typeof FBU !== 'undefined' && FBU) {
-        FB.au.signOut(FB.auth);
+        spSyncSignOut();
         toast('Signed out');
       } else {
         openAuthScreen();
