@@ -3693,225 +3693,261 @@ function openSupportModal() {
   ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
 }
 
-/* ===== COMPREHENSIVE ANALYTICS & WEAKNESS DIAGNOSTIC HUB (ZERO RED, CUSTOM GOAL, REAL ACCURACY, STYLED DRILL BUTTONS) ===== */
+/* ===== ANALYTICS (minimal) =====
+ * ЗАМЕНИТЕ в app.js весь блок от
+ *   "/* ===== COMPREHENSIVE ANALYTICS & WEAKNESS DIAGNOSTIC HUB ..."
+ * до конца функции buildAnalyticsTab() (прямо перед
+ *   "/* Настройка сайдбара и контейнеров ..." ) на этот файл.
+ */
 (function injectAnalyticsStyles() {
-  if (document.getElementById('spAnalyticsCss')) return;
-  var st = document.createElement('style');
-  st.id = 'spAnalyticsCss';
-  st.textContent = `
-    @keyframes spDrawLine {
-      from { stroke-dashoffset: 1800; }
-      to { stroke-dashoffset: 0; }
-    }
-    @keyframes spFadeScale {
-      from { opacity: 0; transform: scale(0.92); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    @keyframes spGrowBar {
-      from { transform: scaleY(0); }
-      to { transform: scaleY(1); }
-    }
-    .an-draw-path {
-      stroke-dasharray: 1800;
-      stroke-dashoffset: 0;
-      animation: spDrawLine 1.4s cubic-bezier(.2,.8,.2,1) backwards;
-    }
-    .an-radar-poly {
-      transform-origin: center;
-      animation: spFadeScale 0.75s cubic-bezier(.2,.85,.3,1) backwards;
-    }
-    .an-hist-bar {
-      transform-origin: bottom;
-      animation: spGrowBar 0.7s cubic-bezier(.2,.85,.3,1) backwards;
-    }
-    .an-kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-bottom: 20px;
-    }
-    @media (max-width: 920px) {
-      .an-kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 520px) {
-      .an-kpi-grid { grid-template-columns: 1fr; }
-    }
-    .an-kpi-card {
-      background: linear-gradient(155deg, var(--panel) 0%, var(--panel2) 100%);
-      border: 1.5px solid var(--line);
-      border-radius: 22px;
-      padding: 18px 20px;
-      box-shadow: 0 8px 22px -10px rgba(0,0,0,0.16), 0 3px 0 var(--line);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 8px;
-      position: relative;
-      overflow: hidden;
-    }
-    .an-kpi-val {
-      font-size: 29px;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      color: var(--tx);
-    }
-    .an-dual-grid {
-      display: grid;
-      grid-template-columns: 1.35fr 1fr;
-      gap: 20px;
-      margin-bottom: 22px;
-      align-items: stretch;
-    }
-    @media (max-width: 980px) {
-      .an-dual-grid { grid-template-columns: 1fr; }
-    }
-    .an-weak-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 14px;
-    }
-    .an-weak-card {
-      background: linear-gradient(155deg, var(--panel2) 0%, var(--panel) 100%);
-      border: 1.5px solid var(--line);
-      border-radius: 20px;
-      padding: 16px 18px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 12px;
-      box-shadow: 0 4px 0 var(--line);
-      transition: transform .18s, border-color .18s, box-shadow .18s;
-    }
-    .an-weak-card:hover {
-      transform: translateY(-3px);
-      border-color: var(--acc);
-      box-shadow: 0 7px 0 var(--acc2), 0 12px 24px rgba(0,0,0,0.14);
-    }
-    .an-weak-card.priority-amber {
-      border-color: var(--sand-line);
-      box-shadow: 0 4px 0 rgba(229, 154, 22, 0.28);
-    }
-    .an-weak-card.priority-amber:hover {
-      border-color: var(--sand);
-      box-shadow: 0 7px 0 var(--sand-deep), 0 12px 24px rgba(245, 184, 46, 0.18);
-    }
-    .an-drill-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 8px 15px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.01em;
-      white-space: nowrap;
-      background: linear-gradient(180deg, var(--acc) 0%, var(--acc2) 100%);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.18);
-      box-shadow: 0 3px 0 var(--acc2);
-      transition: transform .16s, box-shadow .16s, filter .16s;
-      cursor: pointer;
-    }
-    .an-drill-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 0 var(--acc2), 0 8px 16px rgba(34,163,129,0.28);
-      filter: brightness(1.06);
-    }
-    .an-drill-btn:active {
-      transform: translateY(1px);
-      box-shadow: 0 1px 0 var(--acc2);
-    }
-    .an-drill-btn.amber {
-      background: linear-gradient(180deg, var(--sand-bright) 0%, var(--sand) 100%);
-      color: var(--sand-tx);
-      box-shadow: 0 3px 0 var(--sand-deep);
-      border-color: rgba(255,255,255,0.25);
-    }
-    .an-drill-btn.amber:hover {
-      box-shadow: 0 5px 0 var(--sand-deep), 0 8px 16px rgba(245,184,46,0.28);
-    }
-    .an-goal-box {
-      background: linear-gradient(145deg, var(--panel2) 0%, var(--panel) 100%);
-      border: 1.5px solid var(--sand-line);
-      border-radius: 20px;
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      min-width: 280px;
-      box-shadow: 0 4px 0 var(--line);
-    }
-    .an-goal-inp {
-      width: 78px;
-      padding: 5px 8px;
-      border-radius: 10px;
-      border: 1.5px solid var(--sand-line);
-      background: var(--panel);
-      color: var(--sand);
-      font-weight: 800;
-      font-size: 15px;
-      text-align: center;
-      font-variant-numeric: tabular-nums;
-      outline: none;
-    }
-    .an-goal-inp:focus {
-      border-color: var(--acc);
-      color: var(--tx);
-    }
-    .an-goal-slider {
-      width: 100%;
-      accent-color: var(--acc);
-      cursor: pointer;
-      height: 6px;
-      border-radius: 99px;
-    }
-    .an-table-wrap {
-      overflow-x: auto;
-      border: 1.5px solid var(--line);
-      border-radius: 20px;
-      background: var(--panel);
-    }
-    .an-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      text-align: left;
-    }
-    .an-table th {
-      background: var(--panel2);
-      color: var(--mut);
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      padding: 12px 16px;
-      border-bottom: 1.5px solid var(--line);
-      white-space: nowrap;
-    }
-    .an-table td {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--line);
-      vertical-align: middle;
-    }
-    .an-table tr:last-child td { border-bottom: 0; }
-    .an-table tr:hover td { background: var(--panel2); }
-    .an-dot-node {
-      cursor: pointer;
-      transition: r .18s, stroke-width .18s;
-    }
-    .an-dot-node:hover {
-      r: 7px;
-      stroke-width: 3px;
+  var css = `
+    .an2{max-width:880px;margin:0 auto;display:grid;gap:18px}
+    .an2-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+    .an2-goal{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);font-weight:700}
+    .an2-goal input{width:76px;padding:6px 8px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);color:var(--tx);font-weight:800;font-size:14px;text-align:center;outline:none}
+    .an2-goal input:focus{border-color:var(--acc)}
+    .an2-card{background:var(--panel);border:1.5px solid var(--line);border-radius:22px;padding:22px 24px}
+    .an2-lbl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+    .an2-score{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+    .an2-num{font-size:54px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--tx)}
+    .an2-num small{font-size:16px;color:var(--mut);font-weight:700;margin-left:6px;letter-spacing:0}
+    .an2-sec{display:flex;gap:26px}
+    .an2-sec div{text-align:right}
+    .an2-sec b{display:block;font-size:24px;font-weight:800}
+    .an2-prog{height:8px;border-radius:99px;background:var(--cell);overflow:hidden;margin:18px 0 8px}
+    .an2-prog i{display:block;height:100%;background:var(--acc);border-radius:99px;transition:width .6s ease}
+    .an2-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--mut)}
+    .an2-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .an2-stat{background:var(--panel);border:1.5px solid var(--line);border-radius:18px;padding:14px 16px}
+    .an2-stat b{display:block;font-size:22px;font-weight:800;margin-top:4px}
+    .an2-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    .an2-h h2{font-size:17px;font-weight:800}
+    .an2-focus{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .an2-f{border:1.5px solid var(--line);background:var(--panel2);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;justify-content:space-between;gap:12px}
+    .an2-f b{font-size:14.5px;line-height:1.35;display:block;margin:4px 0}
+    .an2-f small{color:var(--mut);font-size:12px}
+    .an2-btn{display:inline-flex;align-items:center;justify-content:center;padding:7px 13px;border-radius:11px;font-size:12px;font-weight:800;background:var(--acc);color:#fff;box-shadow:0 2px 0 var(--acc2);white-space:nowrap}
+    .an2-btn:hover{filter:brightness(1.06)}
+    .an2-btn.ghost{background:transparent;color:var(--acc);box-shadow:none;border:1.5px solid var(--line)}
+    .an2-btn.ghost:hover{border-color:var(--acc)}
+    .an2-row{display:grid;grid-template-columns:1fr 150px 56px 78px;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line);font-size:13px}
+    .an2-row:first-of-type{border-top:0}
+    .an2-row .nm{min-width:0}
+    .an2-row .nm b{font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .an2-row .nm small{color:var(--mut);font-size:11px}
+    .an2-mini{display:flex;align-items:center;gap:8px}
+    .an2-mini .b{flex:1;height:6px;border-radius:99px;background:var(--cell);overflow:hidden}
+    .an2-mini .b i{display:block;height:100%}
+    .an2-mini span{width:34px;text-align:right;font-weight:800;font-size:12px}
+    .an2-empty{color:var(--mut);font-size:13px;padding:6px 0}
+    @media(max-width:720px){
+      .an2-stats{grid-template-columns:repeat(2,1fr)}
+      .an2-focus{grid-template-columns:1fr}
+      .an2-row{grid-template-columns:1fr 96px 70px}
+      .an2-row .mk{display:none}
+      .an2-num{font-size:44px}
     }
   `;
-  document.head.appendChild(st);
+  var st = document.getElementById('spAnalyticsCss');
+  if (!st) { st = document.createElement('style'); st.id = 'spAnalyticsCss'; document.head.appendChild(st); }
+  st.textContent = css;
 })();
 
 var anTargetGoal = Math.max(400, Math.min(1600, Math.round((+(spGet('satpath_goal_score') || 1500)) / 10) * 10));
-var anTopicFilter = 'weak'; // Default to 'weak' so user immediately sees weak spots first!
+var anSecFilter = 'all';   // all | math | rw
+var anShowAll = false;
 
+/* Статистика по каждой из 30 тем.
+ * Источники: Atlas (bankStats) + ответы в Mock Exams (telemetry.pacing, где top = точное имя темы).
+ * Пути (Path) и Blitz в telemetry не содержат тему, поэтому тут не дублируются. */
+function anTopicRows() {
+  var bank = bankStats(), tel = getTelemetry(), mk = getMistakes();
+  var mockBy = {};
+  (tel.pacing || []).forEach(function(p) {
+    if (!p.top || p.top === 'SAT Math' || p.top === 'Reading & Writing') return;
+    var r = mockBy[p.top] || (mockBy[p.top] = { a: 0, c: 0 });
+    r.a++; if (p.good) r.c++;
+  });
+  var errBy = {};
+  mk.forEach(function(m) { var k = String(m.top || '').trim(); if (k) errBy[k] = (errBy[k] || 0) + 1; });
+
+  var rows = [];
+  function add(cur, isRw) {
+    var idx = 0;
+    cur.forEach(function(dom) {
+      dom[1].forEach(function(name) {
+        var ti = idx++;
+        var b = bank[isRw ? 'rw_' + ti : ti] || { a: 0, c: 0 };
+        var m = mockBy[name] || { a: 0, c: 0 };
+        var a = (b.a || 0) + m.a, c = (b.c || 0) + m.c, errs = errBy[name] || 0;
+        var acc = a >= 3 ? c / a : null;
+        var sev = (a > 0 || errs > 0) ? ((acc !== null ? (1 - acc) * 100 : 40) + errs * 6) : -1;
+        rows.push({ name: name, dom: dom[0], ti: ti, isRw: isRw, a: a, c: c, errs: errs, acc: acc, sev: sev });
+      });
+    });
+  }
+  if (typeof CUR !== 'undefined') add(CUR, false);
+  if (typeof RCUR !== 'undefined') add(RCUR, true);
+  return rows;
+}
+
+function anSectionEst(att, cor) {
+  if (att < 20) return null;
+  return Math.min(800, Math.max(200, Math.round((200 + 600 * Math.pow(cor / att, 1.2)) / 10) * 10));
+}
+
+function buildAnalyticsTab() {
+  var el = document.getElementById('vAN');
+  if (!el) return;
+
+  var rows = anTopicRows();
+  var tel = getTelemetry();
+  var streak = computeStreakInfo(tel);
+  var mkList = getMistakes();
+  var mocks = {};
+  try { mocks = ptLoad() || {}; } catch (e) {}
+
+  /* ---- оценка балла: приоритет — реальные моки, иначе практика (мин. 20 вопросов в секции) ---- */
+  var mAtt = 0, mCor = 0, rAtt = 0, rCor = 0;
+  rows.forEach(function(r) { if (r.isRw) { rAtt += r.a; rCor += r.c; } else { mAtt += r.a; mCor += r.c; } });
+  var keys = Object.keys(mocks).map(Number).sort(function(a, b) { return b - a; });
+  var mockM = null, mockR = null, mockMn = 0, mockRn = 0;
+  keys.forEach(function(k) {
+    if (!mockM && mocks[k] && mocks[k].m) { mockM = mocks[k].m.score; mockMn = k; }
+    if (!mockR && mocks[k] && mocks[k].r) { mockR = mocks[k].r.score; mockRn = k; }
+  });
+  var estM = mockM !== null ? mockM : anSectionEst(mAtt, mCor);
+  var estR = mockR !== null ? mockR : anSectionEst(rAtt, rCor);
+  var total = (estM !== null && estR !== null) ? estM + estR : null;
+  var fromMock = (mockM !== null && mockR !== null);
+  var band = fromMock ? 30 : 70;
+  var totalQ = mAtt + rAtt;
+  var accAll = totalQ ? Math.round((mCor + rCor) / totalQ * 100) : null;
+
+  var srcNote = fromMock ? 'Based on your latest Mock Exams'
+    : (total !== null ? 'Practice estimate · take a Mock Exam for a precise score'
+    : 'Need 20+ answered questions in both Math and R&W (Atlas / Mock) for an estimate');
+
+  var gap = total !== null ? Math.max(0, anTargetGoal - total) : null;
+  var pct = total !== null ? Math.max(0, Math.min(100, Math.round((total - 400) / Math.max(1, anTargetGoal - 400) * 100))) : 0;
+
+  /* ---- динамика по полным мокам ---- */
+  var trend = [];
+  Object.keys(mocks).map(Number).sort(function(a, b) { return a - b; }).forEach(function(k) {
+    if (mocks[k] && mocks[k].total) trend.push({ t: k, v: mocks[k].total });
+  });
+
+  var h = '<div class="an2">';
+
+  /* 1. Header + goal */
+  h += '<div class="an2-head"><div><h1>Analytics</h1><p class="sub">Your score, weak spots, and what to practice next.</p></div>' +
+    '<label class="an2-goal">Target <input type="number" id="anGoalInput" min="400" max="1600" step="10" value="' + anTargetGoal + '"></label></div>';
+
+  /* 2. Score card */
+  h += '<div class="an2-card">' +
+    '<div class="an2-score"><div><div class="an2-lbl">Estimated score</div>' +
+    '<div class="an2-num">' + (total !== null ? total + '<small>±' + band + '</small>' : '—') + '</div></div>' +
+    '<div class="an2-sec"><div><span class="an2-lbl">Math</span><b>' + (estM !== null ? estM : '—') + '</b></div>' +
+    '<div><span class="an2-lbl">R&amp;W</span><b>' + (estR !== null ? estR : '—') + '</b></div></div></div>' +
+    '<div class="an2-prog"><i style="width:' + pct + '%"></i></div>' +
+    '<div class="an2-foot"><span>' + srcNote + '</span><span>' +
+    (gap === null ? '' : (gap > 0 ? '<b style="color:var(--tx)">+' + gap + '</b> to reach ' + anTargetGoal : '<b style="color:var(--acc)">Goal ' + anTargetGoal + ' reached</b>')) +
+    '</span></div>';
+  if (trend.length >= 2) {
+    var W = 560, H = 70, pad = 8, mn = Math.min.apply(null, trend.map(function(x) { return x.v; })), mx = Math.max.apply(null, trend.map(function(x) { return x.v; }));
+    if (mx === mn) { mx += 10; mn -= 10; }
+    var pts = trend.map(function(x, i) {
+      return { x: Math.round(pad + i / (trend.length - 1) * (W - pad * 2)), y: Math.round(pad + (1 - (x.v - mn) / (mx - mn)) * (H - pad * 2)), v: x.v, t: x.t };
+    });
+    h += '<svg viewBox="0 0 ' + W + ' ' + (H + 18) + '" style="width:100%;height:auto;margin-top:14px;overflow:visible">' +
+      '<polyline points="' + pts.map(function(p) { return p.x + ',' + p.y; }).join(' ') + '" fill="none" stroke="var(--acc)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+      pts.map(function(p) {
+        return '<circle cx="' + p.x + '" cy="' + p.y + '" r="4" fill="var(--panel)" stroke="var(--acc)" stroke-width="2.5"/>' +
+          '<text x="' + p.x + '" y="' + (p.y - 9) + '" text-anchor="middle" font-size="11" font-weight="800" fill="var(--tx)">' + p.v + '</text>' +
+          '<text x="' + p.x + '" y="' + (H + 14) + '" text-anchor="middle" font-size="10" fill="var(--mut)">Mock ' + p.t + '</text>';
+      }).join('') + '</svg>';
+  }
+  h += '</div>';
+
+  /* 3. Four numbers */
+  h += '<div class="an2-stats">' +
+    '<div class="an2-stat"><span class="an2-lbl">Answered</span><b>' + totalQ.toLocaleString() + '</b></div>' +
+    '<div class="an2-stat"><span class="an2-lbl">Accuracy</span><b>' + (accAll !== null ? accAll + '%' : '—') + '</b></div>' +
+    '<div class="an2-stat"><span class="an2-lbl">Day streak</span><b>' + streak.current + '</b></div>' +
+    '<div class="an2-stat"><span class="an2-lbl">Mistakes to fix</span><b>' + mkList.length + '</b></div></div>';
+
+  /* 4. Focus next */
+  var withData = rows.filter(function(r) { return r.sev >= 0 && (r.acc === null || r.acc < 0.85 || r.errs > 0); })
+    .sort(function(a, b) { return b.sev - a.sev; });
+  var untested = rows.filter(function(r) { return r.sev < 0; });
+  var focus = withData.concat(untested).slice(0, 3);
+
+  h += '<div class="an2-card"><div class="an2-h"><h2>Focus next</h2>' +
+    (mkList.length ? '<button type="button" class="an2-btn ghost" id="anMk">Review ' + mkList.length + ' mistake' + (mkList.length === 1 ? '' : 's') + ' →</button>' : '') +
+    '</div><div class="an2-focus">' +
+    focus.map(function(r) {
+      var info = r.a > 0 ? (r.c + '/' + r.a + ' correct' + (r.acc !== null ? ' · ' + Math.round(r.acc * 100) + '%' : '')) : 'Not practiced yet';
+      if (r.errs) info += ' · ' + r.errs + ' mistake' + (r.errs > 1 ? 's' : '');
+      return '<div class="an2-f"><div><span class="an2-lbl">' + (r.isRw ? 'R&amp;W' : 'Math') + '</span><b>' + lbEsc(r.name) + '</b><small>' + info + '</small></div>' +
+        '<button type="button" class="an2-btn" data-an-drill="' + (r.isRw ? 'r:' : 'm:') + r.ti + '">Drill →</button></div>';
+    }).join('') + '</div></div>';
+
+  /* 5. Topics */
+  var list = rows.filter(function(r) {
+    return anSecFilter === 'all' || (anSecFilter === 'rw' ? r.isRw : !r.isRw);
+  }).sort(function(a, b) {
+    if ((a.sev < 0) !== (b.sev < 0)) return a.sev < 0 ? 1 : -1;
+    return b.sev - a.sev;
+  });
+  var shown = anShowAll ? list : list.slice(0, 8);
+
+  h += '<div class="an2-card"><div class="an2-h"><h2>Topics <small style="color:var(--mut);font-weight:600">weakest first</small></h2>' +
+    '<div class="island-pills">' +
+    [['all', 'All'], ['math', 'Math'], ['rw', 'R&amp;W']].map(function(p) {
+      return '<button type="button" class="island-pill' + (anSecFilter === p[0] ? ' on' : '') + '" data-an-sec="' + p[0] + '">' + p[1] + '</button>';
+    }).join('') + '</div></div>';
+  if (!shown.length) h += '<div class="an2-empty">No topics.</div>';
+  shown.forEach(function(r) {
+    var pc = r.acc !== null ? Math.round(r.acc * 100) : null;
+    var col = pc === null ? 'var(--line)' : (pc >= 80 ? 'var(--acc)' : pc >= 60 ? '#38bdf8' : 'var(--sand)');
+    h += '<div class="an2-row">' +
+      '<div class="nm"><b>' + lbEsc(r.name) + '</b><small>' + (r.isRw ? 'R&amp;W' : 'Math') + ' · ' + lbEsc(r.dom) + '</small></div>' +
+      '<div class="an2-mini"><div class="b"><i style="width:' + (pc === null ? 0 : Math.max(4, pc)) + '%;background:' + col + '"></i></div><span style="color:' + (pc === null ? 'var(--mut)' : col) + '">' + (pc === null ? '—' : pc + '%') + '</span></div>' +
+      '<div class="mk" style="color:' + (r.errs ? 'var(--sand)' : 'var(--mut)') + ';font-weight:700;text-align:center">' + (r.errs ? r.errs + ' err' : '') + '</div>' +
+      '<div style="text-align:right"><button type="button" class="an2-btn ghost" data-an-drill="' + (r.isRw ? 'r:' : 'm:') + r.ti + '">Drill</button></div></div>';
+  });
+  if (list.length > 8) h += '<div style="text-align:center;margin-top:10px"><button type="button" class="an2-btn ghost" id="anMore">' + (anShowAll ? 'Show less' : 'Show all ' + list.length) + '</button></div>';
+  h += '<div class="an2-empty" style="margin-top:10px;font-size:11.5px">Accuracy appears after 3+ answers in a topic (Atlas + Mock Exams).</div></div>';
+
+  h += '</div>';
+  el.innerHTML = h;
+
+  /* ---- events ---- */
+  function setGoal(v) {
+    anTargetGoal = Math.max(400, Math.min(1600, Math.round((+v || 1500) / 10) * 10));
+    spSet('satpath_goal_score', String(anTargetGoal));
+    buildAnalyticsTab();
+  }
+  var gi = el.querySelector('#anGoalInput');
+  if (gi) {
+    gi.onchange = function() { setGoal(gi.value); };
+    gi.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); setGoal(gi.value); } };
+  }
+  var mkBtn = el.querySelector('#anMk');
+  if (mkBtn) mkBtn.onclick = function() { show('mk'); };
+  var more = el.querySelector('#anMore');
+  if (more) more.onclick = function() { anShowAll = !anShowAll; buildAnalyticsTab(); };
+  el.querySelectorAll('[data-an-sec]').forEach(function(b) {
+    b.onclick = function() { anSecFilter = b.getAttribute('data-an-sec'); anShowAll = false; buildAnalyticsTab(); };
+  });
+  el.querySelectorAll('[data-an-drill]').forEach(function(b) {
+    b.onclick = function() {
+      var p = b.getAttribute('data-an-drill').split(':');
+      show('b');
+      if (p[0] === 'r') rwBankOpen(+p[1]); else bankOpen(+p[1]);
+    };
+  });
+}
 function buildAnalyticsTab() {
   var el = document.getElementById('vAN');
   if (!el) return;
