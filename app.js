@@ -3892,7 +3892,28 @@ function buildAnalyticsTab() {
       return '<div class="an2-f"><div><span class="an2-lbl">' + (r.isRw ? 'R&amp;W' : 'Math') + '</span><b>' + lbEsc(r.name) + '</b><small>' + info + '</small></div>' +
         '<button type="button" class="an2-btn" data-an-drill="' + (r.isRw ? 'r:' : 'm:') + r.ti + '">Drill →</button></div>';
     }).join('') + '</div></div>';
-
+  /* 4b. Why you miss */
+  var rc = { concept: 0, careless: 0, time: 0, trap: 0 };
+  mkList.forEach(function(m) { var k = rc.hasOwnProperty(m.reason) ? m.reason : 'concept'; rc[k]++; });
+  var rcol = { concept: '#22a381', careless: '#f5b82e', time: '#d97706', trap: '#38bdf8' };
+  var rtip = {
+    concept: 'Most misses are concept gaps — re-read the theory and drill the weak topics.',
+    careless: 'Most misses are careless — slow down and re-read the question before answering.',
+    time: 'Time pressure is the main cause — practice with Blitz 10 and timed modules.',
+    trap: 'You fall for trap options — before choosing, explain why each other option is wrong.'
+  };
+  var rTot = mkList.length;
+  if (rTot) {
+    var topR = Object.keys(rc).sort(function(a, b) { return rc[b] - rc[a]; })[0];
+    h += '<div class="an2-card"><div class="an2-h"><h2>Why you miss</h2><small style="color:var(--mut)">' + rTot + ' active mistakes</small></div>' +
+      '<div style="display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--cell)">' +
+      MISTAKE_REASONS.map(function(r) { return rc[r.id] ? '<i style="width:' + (rc[r.id] / rTot * 100) + '%;background:' + rcol[r.id] + '"></i>' : ''; }).join('') + '</div>' +
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12.5px">' +
+      MISTAKE_REASONS.map(function(r) {
+        return '<span style="display:inline-flex;align-items:center;gap:6px"><i style="width:9px;height:9px;border-radius:50%;background:' + rcol[r.id] + '"></i>' + r.label + ' <b>' + rc[r.id] + '</b> <small style="color:var(--mut)">' + Math.round(rc[r.id] / rTot * 100) + '%</small></span>';
+      }).join('') + '</div>' +
+      '<div class="an2-empty" style="margin-top:12px">' + rtip[topR] + '</div></div>';
+  }
   /* 5. Topics */
   var list = rows.filter(function(r) {
     return anSecFilter === 'all' || (anSecFilter === 'rw' ? r.isRw : !r.isRw);
