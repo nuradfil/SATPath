@@ -2319,296 +2319,10 @@ var qk=document.getElementById('vQB'),BK='satpath_bank';
 function bankStats(){try{return JSON.parse(spGet(BK))||{}}catch(e){return{}}}
 function bankSave(ti,ok){var s=bankStats(),r=s[ti]||{a:0,c:0};r.a++;if(ok)r.c++;s[ti]=r;try{spSet(BK,JSON.stringify(s))}catch(e){}}
 
-/* ===== QUESTION BANK (CLEAN 2-COLUMN SATPATH DESIGN) ===== */
-(function injectQuestionBankStyles() {
-  if (document.getElementById('spQbBankCss')) return;
-  var st = document.createElement('style');
-  st.id = 'spQbBankCss';
-  st.textContent = `
-    .qb-head-wrap {
-      margin-bottom: 22px;
-    }
-    .qb-title-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-    .qb-filters {
-      display: flex;
-      align-items: flex-end;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-    .qb-fgrp {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      min-width: 122px;
-    }
-    .qb-fgrp label {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--mut);
-      letter-spacing: .04em;
-    }
-    .qb-select {
-      appearance: none;
-      -webkit-appearance: none;
-      background-color: var(--panel);
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2386aaa4' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 10px center;
-      border: 1.5px solid var(--line);
-      border-radius: 12px;
-      color: var(--tx);
-      font-size: 13px;
-      font-weight: 700;
-      padding: 8px 32px 8px 12px;
-      cursor: pointer;
-      outline: none;
-      transition: border-color .18s, background-color .18s;
-    }
-    .qb-select:hover, .qb-select:focus {
-      border-color: var(--acc);
-    }
-    .qb-select.active {
-      border-color: var(--sand);
-      background-color: var(--sand-bg);
-      color: var(--tx);
-    }
+/* ===== ATLAS (Archipelago Skill Map) ===== */
+var qbRealmMode = 'all';
+var qbStarFilter = 'all';
 
-    .qb-cols {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 20px;
-      align-items: start;
-    }
-    @media (max-width: 920px) {
-      .qb-cols { grid-template-columns: 1fr; }
-    }
-
-    .qb-sec-card {
-      background: linear-gradient(160deg, var(--panel) 0%, var(--panel2) 100%);
-      border: 1.5px solid var(--line);
-      border-radius: 26px;
-      padding: 22px 24px 14px;
-      box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.18), 0 4px 0 var(--line);
-    }
-    .qb-sec-hd {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding-bottom: 18px;
-      border-bottom: 1.5px solid var(--line);
-    }
-    .qb-sec-hd h2 {
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: var(--tx);
-      line-height: 1.15;
-    }
-    .qb-sec-hd small {
-      display: block;
-      font-size: 12.5px;
-      font-weight: 600;
-      color: var(--mut);
-      margin-top: 3px;
-    }
-    .qb-sec-acts {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex: none;
-    }
-    .qb-shuf-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      border: 1.5px solid var(--line);
-      background: var(--panel);
-      color: var(--mut);
-      display: grid;
-      place-items: center;
-      transition: .18s;
-      cursor: pointer;
-    }
-    .qb-shuf-btn:hover {
-      border-color: var(--acc);
-      color: var(--acc);
-    }
-    .qb-shuf-btn.on {
-      border-color: var(--acc);
-      background: rgba(34, 163, 129, 0.15);
-      color: var(--acc);
-    }
-    .qb-play-btn {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: linear-gradient(180deg, var(--acc) 0%, var(--acc2) 100%);
-      color: #fff;
-      display: grid;
-      place-items: center;
-      box-shadow: 0 3px 0 var(--acc2), 0 6px 14px rgba(34, 163, 129, 0.28);
-      transition: transform .16s, box-shadow .16s, filter .16s;
-      cursor: pointer;
-    }
-    .qb-play-btn:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.06);
-      box-shadow: 0 5px 0 var(--acc2), 0 10px 18px rgba(34, 163, 129, 0.34);
-    }
-    .qb-play-btn:active {
-      transform: translateY(1px);
-      box-shadow: 0 1px 0 var(--acc2);
-    }
-
-    .qb-dom-block {
-      padding: 16px 0 10px;
-      border-bottom: 1px solid var(--line);
-    }
-    .qb-dom-block:last-child {
-      border-bottom: 0;
-      padding-bottom: 4px;
-    }
-    .qb-row {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 9px 10px;
-      border-radius: 12px;
-      text-align: left;
-      transition: background .16s, transform .16s;
-      cursor: pointer;
-    }
-    .qb-row:hover {
-      background: var(--panel);
-    }
-    .qb-row.dom {
-      margin-bottom: 4px;
-    }
-    .qb-row.dom .qb-r-name {
-      font-size: 15.5px;
-      font-weight: 800;
-      color: var(--tx);
-    }
-    .qb-row.top {
-      padding-left: 20px;
-    }
-    .qb-row.top .qb-r-name {
-      font-size: 13.5px;
-      font-weight: 500;
-      color: var(--tx);
-      opacity: 0.92;
-      line-height: 1.35;
-    }
-    .qb-row:hover .qb-r-name {
-      color: var(--acc);
-    }
-    .qb-r-meta {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      flex: none;
-      white-space: nowrap;
-    }
-    .qb-ok-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 12px;
-      font-weight: 800;
-      color: var(--acc);
-    }
-    .qb-ok-dot {
-      width: 17px;
-      height: 17px;
-      border-radius: 50%;
-      background: var(--acc);
-      color: #fff;
-      display: grid;
-      place-items: center;
-    }
-    .qb-flag-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      font-size: 11.5px;
-      font-weight: 800;
-      color: var(--sand);
-    }
-    .qb-cnt {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--mut);
-      font-variant-numeric: tabular-nums;
-    }
-    .qb-chev {
-      color: var(--mut);
-      opacity: 0.7;
-      display: inline-flex;
-      transition: transform .16s, color .16s;
-    }
-    .qb-row:hover .qb-chev {
-      transform: translateX(3px);
-      color: var(--acc);
-      opacity: 1;
-    }
-    .qb-empty {
-      padding: 28px 12px;
-      text-align: center;
-      color: var(--mut);
-      font-size: 13px;
-    }
-  `;
-  document.head.appendChild(st);
-})();
-
-var QB_FLAGS_KEY = 'satpath_qb_flags_v1';
-var qbFilters = { diff: 'all', solved: 'all', status: 'all', marked: 'all' };
-var qbShuffle = { rw: true, math: true };
-
-function getQbFlags() {
-  try { return JSON.parse(spGet(QB_FLAGS_KEY)) || []; } catch (e) { return []; }
-}
-function saveQbFlags(list) {
-  try { spSet(QB_FLAGS_KEY, JSON.stringify(list.slice(0, 300))); } catch (e) {}
-}
-function isQbFlagged(qText) {
-  var clean = String(qText || '').trim();
-  return getQbFlags().some(function(x) { return String(x.q).trim() === clean; });
-}
-function toggleQbFlag(qObj) {
-  if (!qObj || !qObj.q) return false;
-  var list = getQbFlags();
-  var clean = String(qObj.q).trim();
-  var idx = list.findIndex(function(x) { return String(x.q).trim() === clean; });
-  if (idx >= 0) {
-    list.splice(idx, 1);
-    saveQbFlags(list);
-    return false;
-  }
-  list.unshift({
-    q: qObj.q,
-    ans: qObj.ans,
-    opts: Array.isArray(qObj.opts) ? qObj.opts.slice() : [],
-    isGrid: !!qObj.isGrid,
-    rw: !!qObj.rw,
-    ti: typeof qObj.ti === 'number' ? qObj.ti : 0,
-    top: qObj.top || ''
-  });
-  saveQbFlags(list);
-  return true;
-}
-
-/* Сохраняем совместимость с Analytics и Dashboard */
 function getTopicStars(key, isRw, topicIdx) {
   var st = bankStats();
   var r = st[key] || { a: 0, c: 0 };
@@ -2626,422 +2340,197 @@ function getTopicStars(key, isRw, topicIdx) {
   var pathStars = pathNodesForTopic >= 5 ? 3 : pathNodesForTopic >= 3 ? 2 : pathNodesForTopic >= 1 ? 1 : 0;
   return Math.max(stars, pathStars);
 }
+
 function renderStarsHtml(stars) {
   var s = '';
-  for (var i = 1; i <= 3; i++) s += '<span class="' + (i <= stars ? 'on' : 'off') + '">★</span>';
+  for (var i = 1; i <= 3; i++) {
+    s += '<span class="' + (i <= stars ? 'on' : 'off') + '">★</span>';
+  }
   return '<div class="isl-stars" aria-label="' + stars + ' of 3 stars">' + s + '</div>';
 }
 
-function qbTopicCount(isRw, ti) {
-  if (isRw) {
-    var base = (typeof RQ !== 'undefined' && RQ[ti]) ? RQ[ti].length : 0;
-    var gen = (typeof RGEN !== 'undefined' && RGEN[ti]) ? RGEN[ti].length * 10 : 0;
-    return base + gen;
+function renderMiniTrail(stars) {
+  return '<div class="isl-trail-mini">' +
+    '<i class="' + (stars >= 1 ? 'on' : '') + '"></i>' +
+    '<span class="' + (stars >= 2 ? 'on' : '') + '"></span>' +
+    '<i class="' + (stars >= 2 ? 'on' : '') + '"></i>' +
+    '<span class="' + (stars >= 3 ? 'on' : '') + '"></span>' +
+    '<i class="' + (stars >= 3 ? 'on' : '') + '"></i>' +
+    '</div>';
+}
+
+function getRankLabel(stars, statObj) {
+  var labels = ['Uncharted · 0★', 'Scouted · 1★', 'Charted · 2★', 'Mastered · 3★'];
+  if (statObj && statObj.a > 0) {
+    return labels[stars] + ' (' + Math.round((statObj.c / statObj.a) * 100) + '%)';
   }
-  var gList = (typeof GENERATORS !== 'undefined' && GENERATORS[ti]) ? GENERATORS[ti].length : 1;
-  return gList * 60;
+  return labels[stars];
 }
 
-function qbCheckBadgeHtml(n) {
-  if (!n) return '';
-  return '<span class="qb-ok-badge" title="' + n + ' solved correctly">' +
-    '<span class="qb-ok-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>' +
-    n + '</span>';
-}
 
-function qbPlaySvg() {
-  return '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-left:2px"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
-}
-function qbChevSvg() {
-  return '<span class="qb-chev"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>';
-}
-
-function qbTopicMatchesFilters(isRw, ti, tName, statObj, flags, mistakes) {
-  var a = statObj.a || 0, c = statObj.c || 0;
-  var hasWrong = mistakes.some(function(m) { return !!m.rw === isRw && m.top === tName; }) || (a > c);
-  var flagCnt = flags.filter(function(f) { return !!f.rw === isRw && (f.ti === ti || f.top === tName); }).length;
-
-  if (qbFilters.solved === 'solved' && a === 0) return false;
-  if (qbFilters.solved === 'unsolved' && c > 0 && a >= 5) return false;
-  if (qbFilters.status === 'correct' && c === 0) return false;
-  if (qbFilters.status === 'incorrect' && !hasWrong) return false;
-  if (qbFilters.marked === 'marked' && flagCnt === 0) return false;
-  if (qbFilters.marked === 'unmarked' && flagCnt > 0) return false;
-  return true;
-}
+/* AI tutor removed */
+(function() {
+  if (document.getElementById('spNoAiCss')) return;
+  var st = document.createElement('style');
+  st.id = 'spNoAiCss';
+  st.textContent = '.hud-pill.ai-tok{display:none!important}' +
+    '.sp-ai-stage{display:block!important;max-width:1240px!important;width:96vw!important;margin:0 auto!important}' +
+    '.sp-ai-stage>.qb{max-width:none!important;margin:0!important}' +
+    '@media (min-width:1041px){.sp-ai-stage.calc-open{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(380px,1fr)!important;gap:18px!important;max-width:1820px!important;width:97vw!important;align-items:start}}';
+  document.head.appendChild(st);
+})();
+function createSatPathAiPanelHtml() { return ''; }
+function bindSatPathAiEvents() {}
+function openAiTokenDonateModal() {}
 
 function buildBank() {
   var st = bankStats();
-  var flags = getQbFlags();
-  var mistakes = getMistakes();
-  var anyFilterOn = qbFilters.diff !== 'all' || qbFilters.solved !== 'all' || qbFilters.status !== 'all' || qbFilters.marked !== 'all';
+  var maxStars = (RTOPS.length + TOPS.length) * 3;
+  var earnedStars = 0, masteredCount = 0;
 
-  function renderSectionCard(secKey, title, curList) {
-    var isRw = (secKey === 'rw');
-    var globalIdx = 0;
-    var secTotalQ = 0;
-    var secVisibleTopics = [];
-    var domainsHtml = '';
+  RTOPS.forEach(function(_, k) {
+    var s = getTopicStars('rw_' + k, true, k);
+    earnedStars += s;
+    if (s === 3) masteredCount++;
+  });
+  TOPS.forEach(function(_, k) {
+    var s = getTopicStars(k, false, k);
+    earnedStars += s;
+    if (s === 3) masteredCount++;
+  });
 
-    curList.forEach(function(dom, dIdx) {
+  var h = '<div class="atlas-hero">' +
+    '<div>' +
+    '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + IC_MAP_HTML + ' ARCHIPELAGO TRAINING GROUNDS</div>' +
+    '<h1>Atlas</h1>' +
+    '<p class="sub">Explore topic islands across the R&amp;W and Math archipelagos. Earn up to 3 Mastery Stars (★★★) on every island and collect Pathcoins.</p>' +
+    '</div>' +
+    '<div class="atlas-stats-cluster">' +
+    '<div class="atlas-star-tot">' +
+    '<span class="st-ico">★</span>' +
+    '<div><b>' + earnedStars + ' / ' + maxStars + '</b><small>' + masteredCount + ' Islands Mastered (3★)</small></div>' +
+    '</div>' +
+    '</div>' +
+    '</div>' +
+    '<div class="atlas-controls">' +
+    '<div class="island-pills">' +
+    [
+      ['all', IC_MAP_HTML + ' All Realms'],
+      ['rw', IC_BOOK_HTML + ' R&amp;W Archipelago'],
+      ['math', IC_MATH_HTML + ' Math Archipelago']
+    ].map(function(pair) {
+      return '<button class="island-pill' + (qbRealmMode === pair[0] ? ' on' : '') + '" data-realm="' + pair[0] + '">' + pair[1] + '</button>';
+    }).join('') +
+    '</div>' +
+    '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+    '<div class="island-pills">' +
+    [
+      ['all', 'All ★'],
+      ['0', '☆ Uncharted'],
+      ['12', '★ Exploring'],
+      ['3', '★★★ Mastered']
+    ].map(function(pair) {
+      return '<button class="island-pill sand' + (qbStarFilter === pair[0] ? ' on' : '') + '" data-sfilt="' + pair[0] + '">' + pair[1] + '</button>';
+    }).join('') +
+    '</div></div></div>';
+
+  var regionsHtml = '';
+  var romanNumerals = ['I', 'II', 'III', 'IV'];
+
+  if (qbRealmMode === 'all' || qbRealmMode === 'rw') {
+    var rIdx = 0;
+    RCUR.forEach(function(dom, dIdx) {
       var domName = dom[0], domTopics = dom[1];
-      var domTotalQ = 0, domSolved = 0, domFlags = 0;
-      var domVisibleIds = [];
-      var rowsHtml = '';
-
+      var regStars = 0, regMax = domTopics.length * 3, cards = '';
       domTopics.forEach(function(tName) {
-        var ti = globalIdx++;
-        var rStat = st[isRw ? ('rw_' + ti) : ti] || { a: 0, c: 0 };
-        var qCnt = qbTopicCount(isRw, ti);
-        var fCnt = flags.filter(function(f) { return !!f.rw === isRw && (f.ti === ti || f.top === tName); }).length;
-
-        if (!qbTopicMatchesFilters(isRw, ti, tName, rStat, flags, mistakes)) return;
-
-        domTotalQ += qCnt;
-        domSolved += (rStat.c || 0);
-        domFlags += fCnt;
-        domVisibleIds.push(ti);
-        secVisibleTopics.push(ti);
-
-        rowsHtml += '<button type="button" class="qb-row top" data-qb-sec="' + secKey + '" data-qb-ti="' + ti + '">' +
-          '<span class="qb-r-name">' + tName + '</span>' +
-          '<span class="qb-r-meta">' +
-            (fCnt > 0 ? '<span class="qb-flag-badge" title="Marked for review">' + spSvg('flag', 12) + ' ' + fCnt + '</span>' : '') +
-            qbCheckBadgeHtml(rStat.c || 0) +
-            '<span class="qb-cnt">' + qCnt + ' questions</span>' +
-            qbChevSvg() +
-          '</span>' +
-        '</button>';
-      });
-
-      if (!rowsHtml) return;
-      secTotalQ += domTotalQ;
-
-      domainsHtml += '<div class="qb-dom-block">' +
-        '<button type="button" class="qb-row dom" data-qb-sec="' + secKey + '" data-qb-dom="' + dIdx + '" data-qb-list="' + domVisibleIds.join(',') + '" data-qb-title="' + lbEsc(domName) + '">' +
-          '<span class="qb-r-name">' + domName + '</span>' +
-          '<span class="qb-r-meta">' +
-            (domFlags > 0 ? '<span class="qb-flag-badge">' + spSvg('flag', 12) + ' ' + domFlags + '</span>' : '') +
-            qbCheckBadgeHtml(domSolved) +
-            '<span class="qb-cnt">' + domTotalQ + ' questions</span>' +
-            qbChevSvg() +
-          '</span>' +
-        '</button>' +
-        rowsHtml +
-      '</div>';
-    });
-
-    if (!domainsHtml) {
-      domainsHtml = '<div class="qb-empty">No topics match the selected filters.<br><button type="button" class="chip" data-qb-reset="1" style="margin-top:10px">Reset Filters</button></div>';
-    }
-
-    return '<div class="qb-sec-card">' +
-      '<div class="qb-sec-hd">' +
-        '<div>' +
-          '<h2>' + title + '</h2>' +
-          '<small>' + secTotalQ.toLocaleString() + ' questions</small>' +
-        '</div>' +
-        '<div class="qb-sec-acts">' +
-          '<button type="button" class="qb-shuf-btn' + (qbShuffle[secKey] ? ' on' : '') + '" data-qb-shuf="' + secKey + '" title="Shuffle questions: ' + (qbShuffle[secKey] ? 'ON' : 'OFF') + '">' + spSvg('shuffle', 16) + '</button>' +
-          '<button type="button" class="qb-play-btn" data-qb-play="' + secKey + '" data-qb-list="' + secVisibleTopics.join(',') + '" title="Start ' + title + ' practice">' + qbPlaySvg() + '</button>' +
-        '</div>' +
-      '</div>' +
-      '<div>' + domainsHtml + '</div>' +
-    '</div>';
-  }
-
-  var h = '<div class="qb-head-wrap">' +
-    '<div class="qb-title-row">' +
-      '<div>' +
-        '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + IC_MAP_HTML + ' ARCHIPELAGO TRAINING GROUNDS</div>' +
-        '<h1>Question Bank</h1>' +
-      '</div>' +
-      (anyFilterOn ? '<button type="button" class="chip" data-qb-reset="1" style="color:var(--sand);border-color:var(--sand-line)">' + spSvg('refresh', 13) + ' Reset Filters</button>' : '') +
-    '</div>' +
-    '<div class="qb-filters">' +
-      '<div class="qb-fgrp"><label for="qbFDiff">Difficulty</label>' +
-        '<select id="qbFDiff" class="qb-select' + (qbFilters.diff !== 'all' ? ' active' : '') + '">' +
-          '<option value="all"' + (qbFilters.diff === 'all' ? ' selected' : '') + '>All</option>' +
-          '<option value="easy"' + (qbFilters.diff === 'easy' ? ' selected' : '') + '>Easy</option>' +
-          '<option value="medium"' + (qbFilters.diff === 'medium' ? ' selected' : '') + '>Medium</option>' +
-          '<option value="hard"' + (qbFilters.diff === 'hard' ? ' selected' : '') + '>Hard</option>' +
-        '</select></div>' +
-      '<div class="qb-fgrp"><label for="qbFSolved">Solved</label>' +
-        '<select id="qbFSolved" class="qb-select' + (qbFilters.solved !== 'all' ? ' active' : '') + '">' +
-          '<option value="all"' + (qbFilters.solved === 'all' ? ' selected' : '') + '>All</option>' +
-          '<option value="solved"' + (qbFilters.solved === 'solved' ? ' selected' : '') + '>Solved</option>' +
-          '<option value="unsolved"' + (qbFilters.solved === 'unsolved' ? ' selected' : '') + '>Unsolved</option>' +
-        '</select></div>' +
-      '<div class="qb-fgrp"><label for="qbFStatus">Answer status</label>' +
-        '<select id="qbFStatus" class="qb-select' + (qbFilters.status !== 'all' ? ' active' : '') + '">' +
-          '<option value="all"' + (qbFilters.status === 'all' ? ' selected' : '') + '>All</option>' +
-          '<option value="correct"' + (qbFilters.status === 'correct' ? ' selected' : '') + '>Correct</option>' +
-          '<option value="incorrect"' + (qbFilters.status === 'incorrect' ? ' selected' : '') + '>Incorrect</option>' +
-        '</select></div>' +
-      '<div class="qb-fgrp"><label for="qbFMarked">Marked for Review</label>' +
-        '<select id="qbFMarked" class="qb-select' + (qbFilters.marked !== 'all' ? ' active' : '') + '">' +
-          '<option value="all"' + (qbFilters.marked === 'all' ? ' selected' : '') + '>All</option>' +
-          '<option value="marked"' + (qbFilters.marked === 'marked' ? ' selected' : '') + '>Marked</option>' +
-          '<option value="unmarked"' + (qbFilters.marked === 'unmarked' ? ' selected' : '') + '>Unmarked</option>' +
-        '</select></div>' +
-    '</div>' +
-  '</div>' +
-  '<div class="qb-cols">' +
-    renderSectionCard('rw', 'Reading &amp; Writing', RCUR) +
-    renderSectionCard('math', 'Math', CUR) +
-  '</div>';
-
-  qk.innerHTML = h;
-
-  qk.querySelector('#qbFDiff').onchange = function() { qbFilters.diff = this.value; buildBank(); };
-  qk.querySelector('#qbFSolved').onchange = function() { qbFilters.solved = this.value; buildBank(); };
-  qk.querySelector('#qbFStatus').onchange = function() { qbFilters.status = this.value; buildBank(); };
-  qk.querySelector('#qbFMarked').onchange = function() { qbFilters.marked = this.value; buildBank(); };
-}
-
-/* Единый тренажёр Question Bank (поддерживает 1 тему, целый домен, всю секцию и все фильтры) */
-function qbOpenDrill(cfg) {
-  var isRw = cfg.sec === 'rw';
-  var topicIds = (cfg.topics || []).filter(function(x) { return !isNaN(x); });
-  if (!topicIds.length) return toast('No topics match the current filters');
-
-  var tier = qbFilters.diff === 'all' ? 'bank' : qbFilters.diff;
-  var doShuffle = !!cfg.shuffle;
-
-  // Если выбран фильтр "Marked" или "Incorrect" — подтягиваем сохранённые вопросы
-  var fixedQueue = null;
-  if (qbFilters.marked === 'marked') {
-    var names = topicIds.map(function(ti) { return isRw ? RTOPS[ti] : TOPS[ti]; });
-    fixedQueue = getQbFlags().filter(function(f) {
-      return !!f.rw === isRw && (topicIds.indexOf(f.ti) >= 0 || names.indexOf(f.top) >= 0);
-    });
-    if (!fixedQueue.length) return toast('No marked questions in this selection');
-    if (doShuffle) fixedQueue = shuffle(fixedQueue);
-  } else if (qbFilters.status === 'incorrect') {
-    var mNames = topicIds.map(function(ti) { return isRw ? RTOPS[ti] : TOPS[ti]; });
-    var mList = getMistakes().filter(function(m) {
-      return !!m.rw === isRw && mNames.indexOf(m.top) >= 0;
-    });
-    if (mList.length) fixedQueue = doShuffle ? shuffle(mList) : mList;
-  }
-
-  // Для R&W формируем пул из выбранных тем
-  var rwPool = [];
-  if (isRw && !fixedQueue) {
-    topicIds.forEach(function(ti) {
-      var list = (typeof RQ !== 'undefined' && RQ[ti]) ? RQ[ti] : [];
-      var th = Math.ceil(list.length / 3);
-      var slice = tier === 'easy' ? list.slice(0, th) : (tier === 'medium' ? list.slice(th, th * 2) : (tier === 'hard' ? list.slice(th * 2) : list));
-      if (!slice.length) slice = list;
-      slice.forEach(function(r) {
-        rwPool.push({ q: r[0], ans: r[1], opts: shuffle(r.slice(1)), isGrid: false, rw: true, ti: ti, top: RTOPS[ti] });
-      });
-    });
-    if (doShuffle) rwPool = shuffle(rwPool);
-  }
-
-  var ov = document.createElement('div');
-  ov.style.cssText = 'position:fixed;inset:0;z-index:85;background:var(--bg);overflow:auto;padding:24px';
-  document.body.appendChild(ov);
-
-  var ok = 0, tot = 0, ptr = 0;
-
-  function close() {
-    closeActiveVocabPopover();
-    ov.remove();
-    buildBank();
-  }
-
-  function nextQuestionObj() {
-    if (fixedQueue) {
-      if (ptr >= fixedQueue.length) ptr = 0;
-      return fixedQueue[ptr++];
-    }
-    if (isRw) {
-      if (!rwPool.length) return null;
-      if (ptr >= rwPool.length) { ptr = 0; if (doShuffle) rwPool = shuffle(rwPool); }
-      return rwPool[ptr++];
-    }
-    var ti = doShuffle ? topicIds[R(0, topicIds.length - 1)] : topicIds[ptr++ % topicIds.length];
-    var q = getMathQ(ti, tier, R(0, 999) + tot * 17);
-    q.ti = ti;
-    q.top = TOPS[ti];
-    q.rw = false;
-    return q;
-  }
-
-  function draw() {
-    closeActiveVocabPopover();
-    markQuestionStart();
-    var q = nextQuestionObj();
-    if (!q) { toast('No questions available'); close(); return; }
-    var done = false;
-    var flagged = isQbFlagged(q.q);
-    var wasOpen = ov.dataset.calcOpen === '1' && !isRw;
-
-    ov.innerHTML =
-      '<div id="qbSplitWrap" class="quiz-split-wrap' + (wasOpen ? ' calc-open' : '') + '">' +
-        '<div class="qb" style="border-radius:26px">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
-            '<div>' +
-              '<small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px">' + (isRw ? IC_BOOK_HTML : IC_MATH_HTML) + ' ' + lbEsc(cfg.title || (isRw ? 'Reading & Writing' : 'Math')) + '</small>' +
-              '<div style="font-weight:800;font-size:15.5px">' + lbEsc(q.top || '') + '</div>' +
-            '</div>' +
-            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-              miniHudHtml() +
-              '<button type="button" id="qbFlagBtn" class="chip' + (flagged ? ' on' : '') + '" style="' + (flagged ? 'background:var(--sand);border-color:var(--sand);color:var(--sand-tx)' : '') + '">' + spSvg('flag', 13) + ' ' + (flagged ? 'Marked' : 'Mark') + '</button>' +
-              (isRw ? '<button type="button" id="qbAddWord" class="chip" style="color:var(--sand);border-color:var(--sand-line)">' + spSvg('plus', 13) + ' Add Word</button>' : '') +
-              (!isRw ? '<button type="button" id="qbRefBtn" class="sp-ref-btn">' + spSvg('ruler', 14) + ' Reference</button><button type="button" id="qbCalcBtn" style="background:' + (wasOpen ? 'var(--acc2)' : 'var(--acc)') + ';color:#fff;padding:5px 12px;border-radius:10px;font-weight:700;font-size:12px">' + (wasOpen ? '✕ Close Calculator' : (IC_MATH_HTML + ' Desmos')) + '</button>' : '') +
-              '<button type="button" id="qbExitBtn" class="tbtn">✕</button>' +
-            '</div>' +
+        var k = rIdx++;
+        var stars = getTopicStars('rw_' + k, true, k);
+        regStars += stars;
+        if (qbStarFilter === '0' && stars !== 0) return;
+        if (qbStarFilter === '12' && (stars < 1 || stars > 2)) return;
+        if (qbStarFilter === '3' && stars !== 3) return;
+        var rStat = st['rw_' + k] || { a: 0, c: 0 };
+        cards += '<button class="atlas-island' + (stars === 3 ? ' mastered' : '') + '" data-r="' + k + '">' +
+          '<div>' +
+          '<div class="isl-top-row"><span class="isl-num">R&amp;W Island 0' + (k + 1) + '</span>' + renderStarsHtml(stars) + '</div>' +
+          '<div class="isl-name" style="margin-top:10px">' + tName + '</div>' +
           '</div>' +
-          '<div class="chips">' +
-            '<span class="tag" style="margin:0;font-size:10.5px">' + (qbFilters.diff === 'all' ? 'ALL DIFFICULTIES' : qbFilters.diff.toUpperCase()) + '</span>' +
-            '<span class="sc" style="margin-left:0">✓ ' + ok + ' / ' + tot + ' solved</span>' +
+          '<div>' +
+          renderMiniTrail(stars) +
+          '<div class="isl-foot" style="margin-top:10px">' +
+          '<span class="isl-rank">' + getRankLabel(stars, rStat) + '</span>' +
+          '<span class="isl-bounty">' + IC_COIN_HTML + ' ★ +15 PC ›</span>' +
+          '</div></div></button>';
+      });
+      if (cards) {
+        var c = RDOM[domName] || ['#22a381', '#11676a'];
+        var rom = romanNumerals[dIdx % romanNumerals.length];
+        regionsHtml += '<div class="archipelago-region">' +
+          '<div class="arch-hd">' +
+          '<div class="arch-title"><div class="arch-badge" style="background:' + c[0] + '">' + rom + '</div>' +
+          '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">R&amp;W ARCHIPELAGO · SECTOR ' + rom + '</small><h2 style="font-size:20px;font-weight:800">' + domName + '</h2></div></div>' +
+          '<div style="display:flex;align-items:center;gap:10px"><span class="arch-stars-pill">★ ' + regStars + ' / ' + regMax + ' Stars</span></div>' +
           '</div>' +
-          '<div id="qbBodyTxt" style="font-size:' + (isRw ? 18 : 20) + 'px;line-height:1.6;margin:20px 0 14px">' + (isRw ? wrapWordsForVocab(q.q) : rHTML(q.q)) + '</div>' +
-          '<div id="qbAnsBox"></div>' +
-          '<div id="qbFeedBox"></div>' +
-        '</div>' +
-        '<div id="qbCalcPane" class="quiz-calc-pane"></div>' +
-      '</div>';
-
-    ov.querySelector('#qbExitBtn').onclick = close;
-    var flagBtn = ov.querySelector('#qbFlagBtn');
-    flagBtn.onclick = function() {
-      var nowFlag = toggleQbFlag(q);
-      flagBtn.classList.toggle('on', nowFlag);
-      flagBtn.style.cssText = nowFlag ? 'background:var(--sand);border-color:var(--sand);color:var(--sand-tx)' : '';
-      flagBtn.innerHTML = spSvg('flag', 13) + ' ' + (nowFlag ? 'Marked' : 'Mark');
-      toast(nowFlag ? 'Marked for review' : 'Removed review mark');
-    };
-
-    if (isRw) {
-      var passEl = ov.querySelector('#qbBodyTxt');
-      bindVocabClicksOnContainer(passEl);
-      ov.querySelector('#qbAddWord').onclick = function() {
-        openAddWordModal(passEl.textContent.replace(/\s+/g, ' ').trim().slice(0, 130));
-      };
-    } else {
-      ov.querySelector('#qbRefBtn').onclick = openMathReferenceSheet;
-      var sWrap = ov.querySelector('#qbSplitWrap');
-      var cPane = ov.querySelector('#qbCalcPane');
-      var cBtn = ov.querySelector('#qbCalcBtn');
-      var calc = null;
-      function mountC() {
-        if (!calc && window.Desmos) calc = createFullDesmos(cPane);
-        if (calc) setTimeout(function() { calc.resize(); }, 35);
+          '<div class="atlas-map-grid">' + cards + '</div></div>';
       }
-      if (wasOpen) mountC();
-      cBtn.onclick = function() {
-        if (!sWrap.classList.contains('calc-open')) {
-          sWrap.classList.add('calc-open');
-          ov.dataset.calcOpen = '1';
-          cBtn.style.background = 'var(--acc2)';
-          cBtn.innerHTML = '✕ Close Calculator';
-          mountC();
-        } else {
-          sWrap.classList.remove('calc-open');
-          ov.dataset.calcOpen = '0';
-          cBtn.style.background = 'var(--acc)';
-          cBtn.innerHTML = IC_MATH_HTML + ' Desmos';
-        }
-      };
-    }
-
-    var a = ov.querySelector('#qbAnsBox'), f = ov.querySelector('#qbFeedBox');
-    function fin(v) {
-      if (done) return;
-      done = true;
-      var good = q.isGrid ? same(v, q.ans) : String(v) === String(q.ans);
-      tot++;
-      var statKey = isRw ? ('rw_' + (q.ti || 0)) : (q.ti || 0);
-      bankSave(statKey, good);
-      lbAdd(good, 0, { rw: isRw, top: q.top, src: 'Question Bank' });
-      if (good) {
-        ok++;
-        addCoins(5);
-        removeMistakeByQuestion(q.q);
-      } else {
-        recordMistake(q, v, 'Question Bank · ' + (q.top || ''));
-      }
-
-      a.querySelectorAll('button.qo').forEach(function(b) {
-        b.disabled = true;
-        if (b.dataset.v === String(q.ans)) b.classList.add('good');
-        else if (b.dataset.v === String(v)) b.classList.add('bad');
-      });
-      var gi = ov.querySelector('#qbGridIn');
-      if (gi) { gi.disabled = true; gi.style.borderColor = good ? 'var(--acc)' : 'var(--sand)'; }
-
-      f.innerHTML =
-        '<p style="margin:14px 0;font-weight:700;color:' + (good ? 'var(--acc)' : 'var(--sand)') + '">' +
-          (good ? ('Correct! ✓ (+5 ' + IC_COIN_HTML + ')') : ('Incorrect · Saved to Mistakes. Answer: ' + (isRw ? String(q.ans) : rHTML(fmtAns(q.ans))))) +
-        '</p>' +
-        (!good ? renderMistakeTagPickerHtml(q.q) : '') +
-        '<button type="button" class="cta-amber" id="qbNextBtn">Next Question →</button>';
-      if (!good) bindMistakeTagPicker(f, q.q);
-      var nb = ov.querySelector('#qbNextBtn');
-      nb.onclick = draw;
-      setTimeout(function() { nb.focus(); }, 50);
-    }
-
-    if (q.isGrid) {
-      a.innerHTML = '<input id="qbGridIn" class="qin" placeholder="Enter your answer" autocomplete="off"><button type="button" class="cta-amber" id="qbGridSub" style="margin-top:12px">Check Answer</button>';
-      var inp = ov.querySelector('#qbGridIn');
-      inp.focus();
-      ov.querySelector('#qbGridSub').onclick = function() { if (inp.value) fin(inp.value.trim()); };
-      inp.onkeydown = function(e) { if (e.key === 'Enter' && inp.value) fin(inp.value.trim()); };
-    } else {
-      (q.opts || []).forEach(function(o, k) {
-        var b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'qo';
-        b.dataset.v = o;
-        b.innerHTML = '<b>' + 'ABCD'[k] + '</b>&nbsp; ' + (isRw ? String(o) : rHTML(o));
-        b.onclick = function() { fin(o); };
-        a.appendChild(b);
-      });
-      attachOptionEliminator(a);
-    }
+    });
   }
-  draw();
+
+  if (qbRealmMode === 'all' || qbRealmMode === 'math') {
+    var mIdx = 0;
+    CUR.forEach(function(dom, dIdx) {
+      var domName = dom[0], domTopics = dom[1];
+      var regStars = 0, regMax = domTopics.length * 3, cards = '';
+      domTopics.forEach(function(tName) {
+        var ti = mIdx++;
+        var stars = getTopicStars(ti, false, ti);
+        regStars += stars;
+        if (qbStarFilter === '0' && stars !== 0) return;
+        if (qbStarFilter === '12' && (stars < 1 || stars > 2)) return;
+        if (qbStarFilter === '3' && stars !== 3) return;
+        var mStat = st[ti] || { a: 0, c: 0 };
+        cards += '<button class="atlas-island' + (stars === 3 ? ' mastered' : '') + '" data-t="' + ti + '">' +
+          '<div>' +
+          '<div class="isl-top-row"><span class="isl-num">Math Island ' + (ti + 1 < 10 ? '0' + (ti + 1) : (ti + 1)) + '</span>' + renderStarsHtml(stars) + '</div>' +
+          '<div class="isl-name" style="margin-top:10px">' + tName + '</div>' +
+          '</div>' +
+          '<div>' +
+          renderMiniTrail(stars) +
+          '<div class="isl-foot" style="margin-top:10px">' +
+          '<span class="isl-rank">' + getRankLabel(stars, mStat) + '</span>' +
+          '<span class="isl-bounty">' + IC_COIN_HTML + ' ★ +15 PC ›</span>' +
+          '</div></div></button>';
+      });
+      if (cards) {
+        var c = DOM[domName] || ['#22a381', '#11676a'];
+        var rom = romanNumerals[dIdx % romanNumerals.length];
+        regionsHtml += '<div class="archipelago-region">' +
+          '<div class="arch-hd">' +
+          '<div class="arch-title"><div class="arch-badge" style="background:' + c[0] + '">' + rom + '</div>' +
+          '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">MATH ARCHIPELAGO · SECTOR ' + rom + '</small><h2 style="font-size:20px;font-weight:800">' + domName + '</h2></div></div>' +
+          '<div style="display:flex;align-items:center;gap:10px"><span class="arch-stars-pill">★ ' + regStars + ' / ' + regMax + ' Stars</span></div>' +
+          '</div>' +
+          '<div class="atlas-map-grid">' + cards + '</div></div>';
+      }
+    });
+  }
+
+  if (!regionsHtml) {
+    regionsHtml = '<div class="card" style="padding:36px;text-align:center"><div>' + spIco('compass','ui-ic-lg','color:var(--sand)') + '</div><b>No islands match this star filter yet</b><p class="sub">Switch back to "All ★" to view the full archipelago map.</p></div>';
+  }
+
+  qk.innerHTML = h + regionsHtml;
 }
 
 qk.addEventListener('click', function(e) {
-  if (e.target.closest('[data-qb-reset]')) {
-    qbFilters = { diff: 'all', solved: 'all', status: 'all', marked: 'all' };
-    buildBank();
-    return;
-  }
-  var shufBtn = e.target.closest('[data-qb-shuf]');
-  if (shufBtn) {
-    var sk = shufBtn.getAttribute('data-qb-shuf');
-    qbShuffle[sk] = !qbShuffle[sk];
-    toast((sk === 'rw' ? 'Reading & Writing' : 'Math') + ' shuffle: ' + (qbShuffle[sk] ? 'ON' : 'OFF'));
-    buildBank();
-    return;
-  }
-  var playBtn = e.target.closest('[data-qb-play]');
-  if (playBtn) {
-    var sec = playBtn.getAttribute('data-qb-play');
-    var list = (playBtn.getAttribute('data-qb-list') || '').split(',').filter(Boolean).map(Number);
-    qbOpenDrill({ sec: sec, topics: list, title: sec === 'rw' ? 'Reading & Writing Bank' : 'Math Bank', shuffle: qbShuffle[sec] });
-    return;
-  }
-  var domBtn = e.target.closest('[data-qb-dom]');
-  if (domBtn) {
-    var dSec = domBtn.getAttribute('data-qb-sec');
-    var dList = (domBtn.getAttribute('data-qb-list') || '').split(',').filter(Boolean).map(Number);
-    qbOpenDrill({ sec: dSec, topics: dList, title: domBtn.getAttribute('data-qb-title') || 'Domain Drill', shuffle: qbShuffle[dSec] });
-    return;
-  }
-  var topBtn = e.target.closest('[data-qb-ti]');
-  if (topBtn) {
-    var tSec = topBtn.getAttribute('data-qb-sec');
-    var ti = +topBtn.getAttribute('data-qb-ti');
-    qbOpenDrill({ sec: tSec, topics: [ti], title: tSec === 'rw' ? RTOPS[ti] : TOPS[ti], shuffle: qbShuffle[tSec] });
-  }
+  var rBtn = e.target.closest('[data-realm]');
+  if (rBtn) { qbRealmMode = rBtn.dataset.realm; buildBank(); return; }
+  var sBtn = e.target.closest('[data-sfilt]');
+  if (sBtn) { qbStarFilter = sBtn.dataset.sfilt; buildBank(); return; }
+  var b = e.target.closest('[data-r], [data-t]');
+  if (!b) return;
+  if (b.dataset.r !== undefined) rwBankOpen(+b.dataset.r);
+  else if (b.dataset.t !== undefined) bankOpen(+b.dataset.t);
 });
 
 function bankOpen(ti) {
