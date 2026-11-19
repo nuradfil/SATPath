@@ -4088,13 +4088,12 @@ document.querySelector('.main').addEventListener('click',function(){sd.classList
 document.getElementById('th').onclick=function(){var r=document.documentElement,dk=r.dataset.theme?r.dataset.theme=='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dk?'light':'dark'};
 var FB_CONFIG = {
   apiKey: "AIzaSyApS0OklFNhdr5LMyqnq3Qt0dIoGiQIaTU",
-  authDomain: "satpath-3ec98.firebaseapp.com",
+  authDomain: "satpath.online",
   projectId: "satpath-3ec98",
   storageBucket: "satpath-3ec98.firebasestorage.app",
   messagingSenderId: "766311395755",
   appId: "1:766311395755:web:b0c6314a631ee92da462ee"
 };
-
 /* ===== LEADERBOARD (Firebase) ===== */
 var FB=null,FBU=null,lbOff=0,lbCache={},lbT;
 function lbEsc(s){return String(s).replace(/[&<>"']/g,function(c){return'&#'+c.charCodeAt(0)+';'})}
