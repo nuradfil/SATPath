@@ -3693,910 +3693,283 @@ function openSupportModal() {
   ov.addEventListener('click', function(e) { if (e.target === ov) ov.remove(); });
 }
 
-/* ===== COMPREHENSIVE ANALYTICS & WEAKNESS DIAGNOSTIC HUB (ZERO RED, CUSTOM GOAL, REAL ACCURACY, STYLED DRILL BUTTONS) ===== */
+
+/* ===== ANALYTICS (minimal) =====
+ * ЗАМЕНИТЕ в app.js весь блок от
+ *   "/* ===== COMPREHENSIVE ANALYTICS & WEAKNESS DIAGNOSTIC HUB ..."
+ * до конца функции buildAnalyticsTab() (прямо перед
+ *   "/* Настройка сайдбара и контейнеров ..." ) на этот файл.
+ */
 (function injectAnalyticsStyles() {
-  if (document.getElementById('spAnalyticsCss')) return;
-  var st = document.createElement('style');
-  st.id = 'spAnalyticsCss';
-  st.textContent = `
-    @keyframes spDrawLine {
-      from { stroke-dashoffset: 1800; }
-      to { stroke-dashoffset: 0; }
-    }
-    @keyframes spFadeScale {
-      from { opacity: 0; transform: scale(0.92); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    @keyframes spGrowBar {
-      from { transform: scaleY(0); }
-      to { transform: scaleY(1); }
-    }
-    .an-draw-path {
-      stroke-dasharray: 1800;
-      stroke-dashoffset: 0;
-      animation: spDrawLine 1.4s cubic-bezier(.2,.8,.2,1) backwards;
-    }
-    .an-radar-poly {
-      transform-origin: center;
-      animation: spFadeScale 0.75s cubic-bezier(.2,.85,.3,1) backwards;
-    }
-    .an-hist-bar {
-      transform-origin: bottom;
-      animation: spGrowBar 0.7s cubic-bezier(.2,.85,.3,1) backwards;
-    }
-    .an-kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-bottom: 20px;
-    }
-    @media (max-width: 920px) {
-      .an-kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 520px) {
-      .an-kpi-grid { grid-template-columns: 1fr; }
-    }
-    .an-kpi-card {
-      background: linear-gradient(155deg, var(--panel) 0%, var(--panel2) 100%);
-      border: 1.5px solid var(--line);
-      border-radius: 22px;
-      padding: 18px 20px;
-      box-shadow: 0 8px 22px -10px rgba(0,0,0,0.16), 0 3px 0 var(--line);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 8px;
-      position: relative;
-      overflow: hidden;
-    }
-    .an-kpi-val {
-      font-size: 29px;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      color: var(--tx);
-    }
-    .an-dual-grid {
-      display: grid;
-      grid-template-columns: 1.35fr 1fr;
-      gap: 20px;
-      margin-bottom: 22px;
-      align-items: stretch;
-    }
-    @media (max-width: 980px) {
-      .an-dual-grid { grid-template-columns: 1fr; }
-    }
-    .an-weak-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 14px;
-    }
-    .an-weak-card {
-      background: linear-gradient(155deg, var(--panel2) 0%, var(--panel) 100%);
-      border: 1.5px solid var(--line);
-      border-radius: 20px;
-      padding: 16px 18px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 12px;
-      box-shadow: 0 4px 0 var(--line);
-      transition: transform .18s, border-color .18s, box-shadow .18s;
-    }
-    .an-weak-card:hover {
-      transform: translateY(-3px);
-      border-color: var(--acc);
-      box-shadow: 0 7px 0 var(--acc2), 0 12px 24px rgba(0,0,0,0.14);
-    }
-    .an-weak-card.priority-amber {
-      border-color: var(--sand-line);
-      box-shadow: 0 4px 0 rgba(229, 154, 22, 0.28);
-    }
-    .an-weak-card.priority-amber:hover {
-      border-color: var(--sand);
-      box-shadow: 0 7px 0 var(--sand-deep), 0 12px 24px rgba(245, 184, 46, 0.18);
-    }
-    .an-drill-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 8px 15px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.01em;
-      white-space: nowrap;
-      background: linear-gradient(180deg, var(--acc) 0%, var(--acc2) 100%);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.18);
-      box-shadow: 0 3px 0 var(--acc2);
-      transition: transform .16s, box-shadow .16s, filter .16s;
-      cursor: pointer;
-    }
-    .an-drill-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 0 var(--acc2), 0 8px 16px rgba(34,163,129,0.28);
-      filter: brightness(1.06);
-    }
-    .an-drill-btn:active {
-      transform: translateY(1px);
-      box-shadow: 0 1px 0 var(--acc2);
-    }
-    .an-drill-btn.amber {
-      background: linear-gradient(180deg, var(--sand-bright) 0%, var(--sand) 100%);
-      color: var(--sand-tx);
-      box-shadow: 0 3px 0 var(--sand-deep);
-      border-color: rgba(255,255,255,0.25);
-    }
-    .an-drill-btn.amber:hover {
-      box-shadow: 0 5px 0 var(--sand-deep), 0 8px 16px rgba(245,184,46,0.28);
-    }
-    .an-goal-box {
-      background: linear-gradient(145deg, var(--panel2) 0%, var(--panel) 100%);
-      border: 1.5px solid var(--sand-line);
-      border-radius: 20px;
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      min-width: 280px;
-      box-shadow: 0 4px 0 var(--line);
-    }
-    .an-goal-inp {
-      width: 78px;
-      padding: 5px 8px;
-      border-radius: 10px;
-      border: 1.5px solid var(--sand-line);
-      background: var(--panel);
-      color: var(--sand);
-      font-weight: 800;
-      font-size: 15px;
-      text-align: center;
-      font-variant-numeric: tabular-nums;
-      outline: none;
-    }
-    .an-goal-inp:focus {
-      border-color: var(--acc);
-      color: var(--tx);
-    }
-    .an-goal-slider {
-      width: 100%;
-      accent-color: var(--acc);
-      cursor: pointer;
-      height: 6px;
-      border-radius: 99px;
-    }
-    .an-table-wrap {
-      overflow-x: auto;
-      border: 1.5px solid var(--line);
-      border-radius: 20px;
-      background: var(--panel);
-    }
-    .an-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      text-align: left;
-    }
-    .an-table th {
-      background: var(--panel2);
-      color: var(--mut);
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      padding: 12px 16px;
-      border-bottom: 1.5px solid var(--line);
-      white-space: nowrap;
-    }
-    .an-table td {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--line);
-      vertical-align: middle;
-    }
-    .an-table tr:last-child td { border-bottom: 0; }
-    .an-table tr:hover td { background: var(--panel2); }
-    .an-dot-node {
-      cursor: pointer;
-      transition: r .18s, stroke-width .18s;
-    }
-    .an-dot-node:hover {
-      r: 7px;
-      stroke-width: 3px;
+  var css = `
+    .an2{max-width:880px;margin:0 auto;display:grid;gap:18px}
+    .an2-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+    .an2-goal{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut);font-weight:700}
+    .an2-goal input{width:76px;padding:6px 8px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);color:var(--tx);font-weight:800;font-size:14px;text-align:center;outline:none}
+    .an2-goal input:focus{border-color:var(--acc)}
+    .an2-card{background:var(--panel);border:1.5px solid var(--line);border-radius:22px;padding:22px 24px}
+    .an2-lbl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+    .an2-score{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+    .an2-num{font-size:54px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--tx)}
+    .an2-num small{font-size:16px;color:var(--mut);font-weight:700;margin-left:6px;letter-spacing:0}
+    .an2-sec{display:flex;gap:26px}
+    .an2-sec div{text-align:right}
+    .an2-sec b{display:block;font-size:24px;font-weight:800}
+    .an2-prog{height:8px;border-radius:99px;background:var(--cell);overflow:hidden;margin:18px 0 8px}
+    .an2-prog i{display:block;height:100%;background:var(--acc);border-radius:99px;transition:width .6s ease}
+    .an2-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--mut)}
+    .an2-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .an2-stat{background:var(--panel);border:1.5px solid var(--line);border-radius:18px;padding:14px 16px}
+    .an2-stat b{display:block;font-size:22px;font-weight:800;margin-top:4px}
+    .an2-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    .an2-h h2{font-size:17px;font-weight:800}
+    .an2-focus{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .an2-f{border:1.5px solid var(--line);background:var(--panel2);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;justify-content:space-between;gap:12px}
+    .an2-f b{font-size:14.5px;line-height:1.35;display:block;margin:4px 0}
+    .an2-f small{color:var(--mut);font-size:12px}
+    .an2-btn{display:inline-flex;align-items:center;justify-content:center;padding:7px 13px;border-radius:11px;font-size:12px;font-weight:800;background:var(--acc);color:#fff;box-shadow:0 2px 0 var(--acc2);white-space:nowrap}
+    .an2-btn:hover{filter:brightness(1.06)}
+    .an2-btn.ghost{background:transparent;color:var(--acc);box-shadow:none;border:1.5px solid var(--line)}
+    .an2-btn.ghost:hover{border-color:var(--acc)}
+    .an2-row{display:grid;grid-template-columns:1fr 150px 56px 78px;gap:12px;align-items:center;padding:11px 0;border-top:1px solid var(--line);font-size:13px}
+    .an2-row:first-of-type{border-top:0}
+    .an2-row .nm{min-width:0}
+    .an2-row .nm b{font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .an2-row .nm small{color:var(--mut);font-size:11px}
+    .an2-mini{display:flex;align-items:center;gap:8px}
+    .an2-mini .b{flex:1;height:6px;border-radius:99px;background:var(--cell);overflow:hidden}
+    .an2-mini .b i{display:block;height:100%}
+    .an2-mini span{width:34px;text-align:right;font-weight:800;font-size:12px}
+    .an2-empty{color:var(--mut);font-size:13px;padding:6px 0}
+    @media(max-width:720px){
+      .an2-stats{grid-template-columns:repeat(2,1fr)}
+      .an2-focus{grid-template-columns:1fr}
+      .an2-row{grid-template-columns:1fr 96px 70px}
+      .an2-row .mk{display:none}
+      .an2-num{font-size:44px}
     }
   `;
-  document.head.appendChild(st);
+  var st = document.getElementById('spAnalyticsCss');
+  if (!st) { st = document.createElement('style'); st.id = 'spAnalyticsCss'; document.head.appendChild(st); }
+  st.textContent = css;
 })();
 
 var anTargetGoal = Math.max(400, Math.min(1600, Math.round((+(spGet('satpath_goal_score') || 1500)) / 10) * 10));
-var anTopicFilter = 'weak'; // Default to 'weak' so user immediately sees weak spots first!
+var anSecFilter = 'all';   // all | math | rw
+var anShowAll = false;
+
+/* Статистика по каждой из 30 тем.
+ * Источники: Atlas (bankStats) + ответы в Mock Exams (telemetry.pacing, где top = точное имя темы).
+ * Пути (Path) и Blitz в telemetry не содержат тему, поэтому тут не дублируются. */
+function anTopicRows() {
+  var bank = bankStats(), tel = getTelemetry(), mk = getMistakes();
+  var mockBy = {};
+  (tel.pacing || []).forEach(function(p) {
+    if (!p.top || p.top === 'SAT Math' || p.top === 'Reading & Writing') return;
+    var r = mockBy[p.top] || (mockBy[p.top] = { a: 0, c: 0 });
+    r.a++; if (p.good) r.c++;
+  });
+  var errBy = {};
+  mk.forEach(function(m) { var k = String(m.top || '').trim(); if (k) errBy[k] = (errBy[k] || 0) + 1; });
+
+  var rows = [];
+  function add(cur, isRw) {
+    var idx = 0;
+    cur.forEach(function(dom) {
+      dom[1].forEach(function(name) {
+        var ti = idx++;
+        var b = bank[isRw ? 'rw_' + ti : ti] || { a: 0, c: 0 };
+        var m = mockBy[name] || { a: 0, c: 0 };
+        var a = (b.a || 0) + m.a, c = (b.c || 0) + m.c, errs = errBy[name] || 0;
+        var acc = a >= 3 ? c / a : null;
+        var sev = (a > 0 || errs > 0) ? ((acc !== null ? (1 - acc) * 100 : 40) + errs * 6) : -1;
+        rows.push({ name: name, dom: dom[0], ti: ti, isRw: isRw, a: a, c: c, errs: errs, acc: acc, sev: sev });
+      });
+    });
+  }
+  if (typeof CUR !== 'undefined') add(CUR, false);
+  if (typeof RCUR !== 'undefined') add(RCUR, true);
+  return rows;
+}
+
+function anSectionEst(att, cor) {
+  if (att < 20) return null;
+  return Math.min(800, Math.max(200, Math.round((200 + 600 * Math.pow(cor / att, 1.2)) / 10) * 10));
+}
 
 function buildAnalyticsTab() {
   var el = document.getElementById('vAN');
   if (!el) return;
-  var t = getTelemetry();
-  var st = bankStats();
-  var md = getDone(), rd = getRDone();
+
+  var rows = anTopicRows();
+  var tel = getTelemetry();
+  var streak = computeStreakInfo(tel);
   var mkList = getMistakes();
-  var ptRes = ptLoad();
-  var streak = computeStreakInfo(t);
+  var mocks = {};
+  try { mocks = ptLoad() || {}; } catch (e) {}
 
-  // Count active mistakes per topic name for exact weakness detection
-  var mistakesByTopic = {};
-  var repeatMistakesByTopic = {};
-  mkList.forEach(function(m) {
-    var topKey = String(m.top || '').trim();
-    if (!topKey) return;
-    mistakesByTopic[topKey] = (mistakesByTopic[topKey] || 0) + 1;
-    if ((m.failCount || 1) >= 2) {
-      repeatMistakesByTopic[topKey] = (repeatMistakesByTopic[topKey] || 0) + 1;
-    }
-  });
-
-  // Separate Math vs R&W accuracy from real solved questions
+  /* ---- оценка балла: приоритет — реальные моки, иначе практика (мин. 20 вопросов в секции) ---- */
   var mAtt = 0, mCor = 0, rAtt = 0, rCor = 0;
-  Object.keys(st).forEach(function(k) {
-    var rec = st[k] || { a: 0, c: 0 };
-    if (String(k).indexOf('rw_') === 0) {
-      rAtt += rec.a || 0;
-      rCor += rec.c || 0;
-    } else {
-      mAtt += rec.a || 0;
-      mCor += rec.c || 0;
-    }
+  rows.forEach(function(r) { if (r.isRw) { rAtt += r.a; rCor += r.c; } else { mAtt += r.a; mCor += r.c; } });
+  var keys = Object.keys(mocks).map(Number).sort(function(a, b) { return b - a; });
+  var mockM = null, mockR = null, mockMn = 0, mockRn = 0;
+  keys.forEach(function(k) {
+    if (!mockM && mocks[k] && mocks[k].m) { mockM = mocks[k].m.score; mockMn = k; }
+    if (!mockR && mocks[k] && mocks[k].r) { mockR = mocks[k].r.score; mockRn = k; }
   });
-  // Also include telemetry pacing history if bankStats is sparse
-  var pacing = t.pacing || [];
-  var mathP = pacing.filter(function(x) { return !x.rw; });
-  var rwP = pacing.filter(function(x) { return !!x.rw; });
-  var totA = mAtt + rAtt;
-  var totC = mCor + rCor;
-  var overallAcc = totA > 0 ? Math.round((totC / totA) * 100) : (pacing.length > 0 ? Math.round((pacing.filter(function(x){return x.good}).length / pacing.length) * 100) : 0);
+  var estM = mockM !== null ? mockM : anSectionEst(mAtt, mCor);
+  var estR = mockR !== null ? mockR : anSectionEst(rAtt, rCor);
+  var total = (estM !== null && estR !== null) ? estM + estR : null;
+  var fromMock = (mockM !== null && mockR !== null);
+  var band = fromMock ? 30 : 70;
+  var totalQ = mAtt + rAtt;
+  var accAll = totalQ ? Math.round((mCor + rCor) / totalQ * 100) : null;
 
-  var mAccRatio = mAtt > 0 ? (mCor / mAtt) : (mathP.length > 0 ? (mathP.filter(function(x){return x.good}).length / mathP.length) : 0);
-  var rAccRatio = rAtt > 0 ? (rCor / rAtt) : (rwP.length > 0 ? (rwP.filter(function(x){return x.good}).length / rwP.length) : 0);
+  var srcNote = fromMock ? 'Based on your latest Mock Exams'
+    : (total !== null ? 'Practice estimate · take a Mock Exam for a precise score'
+    : 'Need 20+ answered questions in both Math and R&W (Atlas / Mock) for an estimate');
 
-  // Honest, accurate score projection: starts at 400 per section if untouched, scales with real accuracy + islands + mocks
-  var mPracticeScore = (mAtt === 0 && md.length === 0 && mathP.length === 0)
-    ? 400
-    : Math.min(800, Math.max(200, Math.round((360 + md.length * 2.2 + mAccRatio * 220 + Math.min(40, mAtt * 0.5)) / 10) * 10));
-  var rPracticeScore = (rAtt === 0 && rd.length === 0 && rwP.length === 0)
-    ? 400
-    : Math.min(800, Math.max(200, Math.round((360 + rd.length * 4.4 + rAccRatio * 220 + Math.min(40, rAtt * 0.5)) / 10) * 10));
+  var gap = total !== null ? Math.max(0, anTargetGoal - total) : null;
+  var pct = total !== null ? Math.max(0, Math.min(100, Math.round((total - 400) / Math.max(1, anTargetGoal - 400) * 100))) : 0;
 
-  var mockScores = [];
-  Object.keys(ptRes).forEach(function(k) {
-    var r = ptRes[k];
-    if (!r) return;
-    var mSc = r.m ? r.m.score : mPracticeScore;
-    var rSc = r.r ? r.r.score : rPracticeScore;
-    var totSc = r.total || (mSc + rSc);
-    mockScores.push({
-      t: +k,
-      label: 'Mock 0' + k,
-      total: totSc,
-      m: mSc,
-      r: rSc,
-      mHard: r.m ? !!r.m.hard : false,
-      rHard: r.r ? !!r.r.hard : false
-    });
+  /* ---- динамика по полным мокам ---- */
+  var trend = [];
+  Object.keys(mocks).map(Number).sort(function(a, b) { return a - b; }).forEach(function(k) {
+    if (mocks[k] && mocks[k].total) trend.push({ t: k, v: mocks[k].total });
   });
-  mockScores.sort(function(a, b) { return a.t - b.t; });
 
-  var mScore = mPracticeScore;
-  var rScore = rPracticeScore;
-  if (mockScores.length) {
-    var latest = mockScores[mockScores.length - 1];
-    mScore = mAtt + md.length > 0 ? Math.round((mPracticeScore * 0.35 + latest.m * 0.65) / 10) * 10 : latest.m;
-    rScore = rAtt + rd.length > 0 ? Math.round((rPracticeScore * 0.35 + latest.r * 0.65) / 10) * 10 : latest.r;
-  }
-  var totalEst = mScore + rScore;
-  var totalEvidence = totA + md.length * 5 + rd.length * 5 + mockScores.length * 50;
-  var band = totalEvidence >= 120 ? 20 : (totalEvidence >= 40 ? 30 : (totalEvidence >= 10 ? 50 : 70));
-  var lowEst = Math.max(400, totalEst - band), highEst = Math.min(1600, totalEst + band);
-  var mHardUnlocked = (mAtt >= 10 && mAccRatio >= 0.68) || md.length >= 30 || (mockScores.length && mockScores[mockScores.length - 1].mHard);
-  var rHardUnlocked = (rAtt >= 10 && rAccRatio >= 0.68) || rd.length >= 18 || (mockScores.length && mockScores[mockScores.length - 1].rHard);
-  var percentile = totalEst >= 1550 ? '99th+' : totalEst >= 1500 ? '98th' : totalEst >= 1450 ? '96th' : totalEst >= 1400 ? '93rd' : totalEst >= 1300 ? '86th' : totalEst >= 1200 ? '74th' : totalEst >= 1100 ? '58th' : totalEst >= 950 ? '38th' : 'Baseline';
-  var gapToGoal = Math.max(0, anTargetGoal - totalEst);
+  var h = '<div class="an2">';
 
-  // Build trajectory points from real data
-  var trajPoints = [];
-  var startScore = 800;
-  trajPoints.push({ lbl: 'Start', tot: startScore, m: 400, r: 400 });
-  if (mockScores.length) {
-    mockScores.forEach(function(ms) {
-      trajPoints.push({ lbl: ms.label, tot: ms.total, m: ms.m, r: ms.r });
+  /* 1. Header + goal */
+  h += '<div class="an2-head"><div><h1>Analytics</h1><p class="sub">Your score, weak spots, and what to practice next.</p></div>' +
+    '<label class="an2-goal">Target <input type="number" id="anGoalInput" min="400" max="1600" step="10" value="' + anTargetGoal + '"></label></div>';
+
+  /* 2. Score card */
+  h += '<div class="an2-card">' +
+    '<div class="an2-score"><div><div class="an2-lbl">Estimated score</div>' +
+    '<div class="an2-num">' + (total !== null ? total + '<small>±' + band + '</small>' : '—') + '</div></div>' +
+    '<div class="an2-sec"><div><span class="an2-lbl">Math</span><b>' + (estM !== null ? estM : '—') + '</b></div>' +
+    '<div><span class="an2-lbl">R&amp;W</span><b>' + (estR !== null ? estR : '—') + '</b></div></div></div>' +
+    '<div class="an2-prog"><i style="width:' + pct + '%"></i></div>' +
+    '<div class="an2-foot"><span>' + srcNote + '</span><span>' +
+    (gap === null ? '' : (gap > 0 ? '<b style="color:var(--tx)">+' + gap + '</b> to reach ' + anTargetGoal : '<b style="color:var(--acc)">Goal ' + anTargetGoal + ' reached</b>')) +
+    '</span></div>';
+  if (trend.length >= 2) {
+    var W = 560, H = 70, pad = 8, mn = Math.min.apply(null, trend.map(function(x) { return x.v; })), mx = Math.max.apply(null, trend.map(function(x) { return x.v; }));
+    if (mx === mn) { mx += 10; mn -= 10; }
+    var pts = trend.map(function(x, i) {
+      return { x: Math.round(pad + i / (trend.length - 1) * (W - pad * 2)), y: Math.round(pad + (1 - (x.v - mn) / (mx - mn)) * (H - pad * 2)), v: x.v, t: x.t };
     });
-  } else if (totalEvidence > 0) {
-    var midM = Math.round(((400 + mScore) / 2) / 10) * 10;
-    var midR = Math.round(((400 + rScore) / 2) / 10) * 10;
-    trajPoints.push({ lbl: 'Midpoint', tot: midM + midR, m: midM, r: midR });
+    h += '<svg viewBox="0 0 ' + W + ' ' + (H + 18) + '" style="width:100%;height:auto;margin-top:14px;overflow:visible">' +
+      '<polyline points="' + pts.map(function(p) { return p.x + ',' + p.y; }).join(' ') + '" fill="none" stroke="var(--acc)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+      pts.map(function(p) {
+        return '<circle cx="' + p.x + '" cy="' + p.y + '" r="4" fill="var(--panel)" stroke="var(--acc)" stroke-width="2.5"/>' +
+          '<text x="' + p.x + '" y="' + (p.y - 9) + '" text-anchor="middle" font-size="11" font-weight="800" fill="var(--tx)">' + p.v + '</text>' +
+          '<text x="' + p.x + '" y="' + (H + 14) + '" text-anchor="middle" font-size="10" fill="var(--mut)">Mock ' + p.t + '</text>';
+      }).join('') + '</svg>';
   }
-  trajPoints.push({ lbl: 'Now', tot: totalEst, m: mScore, r: rScore });
+  h += '</div>';
 
-  var svgW = 680, svgH = 230, padL = 46, padR = 26, padT = 24, padB = 34;
-  var plotW = svgW - padL - padR, plotH = svgH - padT - padB;
-  var minChartScore = Math.min(700, Math.floor(Math.min(totalEst, anTargetGoal, 800) / 100) * 100);
-  function yForScore(sc) {
-    var clamped = Math.max(minChartScore, Math.min(1600, sc));
-    return Math.round(padT + plotH * (1 - (clamped - minChartScore) / (1600 - minChartScore)));
-  }
-  function xForIdx(i, n) {
-    return n <= 1 ? padL + plotW / 2 : Math.round(padL + (i / (n - 1)) * plotW);
-  }
-  function smoothSvgPath(pts) {
-    if (!pts.length) return '';
-    if (pts.length === 1) return 'M ' + pts[0].x + ' ' + pts[0].y;
-    var d = 'M ' + pts[0].x + ' ' + pts[0].y;
-    for (var i = 0; i < pts.length - 1; i++) {
-      var p0 = pts[i], p1 = pts[i + 1];
-      var cx = Math.round((p0.x + p1.x) / 2);
-      d += ' C ' + cx + ' ' + p0.y + ', ' + cx + ' ' + p1.y + ', ' + p1.x + ' ' + p1.y;
-    }
-    return d;
-  }
-  var totCoords = trajPoints.map(function(p, i) { return { x: xForIdx(i, trajPoints.length), y: yForScore(p.tot), p: p }; });
-  var linePath = smoothSvgPath(totCoords);
-  var areaPath = linePath + ' L ' + totCoords[totCoords.length - 1].x + ' ' + (padT + plotH) + ' L ' + totCoords[0].x + ' ' + (padT + plotH) + ' Z';
-  var goalY = yForScore(anTargetGoal);
+  /* 3. Four numbers */
+  h += '<div class="an2-stats">' +
+    '<div class="an2-stat"><span class="an2-lbl">Answered</span><b>' + totalQ.toLocaleString() + '</b></div>' +
+    '<div class="an2-stat"><span class="an2-lbl">Accuracy</span><b>' + (accAll !== null ? accAll + '%' : '—') + '</b></div>' +
+    '<div class="an2-stat"><span class="an2-lbl">Day streak</span><b>' + streak.current + '</b></div>' +
+    '<div class="an2-stat"><span class="an2-lbl">Mistakes to fix</span><b>' + mkList.length + '</b></div></div>';
 
-  // 2. Pacing & Time Telemetry Buckets (Harmonious teal/cyan/amber palette — NO RED)
-  var avgMathSec = mathP.length ? Math.round(mathP.reduce(function(s, x) { return s + x.sec; }, 0) / mathP.length) : null;
-  var avgRwSec = rwP.length ? Math.round(rwP.reduce(function(s, x) { return s + x.sec; }, 0) / rwP.length) : null;
+  /* 4. Focus next */
+  var withData = rows.filter(function(r) { return r.sev >= 0 && (r.acc === null || r.acc < 0.85 || r.errs > 0); })
+    .sort(function(a, b) { return b.sev - a.sev; });
+  var untested = rows.filter(function(r) { return r.sev < 0; });
+  var focus = withData.concat(untested).slice(0, 3);
 
-  var buckets = [
-    { lbl: '<25s (Rushed)', min: 0, max: 24, tot: 0, ok: 0, col: '#f5b82e' },
-    { lbl: '25–50s (Fast)', min: 25, max: 50, tot: 0, ok: 0, col: '#22a381' },
-    { lbl: '51–80s (Optimal)', min: 51, max: 80, tot: 0, ok: 0, col: '#14b8a6' },
-    { lbl: '81–105s (Careful)', min: 81, max: 105, tot: 0, ok: 0, col: '#38bdf8' },
-    { lbl: '>105s (Overtime)', min: 106, max: 9999, tot: 0, ok: 0, col: '#d97706' }
-  ];
-  pacing.forEach(function(p) {
-    for (var b = 0; b < buckets.length; b++) {
-      if (p.sec >= buckets[b].min && p.sec <= buckets[b].max) {
-        buckets[b].tot++;
-        if (p.good) buckets[b].ok++;
-        break;
-      }
-    }
+  h += '<div class="an2-card"><div class="an2-h"><h2>Focus next</h2>' +
+    (mkList.length ? '<button type="button" class="an2-btn ghost" id="anMk">Review ' + mkList.length + ' mistake' + (mkList.length === 1 ? '' : 's') + ' →</button>' : '') +
+    '</div><div class="an2-focus">' +
+    focus.map(function(r) {
+      var info = r.a > 0 ? (r.c + '/' + r.a + ' correct' + (r.acc !== null ? ' · ' + Math.round(r.acc * 100) + '%' : '')) : 'Not practiced yet';
+      if (r.errs) info += ' · ' + r.errs + ' mistake' + (r.errs > 1 ? 's' : '');
+      return '<div class="an2-f"><div><span class="an2-lbl">' + (r.isRw ? 'R&amp;W' : 'Math') + '</span><b>' + lbEsc(r.name) + '</b><small>' + info + '</small></div>' +
+        '<button type="button" class="an2-btn" data-an-drill="' + (r.isRw ? 'r:' : 'm:') + r.ti + '">Drill →</button></div>';
+    }).join('') + '</div></div>';
+  /* 4b. Why you miss */
+  var rc = { concept: 0, careless: 0, time: 0, trap: 0 };
+  mkList.forEach(function(m) { var k = rc.hasOwnProperty(m.reason) ? m.reason : 'concept'; rc[k]++; });
+  var rcol = { concept: '#22a381', careless: '#f5b82e', time: '#d97706', trap: '#38bdf8' };
+  var rtip = {
+    concept: 'Most misses are concept gaps — re-read the theory and drill the weak topics.',
+    careless: 'Most misses are careless — slow down and re-read the question before answering.',
+    time: 'Time pressure is the main cause — practice with Blitz 10 and timed modules.',
+    trap: 'You fall for trap options — before choosing, explain why each other option is wrong.'
+  };
+  var rTot = mkList.length;
+  if (rTot) {
+    var topR = Object.keys(rc).sort(function(a, b) { return rc[b] - rc[a]; })[0];
+    h += '<div class="an2-card"><div class="an2-h"><h2>Why you miss</h2><small style="color:var(--mut)">' + rTot + ' active mistakes</small></div>' +
+      '<div style="display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--cell)">' +
+      MISTAKE_REASONS.map(function(r) { return rc[r.id] ? '<i style="width:' + (rc[r.id] / rTot * 100) + '%;background:' + rcol[r.id] + '"></i>' : ''; }).join('') + '</div>' +
+      '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12.5px">' +
+      MISTAKE_REASONS.map(function(r) {
+        return '<span style="display:inline-flex;align-items:center;gap:6px"><i style="width:9px;height:9px;border-radius:50%;background:' + rcol[r.id] + '"></i>' + r.label + ' <b>' + rc[r.id] + '</b> <small style="color:var(--mut)">' + Math.round(rc[r.id] / rTot * 100) + '%</small></span>';
+      }).join('') + '</div>' +
+      '<div class="an2-empty" style="margin-top:12px">' + rtip[topR] + '</div></div>';
+  }
+  /* 5. Topics */
+  var list = rows.filter(function(r) {
+    return anSecFilter === 'all' || (anSecFilter === 'rw' ? r.isRw : !r.isRw);
+  }).sort(function(a, b) {
+    if ((a.sev < 0) !== (b.sev < 0)) return a.sev < 0 ? 1 : -1;
+    return b.sev - a.sev;
   });
-  var maxBucketTot = Math.max(1, Math.max.apply(null, buckets.map(function(b) { return b.tot; })));
+  var shown = anShowAll ? list : list.slice(0, 8);
 
-  // 3. 8 Official College Board Domains & 30 Topic Diagnostics (Real Mastery Calculation)
-  var domainRows = [];
-  var allTopicRows = [];
-  function computeTopicDiagnostic(sec, domName, ti, tName, isRw) {
-    var stKey = isRw ? ('rw_' + ti) : ti;
-    var r = st[stKey] || { a: 0, c: 0 };
-    var stars = getTopicStars(stKey, isRw, ti);
-    var pathDone = isRw ? rd : md;
-    var pathNodes = 0;
-    for (var n = 0; n < 5; n++) if (pathDone.indexOf(ti * 5 + n) >= 0) pathNodes++;
-    var errCnt = mistakesByTopic[tName] || 0;
-    var repErrCnt = repeatMistakesByTopic[tName] || 0;
-
-    // Exact Mastery: if user has drilled, weight real drill accuracy (75%) + path completion (25%), minus penalty for active unresolved mistakes
-    var hasActivity = (r.a > 0 || pathNodes > 0 || errCnt > 0);
-    var rawPct = 0;
-    if (r.a > 0 && pathNodes > 0) {
-      rawPct = Math.round((r.c / r.a) * 78 + (pathNodes / 5) * 22);
-    } else if (r.a > 0) {
-      rawPct = Math.round((r.c / r.a) * 100);
-    } else if (pathNodes > 0) {
-      rawPct = Math.round((pathNodes / 5) * 90);
-    } else {
-      rawPct = 0;
-    }
-    if (errCnt > 0 && rawPct > 0) {
-      rawPct = Math.max(12, rawPct - Math.min(30, errCnt * 6 + repErrCnt * 5));
-    }
-
-    // Weakness Priority Score (higher = needs more urgent attention)
-    var wrongDrills = Math.max(0, (r.a || 0) - (r.c || 0));
-    var weaknessSeverity = (errCnt * 28) + (repErrCnt * 20) + (wrongDrills * 9) + (hasActivity ? Math.max(0, 88 - rawPct) : 35);
-    var potentialGain = !hasActivity ? 20 : Math.max(5, Math.round((100 - rawPct) * 0.35 + errCnt * 5));
-
-    return {
-      sec: sec,
-      dom: domName,
-      ti: ti,
-      name: tName,
-      a: r.a || 0,
-      c: r.c || 0,
-      wrong: wrongDrills,
-      errCnt: errCnt,
-      repErrCnt: repErrCnt,
-      hasActivity: hasActivity,
-      pct: rawPct,
-      stars: stars,
-      pathNodes: pathNodes,
-      isRw: isRw,
-      weaknessSeverity: weaknessSeverity,
-      potentialGain: potentialGain
-    };
-  }
-
-  if (typeof CUR !== 'undefined') {
-    var mIdx = 0;
-    CUR.forEach(function(dom) {
-      var dName = dom[0], dTopics = dom[1];
-      var aSum = 0, cSum = 0, starsSum = 0, pctSum = 0, activeCnt = 0, errSum = 0;
-      var weakestTi = mIdx, highestWeakSev = -1;
-      dTopics.forEach(function(tName) {
-        var ti = mIdx++;
-        var row = computeTopicDiagnostic('MATH', dName, ti, tName, false);
-        allTopicRows.push(row);
-        aSum += row.a; cSum += row.c; starsSum += row.stars; errSum += row.errCnt;
-        if (row.hasActivity) { pctSum += row.pct; activeCnt++; }
-        if (row.weaknessSeverity > highestWeakSev) { highestWeakSev = row.weaknessSeverity; weakestTi = ti; }
-      });
-      var domPct = aSum > 0 ? Math.round((cSum / aSum) * 100) : (activeCnt > 0 ? Math.round(pctSum / dTopics.length) : 0);
-      domainRows.push({
-        sec: 'MATH', short: dName.split(' ')[0], name: dName, pct: domPct, stars: starsSum, maxStars: dTopics.length * 3,
-        weakTi: weakestTi, weakName: TOPS[weakestTi], isRw: false, solved: aSum, errSum: errSum
-      });
-    });
-  }
-  if (typeof RCUR !== 'undefined') {
-    var rIdx = 0;
-    RCUR.forEach(function(dom) {
-      var dName = dom[0], dTopics = dom[1];
-      var aSum = 0, cSum = 0, starsSum = 0, pctSum = 0, activeCnt = 0, errSum = 0;
-      var weakestTi = rIdx, highestWeakSev = -1;
-      dTopics.forEach(function(tName) {
-        var ti = rIdx++;
-        var row = computeTopicDiagnostic('R&W', dName, ti, tName, true);
-        allTopicRows.push(row);
-        aSum += row.a; cSum += row.c; starsSum += row.stars; errSum += row.errCnt;
-        if (row.hasActivity) { pctSum += row.pct; activeCnt++; }
-        if (row.weaknessSeverity > highestWeakSev) { highestWeakSev = row.weaknessSeverity; weakestTi = ti; }
-      });
-      var domPct = aSum > 0 ? Math.round((cSum / aSum) * 100) : (activeCnt > 0 ? Math.round(pctSum / dTopics.length) : 0);
-      domainRows.push({
-        sec: 'R&W', short: dName.split(' ')[0], name: dName, pct: domPct, stars: starsSum, maxStars: dTopics.length * 3,
-        weakTi: weakestTi, weakName: RTOPS[weakestTi], isRw: true, solved: aSum, errSum: errSum
-      });
-    });
-  }
-
-  // Identify Top Weak Spots (Priority Weaknesses Radar)
-  var priorityWeakList = allTopicRows.slice().sort(function(a, b) {
-    var aHasErr = (a.errCnt > 0 || a.wrong > 0) ? 1 : 0;
-    var bHasErr = (b.errCnt > 0 || b.wrong > 0) ? 1 : 0;
-    if (aHasErr !== bHasErr) return bHasErr - aHasErr;
-    return b.weaknessSeverity - a.weaknessSeverity || a.pct - b.pct;
-  }).slice(0, 6);
-
-  // Build 8-Axis Spider Radar SVG (cx=190, cy=165, R=104)
-  var rCx = 190, rCy = 165, rMax = 102;
-  var radarShortLabels = ['Algebra', 'Adv Math', 'Data & Prob', 'Geometry', 'Info & Ideas', 'Craft & Struct', 'Expression', 'Conventions'];
-  function radarPt(idx, ratio) {
-    var ang = -Math.PI / 2 + idx * (2 * Math.PI / 8);
-    return [
-      Math.round(rCx + Math.cos(ang) * rMax * ratio),
-      Math.round(rCy + Math.sin(ang) * rMax * ratio)
-    ];
-  }
-  var webRingsSvg = [0.25, 0.5, 0.75, 1.0].map(function(level) {
-    var pts = [];
-    for (var i = 0; i < 8; i++) pts.push(radarPt(i, level).join(','));
-    return '<polygon points="' + pts.join(' ') + '" fill="none" stroke="var(--line)" stroke-width="1.2" stroke-dasharray="' + (level === 0.75 ? '3 3' : 'none') + '"/>';
-  }).join('');
-  var spokesSvg = '';
-  var userPolyPts = [];
-  var dotsSvg = '';
-  for (var i = 0; i < 8; i++) {
-    var outer = radarPt(i, 1.0);
-    var lblPos = radarPt(i, 1.25);
-    var dObj = domainRows[i] || { pct: 0 };
-    var ratio = Math.max(0.12, Math.min(1, dObj.pct / 100));
-    var uPt = radarPt(i, ratio);
-    userPolyPts.push(uPt.join(','));
-    spokesSvg += '<line x1="' + rCx + '" y1="' + rCy + '" x2="' + outer[0] + '" y2="' + outer[1] + '" stroke="var(--line)" stroke-width="1.2"/>';
-    spokesSvg += '<text x="' + lblPos[0] + '" y="' + (lblPos[1] + 4) + '" text-anchor="middle" fill="var(--mut)" font-size="10.5" font-weight="800">' + (radarShortLabels[i] || '') + ' (' + dObj.pct + '%)</text>';
-    dotsSvg += '<circle cx="' + uPt[0] + '" cy="' + uPt[1] + '" r="4.5" fill="var(--sand)" stroke="var(--panel)" stroke-width="2"/>';
-  }
-  var radarSvg = '<svg viewBox="0 0 380 330" style="width:100%;max-width:390px;height:auto;margin:0 auto;display:block">' +
-    webRingsSvg + spokesSvg +
-    '<polygon class="an-radar-poly" points="' + userPolyPts.join(' ') + '" fill="rgba(34,163,129,0.22)" stroke="var(--acc)" stroke-width="2.5"/>' +
-    dotsSvg +
-  '</svg>';
-
-  // 4. Mistake Root-Cause Donut SVG (Cohesive Palette — Zero Red)
-  var repeatMistakes = mkList.filter(function(x) { return (x.failCount || 1) >= 2; }).length;
-  var recidivismRate = mkList.length ? Math.round((repeatMistakes / mkList.length) * 100) : 0;
-  var totalEver = Math.max(mkList.length + (t.resolvedMistakes || 0), t.totalMistakesEver || 0);
-  var resolutionRate = totalEver > 0 ? Math.round(((t.resolvedMistakes || 0) / totalEver) * 100) : 100;
-  var reasonCounts = { concept: 0, careless: 0, time: 0, trap: 0 };
-  mkList.forEach(function(x) {
-    var k = x.reason && reasonCounts.hasOwnProperty(x.reason) ? x.reason : 'concept';
-    reasonCounts[k]++;
+  h += '<div class="an2-card"><div class="an2-h"><h2>Topics <small style="color:var(--mut);font-weight:600">weakest first</small></h2>' +
+    '<div class="island-pills">' +
+    [['all', 'All'], ['math', 'Math'], ['rw', 'R&amp;W']].map(function(p) {
+      return '<button type="button" class="island-pill' + (anSecFilter === p[0] ? ' on' : '') + '" data-an-sec="' + p[0] + '">' + p[1] + '</button>';
+    }).join('') + '</div></div>';
+  if (!shown.length) h += '<div class="an2-empty">No topics.</div>';
+  shown.forEach(function(r) {
+    var pc = r.acc !== null ? Math.round(r.acc * 100) : null;
+    var col = pc === null ? 'var(--line)' : (pc >= 80 ? 'var(--acc)' : pc >= 60 ? '#38bdf8' : 'var(--sand)');
+    h += '<div class="an2-row">' +
+      '<div class="nm"><b>' + lbEsc(r.name) + '</b><small>' + (r.isRw ? 'R&amp;W' : 'Math') + ' · ' + lbEsc(r.dom) + '</small></div>' +
+      '<div class="an2-mini"><div class="b"><i style="width:' + (pc === null ? 0 : Math.max(4, pc)) + '%;background:' + col + '"></i></div><span style="color:' + (pc === null ? 'var(--mut)' : col) + '">' + (pc === null ? '—' : pc + '%') + '</span></div>' +
+      '<div class="mk" style="color:' + (r.errs ? 'var(--sand)' : 'var(--mut)') + ';font-weight:700;text-align:center">' + (r.errs ? r.errs + ' err' : '') + '</div>' +
+      '<div style="text-align:right"><button type="button" class="an2-btn ghost" data-an-drill="' + (r.isRw ? 'r:' : 'm:') + r.ti + '">Drill</button></div></div>';
   });
-  var reasonColors = { concept: '#22a381', careless: '#f5b82e', time: '#d97706', trap: '#38bdf8' };
-  var totalReasons = Math.max(1, mkList.length);
-  var donutR = 54, donutCircum = 2 * Math.PI * donutR, donutOffset = 0;
-  var donutSegmentsSvg = mkList.length ? MISTAKE_REASONS.map(function(r) {
-    var cnt = reasonCounts[r.id] || 0;
-    if (!cnt) return '';
-    var len = (cnt / totalReasons) * donutCircum;
-    var seg = '<circle cx="75" cy="75" r="' + donutR + '" fill="none" stroke="' + reasonColors[r.id] + '" stroke-width="16" stroke-dasharray="' + len.toFixed(1) + ' ' + (donutCircum - len).toFixed(1) + '" stroke-dashoffset="' + (-donutOffset).toFixed(1) + '"/>';
-    donutOffset += len;
-    return seg;
-  }).join('') : '<circle cx="75" cy="75" r="' + donutR + '" fill="none" stroke="var(--acc)" stroke-width="16"/>';
+  if (list.length > 8) h += '<div style="text-align:center;margin-top:10px"><button type="button" class="an2-btn ghost" id="anMore">' + (anShowAll ? 'Show less' : 'Show all ' + list.length) + '</button></div>';
+  h += '<div class="an2-empty" style="margin-top:10px;font-size:11.5px">Accuracy appears after 3+ answers in a topic (Atlas + Mock Exams).</div></div>';
 
-  // 14-Day Activity Bars
-  var last14 = [];
-  var maxDayQ = 5;
-  var nowDt = new Date();
-  for (var dBack = 13; dBack >= 0; dBack--) {
-    var dt = new Date(nowDt.getFullYear(), nowDt.getMonth(), nowDt.getDate() - dBack);
-    var kDay = isoDateLocal(dt);
-    var recDay = t.days[kDay] || { q: 0, ok: 0 };
-    if (recDay.q > maxDayQ) maxDayQ = recDay.q;
-    last14.push({
-      lbl: dt.toLocaleString('en', { weekday: 'narrow' }) + ' ' + dt.getDate(),
-      q: recDay.q || 0,
-      ok: recDay.ok || 0,
-      isToday: dBack === 0
-    });
-  }
-
-  // Filter & sort 30-Topic Table
-  var filteredTopics = allTopicRows.filter(function(r) {
-    if (anTopicFilter === 'math') return !r.isRw;
-    if (anTopicFilter === 'rw') return !!r.isRw;
-    return true;
-  });
-  if (anTopicFilter === 'weak') {
-    filteredTopics.sort(function(a, b) {
-      var aHasErr = (a.errCnt > 0 || a.wrong > 0) ? 1 : 0;
-      var bHasErr = (b.errCnt > 0 || b.wrong > 0) ? 1 : 0;
-      if (aHasErr !== bHasErr) return bHasErr - aHasErr;
-      return b.weaknessSeverity - a.weaknessSeverity || a.pct - b.pct;
-    });
-  }
-
-  var h = '<div class="atlas-hero" style="margin-bottom:20px">' +
-    '<div style="max-width:620px">' +
-      '<div style="font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);margin-bottom:4px;display:flex;align-items:center;gap:6px">' + spSvg('chart', 15) + ' DIAGNOSTIC &amp; WEAKNESS COMMAND CENTER</div>' +
-      '<h1>SAT Performance Analytics</h1>' +
-      '<p class="sub">Pinpoint your exact weak spots across all 30 SAT topics, customize your personal target score, and launch targeted drills to gain points fastest.</p>' +
-    '</div>' +
-    '<div class="an-goal-box">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">' +
-        '<div>' +
-          '<small style="font-weight:800;color:var(--mut);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;display:block">Your Custom Target Score</small>' +
-          '<span style="font-size:12px;color:var(--mut)">Type or slide any score (400–1600)</span>' +
-        '</div>' +
-        '<div style="display:flex;align-items:center;gap:4px">' +
-          '<button type="button" class="tbtn" id="anGoalMinus" title="-10 pts" style="width:28px;height:28px;font-weight:800">&minus;</button>' +
-          '<input type="number" id="anGoalInput" class="an-goal-inp" min="400" max="1600" step="10" value="' + anTargetGoal + '">' +
-          '<button type="button" class="tbtn" id="anGoalPlus" title="+10 pts" style="width:28px;height:28px;font-weight:800">+</button>' +
-        '</div>' +
-      '</div>' +
-      '<input type="range" id="anGoalSlider" class="an-goal-slider" min="800" max="1600" step="10" value="' + Math.max(800, anTargetGoal) + '">' +
-      '<div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:700;color:var(--mut)">' +
-        '<span>800</span><span>1000</span><span>1200</span><span>1400</span><span style="color:var(--sand)">1600 Max</span>' +
-      '</div>' +
-    '</div>' +
-  '</div>';
-
-  // 4 Top KPI Strip Cards
-  h += '<div class="an-kpi-grid">' +
-    '<div class="an-kpi-card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Estimated Score</small><span class="tag n" style="margin:0">' + percentile + '</span></div>' +
-      '<div class="an-kpi-val" style="color:var(--acc)">' + totalEst + ' <span style="font-size:15px;color:var(--mut);font-weight:700">&plusmn;' + band + '</span></div>' +
-      '<div style="font-size:12px;color:var(--mut)">Range: <b style="color:var(--tx)">' + lowEst + '&ndash;' + highEst + '</b> &middot; ' + (gapToGoal > 0 ? ('Need <b style="color:var(--sand)">+' + gapToGoal + ' pts</b> for ' + anTargetGoal) : '<b style="color:var(--acc)">Goal ' + anTargetGoal + ' Reached!</b>') + '</div>' +
-    '</div>' +
-    '<div class="an-kpi-card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Section Breakdown</small><span class="tag" style="margin:0">' + overallAcc + '% ACC</span></div>' +
-      '<div class="an-kpi-val">' + mScore + ' <span style="font-size:15px;color:var(--mut);font-weight:600">Math</span> / ' + rScore + ' <span style="font-size:15px;color:var(--mut);font-weight:600">R&amp;W</span></div>' +
-      '<div style="font-size:12px;color:var(--mut)">Solved: <b>' + mAtt + ' Math</b> &middot; <b>' + rAtt + ' R&amp;W</b> &middot; <b>' + mockScores.length + ' Mocks</b></div>' +
-    '</div>' +
-    '<div class="an-kpi-card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Pacing Speed</small><span class="tag" style="margin:0">' + spSvg('clock', 11) + ' PACE</span></div>' +
-      '<div class="an-kpi-val" style="color:var(--sand)">' + (avgMathSec !== null ? avgMathSec + 's' : '—') + ' <span style="font-size:15px;color:var(--mut)">M</span> &middot; ' + (avgRwSec !== null ? avgRwSec + 's' : '—') + ' <span style="font-size:15px;color:var(--mut)">RW</span></div>' +
-      '<div style="font-size:12px;color:var(--mut)">Target Pace: <b>&le;95s Math</b> &middot; <b>&le;71s R&amp;W</b></div>' +
-    '</div>' +
-    '<div class="an-kpi-card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center"><small style="color:var(--mut);font-weight:800;font-size:11px;text-transform:uppercase">Weakness Recovery</small><span class="tag" style="margin:0;color:var(--acc)">' + streak.current + 'd Streak</span></div>' +
-      '<div class="an-kpi-val">' + resolutionRate + '% <span style="font-size:14px;color:var(--mut);font-weight:600">fixed</span></div>' +
-      '<div style="font-size:12px;color:var(--mut)">Unresolved Mistakes: <b style="color:var(--sand)">' + mkList.length + '</b> &middot; Fixed: <b style="color:var(--acc)">' + (t.resolvedMistakes || 0) + '</b></div>' +
-    '</div>' +
-  '</div>';
-
-  // NEW SECTION: Priority Weak Spots & High-Yield Focus Areas (Answers "where are my weak spots?")
-  h += '<div class="archipelago-region" style="margin-bottom:22px;border-color:var(--sand-line)">' +
-    '<div class="arch-hd">' +
-      '<div class="arch-title"><div class="arch-badge" style="background:linear-gradient(145deg, var(--sand), var(--sand-deep));color:var(--sand-tx)">' + spSvg('target', 20) + '</div>' +
-      '<div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">WEAKNESS DIAGNOSTIC &amp; SCORE BOOSTER</small><h2 style="font-size:20px;font-weight:800">Your Top Weak Spots &amp; Fastest Point Gains</h2></div></div>' +
-      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
-        (mkList.length > 0 ? '<button type="button" class="an-drill-btn amber" id="anTopMistakeBtn">' + spSvg('zap', 14) + ' Fix ' + mkList.length + ' Active Mistake' + (mkList.length === 1 ? '' : 's') + ' →</button>' : '<span class="arch-stars-pill">Sorted by point-gain potential</span>') +
-      '</div>' +
-    '</div>' +
-    '<div class="an-weak-grid">' +
-      priorityWeakList.map(function(w, idx) {
-        var hasIssues = w.errCnt > 0 || w.wrong > 0;
-        var badgeTxt = w.errCnt > 0
-          ? (w.errCnt + ' unresolved mistake' + (w.errCnt > 1 ? 's' : ''))
-          : (w.a > 0 ? (w.c + '/' + w.a + ' correct (' + w.pct + '%)') : 'Not practiced yet · High ROI');
-        var barCol = w.pct >= 80 ? 'var(--acc)' : (w.pct >= 50 ? '#38bdf8' : 'var(--sand)');
-        return '<div class="an-weak-card' + (idx < 3 ? ' priority-amber' : '') + '">' +
-          '<div>' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">' +
-              '<div style="display:flex;align-items:center;gap:6px">' +
-                '<span class="tag" style="margin:0;font-size:9.5px;background:' + (w.isRw ? 'var(--acc2)' : 'var(--acc)') + ';color:#fff;border:0">' + w.sec + '</span>' +
-                '<small style="color:var(--mut);font-weight:700;font-size:11px">' + lbEsc(w.dom) + '</small>' +
-              '</div>' +
-              '<span class="tag" style="margin:0;color:var(--sand);border-color:var(--sand-line);background:var(--sand-bg);font-size:10.5px">+' + w.potentialGain + ' pts potential</span>' +
-            '</div>' +
-            '<div style="font-size:15.5px;font-weight:800;color:var(--tx);line-height:1.35;margin-bottom:6px">' + lbEsc(w.name) + '</div>' +
-            '<div style="font-size:12px;color:' + (hasIssues ? 'var(--sand)' : 'var(--mut)') + ';font-weight:700">' + badgeTxt + '</div>' +
-          '</div>' +
-          '<div>' +
-            '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-bottom:5px">' +
-              '<span>Current Mastery</span><b style="color:var(--tx)">' + w.pct + '%</b>' +
-            '</div>' +
-            '<div class="bar" style="margin:0 0 12px;height:6px"><div style="width:' + Math.max(6, w.pct) + '%;background:' + barCol + '"></div></div>' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-              '<small style="font-size:11px;color:var(--mut);font-weight:600">Path: ' + w.pathNodes + '/5 &middot; ' + ('★'.repeat(w.stars) + '☆'.repeat(3 - w.stars)) + '</small>' +
-              '<button type="button" class="an-drill-btn' + (idx < 2 ? ' amber' : '') + '" data-an-drill="' + (w.isRw ? 'r:' : 'm:') + w.ti + '">' + spSvg('zap', 13) + ' Drill Topic →</button>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-      }).join('') +
-    '</div>' +
-  '</div>';
-
-  // Row 1: Animated Score Trajectory SVG Chart + Pacing Distribution Histogram
-  var yTicks = [800, 1000, 1200, 1400, 1600].filter(function(v) { return v >= minChartScore; });
-  h += '<div class="an-dual-grid">' +
-    '<div class="card" style="padding:22px 24px;border-radius:26px;display:flex;flex-direction:column;justify-content:space-between">' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px">' +
-        '<div><small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('trend', 13) + ' LIVE SCORE PROJECTION CURVE</small><h3 style="font-size:19px;font-weight:800;margin-top:2px">Score Trajectory vs. Your ' + anTargetGoal + ' Goal</h3></div>' +
-        '<div style="display:flex;gap:12px;font-size:11.5px;font-weight:700;color:var(--mut)">' +
-          '<span style="display:inline-flex;align-items:center;gap:5px"><i style="width:10px;height:10px;border-radius:50%;background:var(--acc);display:inline-block"></i> Your Score</span>' +
-          '<span style="display:inline-flex;align-items:center;gap:5px"><i style="width:12px;height:2px;background:var(--sand);display:inline-block"></i> Goal (' + anTargetGoal + ')</span>' +
-        '</div>' +
-      '</div>' +
-      '<svg viewBox="0 0 ' + svgW + ' ' + svgH + '" style="width:100%;height:auto;overflow:visible">' +
-        '<defs>' +
-          '<linearGradient id="anAreaGrad" x1="0" y1="0" x2="0" y2="1">' +
-            '<stop offset="0%" stop-color="var(--acc)" stop-opacity="0.32"/>' +
-            '<stop offset="100%" stop-color="var(--acc)" stop-opacity="0.0"/>' +
-          '</linearGradient>' +
-        '</defs>' +
-        yTicks.map(function(val) {
-          var y = yForScore(val);
-          return '<line x1="' + padL + '" y1="' + y + '" x2="' + (svgW - padR) + '" y2="' + y + '" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>' +
-            '<text x="' + (padL - 8) + '" y="' + (y + 4) + '" text-anchor="end" fill="var(--mut)" font-size="10.5" font-weight="700">' + val + '</text>';
-        }).join('') +
-        '<line x1="' + padL + '" y1="' + goalY + '" x2="' + (svgW - padR) + '" y2="' + goalY + '" stroke="var(--sand)" stroke-width="2" stroke-dasharray="6 4"/>' +
-        '<text x="' + (svgW - padR - 4) + '" y="' + Math.max(14, goalY - 6) + '" text-anchor="end" fill="var(--sand)" font-size="10.5" font-weight="800">TARGET ' + anTargetGoal + '</text>' +
-        '<path d="' + areaPath + '" fill="url(#anAreaGrad)"/>' +
-        '<path class="an-draw-path" d="' + linePath + '" fill="none" stroke="var(--acc)" stroke-width="3.5" stroke-linecap="round"/>' +
-        totCoords.map(function(pt) {
-          return '<g>' +
-            '<circle class="an-dot-node" cx="' + pt.x + '" cy="' + pt.y + '" r="5.5" fill="var(--panel)" stroke="var(--acc)" stroke-width="3"><title>' + pt.p.lbl + ': ' + pt.p.tot + ' (Math ' + pt.p.m + ' / R&W ' + pt.p.r + ')</title></circle>' +
-            '<text x="' + pt.x + '" y="' + (pt.y - 11) + '" text-anchor="middle" fill="var(--tx)" font-size="11" font-weight="800">' + pt.p.tot + '</text>' +
-            '<text x="' + pt.x + '" y="' + (svgH - 8) + '" text-anchor="middle" fill="var(--mut)" font-size="10.5" font-weight="700">' + pt.p.lbl + '</text>' +
-          '</g>';
-        }).join('') +
-      '</svg>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--mut);flex-wrap:wrap;gap:8px">' +
-        '<span>Confidence Interval: <b style="color:var(--tx)">' + lowEst + ' &ndash; ' + highEst + ' (&plusmn;' + band + ' pts)</b></span>' +
-        '<button type="button" class="an-drill-btn" onclick="show(\'pt\')" style="padding:6px 13px;font-size:11.5px">' + spSvg('compass', 13) + ' Take Mock Exam →</button>' +
-      '</div>' +
-    '</div>' +
-
-    // Right Card: Animated Pacing Histogram & Speed Distribution
-    '<div class="card" style="padding:22px 24px;border-radius:26px;display:flex;flex-direction:column;justify-content:space-between">' +
-      '<div>' +
-        '<small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('clock', 13) + ' TIME TELEMETRY HISTOGRAM</small>' +
-        '<h3 style="font-size:19px;font-weight:800;margin-top:2px">Speed vs. Accuracy Distribution</h3>' +
-        '<p class="sub" style="font-size:12px;margin-bottom:14px">Accuracy by time spent across ' + pacing.length + ' recorded answers.</p>' +
-        '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:end;height:148px;padding:16px 6px 6px;border-bottom:1.5px solid var(--line)">' +
-          buckets.map(function(b, idx) {
-            var hPct = b.tot ? Math.max(14, Math.round((b.tot / maxBucketTot) * 100)) : 8;
-            var bAcc = b.tot ? Math.round((b.ok / b.tot) * 100) : 0;
-            return '<div style="display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;gap:4px">' +
-              '<small style="font-size:10px;font-weight:800;color:var(--tx)">' + (b.tot ? bAcc + '%' : '—') + '</small>' +
-              '<div class="an-hist-bar" style="width:100%;max-width:38px;height:' + hPct + '%;background:' + b.col + ';border-radius:8px 8px 3px 3px;animation-delay:' + (idx * 0.08) + 's" title="' + b.lbl + ': ' + b.tot + ' questions (' + bAcc + '% accuracy)"></div>' +
-            '</div>';
-          }).join('') +
-        '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;margin-top:6px">' +
-          buckets.map(function(b) {
-            return '<div><b style="font-size:10px;display:block;color:var(--tx)">' + b.lbl.split(' ')[0] + '</b><small style="font-size:9.5px;color:var(--mut)">' + b.tot + ' Qs</small></div>';
-          }).join('') +
-        '</div>' +
-      '</div>' +
-      '<div style="margin-top:14px;padding:10px 12px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);font-size:12px;color:var(--mut)">' +
-        '<b style="color:var(--tx)">Pacing Insight:</b> ' +
-        (buckets[0].tot > buckets[0].ok ? 'You missed <b>' + (buckets[0].tot - buckets[0].ok) + ' fast questions (&lt;25s)</b>. Taking an extra 10 seconds to verify the question stem will prevent careless traps.' : 'Your pacing is well-balanced inside the 25–80s sweet spot.') +
-      '</div>' +
-    '</div>' +
-  '</div>';
-
-  // Row 2: 8-Axis Spider Radar SVG + Domain Cards
-  h += '<div class="archipelago-region" style="margin-bottom:22px">' +
-    '<div class="arch-hd">' +
-      '<div class="arch-title"><div class="arch-badge" style="background:var(--acc)">' + spSvg('compass', 20) + '</div>' +
-      '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">COLLEGE BOARD DIGITAL SAT BLUEPRINT</small><h2 style="font-size:20px;font-weight:800">8-Domain Mastery Radar &amp; Domain Breakdown</h2></div></div>' +
-      '<span class="arch-stars-pill">Needs Focus &lt;60% &middot; Developing 60–84% &middot; Mastered &ge;85%</span>' +
-    '</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;align-items:center">' +
-      '<div style="background:var(--panel2);border:1.5px solid var(--line);border-radius:24px;padding:18px;text-align:center">' +
-        radarSvg +
-        '<small style="color:var(--mut);font-size:11.5px;font-weight:700;display:block;margin-top:6px">Octagonal Balance Across All 4 Math &amp; 4 R&amp;W Domains</small>' +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">' +
-        domainRows.map(function(d) {
-          var stCol = d.pct >= 85 ? 'var(--acc)' : (d.pct >= 60 ? '#38bdf8' : 'var(--sand)');
-          return '<div class="card" style="padding:14px 16px;border-radius:18px;background:var(--panel2)">' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px">' +
-              '<div><span class="tag" style="margin:0;font-size:9px">' + d.sec + '</span> <b style="font-size:13.5px;margin-left:3px">' + d.name + '</b></div>' +
-              '<b style="font-size:13px;color:' + stCol + '">' + d.pct + '%</b>' +
-            '</div>' +
-            '<div class="bar" style="margin:8px 0"><div style="width:' + Math.max(5, d.pct) + '%;background:' + stCol + '"></div></div>' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11.5px;color:var(--mut)">' +
-              '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px" title="Focus: ' + lbEsc(d.weakName) + '">Focus: <b style="color:var(--tx)">' + d.weakName + '</b></span>' +
-              '<button type="button" class="an-drill-btn" data-an-drill="' + (d.isRw ? 'r:' : 'm:') + d.weakTi + '" style="padding:5px 11px;font-size:11px">Drill →</button>' +
-            '</div>' +
-          '</div>';
-        }).join('') +
-      '</div>' +
-    '</div>' +
-  '</div>';
-
-  // Row 3: Mistake Root-Cause Donut Chart + 14-Day Daily Activity Volume
-  h += '<div class="an-dual-grid">' +
-    '<div class="card" style="padding:22px 24px;border-radius:26px;display:flex;flex-direction:column;justify-content:space-between">' +
-      '<div>' +
-        '<small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('alert', 13) + ' ERROR ROOT-CAUSE ANATOMY</small>' +
-        '<h3 style="font-size:19px;font-weight:800;margin-top:2px">Why You Miss Questions</h3>' +
-        '<div style="display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center;margin:16px 0">' +
-          '<div style="position:relative;width:150px;height:150px;margin:0 auto">' +
-            '<svg viewBox="0 0 150 150" style="transform:rotate(-90deg);width:100%;height:100%">' + donutSegmentsSvg + '</svg>' +
-            '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">' +
-              '<b style="font-size:24px;font-weight:800;color:var(--tx);line-height:1">' + mkList.length + '</b>' +
-              '<small style="font-size:10px;color:var(--mut);font-weight:700;text-transform:uppercase">Active Errs</small>' +
-            '</div>' +
-          '</div>' +
-          '<div style="display:grid;gap:8px">' +
-            MISTAKE_REASONS.map(function(r) {
-              var cnt = reasonCounts[r.id] || 0;
-              var pctR = mkList.length ? Math.round((cnt / mkList.length) * 100) : 0;
-              return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);font-size:12.5px">' +
-                '<span style="display:inline-flex;align-items:center;gap:8px"><i style="width:10px;height:10px;border-radius:50%;background:' + reasonColors[r.id] + ';display:inline-block"></i> <b>' + r.label + '</b></span>' +
-                '<span><b>' + cnt + '</b> <small style="color:var(--mut)">(' + pctR + '%)</small></span>' +
-              '</div>';
-            }).join('') +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px dashed var(--line);gap:10px;flex-wrap:wrap">' +
-        '<span style="font-size:12px;color:var(--mut)">Repeat Mistakes (2x+ missed): <b style="color:var(--sand)">' + repeatMistakes + ' questions</b></span>' +
-        '<button type="button" class="an-drill-btn amber" id="anGoMistakes">' + spSvg('zap', 13) + ' Open Mistake Drill →</button>' +
-      '</div>' +
-    '</div>' +
-
-    '<div class="card" style="padding:22px 24px;border-radius:26px;display:flex;flex-direction:column;justify-content:space-between">' +
-      '<div>' +
-        '<small style="color:var(--sand);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">' + spSvg('flame', 13) + ' CONSISTENCY &amp; DAILY VOLUME</small>' +
-        '<h3 style="font-size:19px;font-weight:800;margin-top:2px">Last 14 Days Practice Output</h3>' +
-        '<p class="sub" style="font-size:12px;margin-bottom:14px">Daily solved questions and accuracy momentum.</p>' +
-        '<div style="display:grid;grid-template-columns:repeat(14,1fr);gap:6px;align-items:end;height:148px;padding:14px 4px 6px;border-bottom:1.5px solid var(--line)">' +
-          last14.map(function(d, idx) {
-            var hPct = d.q ? Math.max(12, Math.round((d.q / maxDayQ) * 100)) : 5;
-            var col = d.isToday ? 'var(--sand)' : (d.q > 0 ? 'var(--acc)' : 'var(--cell)');
-            return '<div style="display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;gap:3px">' +
-              (d.q > 0 ? '<small style="font-size:9px;font-weight:800;color:var(--tx)">' + d.q + '</small>' : '') +
-              '<div class="an-hist-bar" style="width:100%;height:' + hPct + '%;background:' + col + ';border-radius:6px 6px 2px 2px;animation-delay:' + (idx * 0.04) + 's" title="' + d.lbl + ': ' + d.q + ' solved (' + d.ok + ' correct)"></div>' +
-            '</div>';
-          }).join('') +
-        '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(14,1fr);gap:4px;text-align:center;margin-top:6px">' +
-          last14.map(function(d) {
-            return '<small style="font-size:9px;color:' + (d.isToday ? 'var(--sand)' : 'var(--mut)') + ';font-weight:' + (d.isToday ? '800' : '600') + '">' + d.lbl.split(' ')[0] + '</small>';
-          }).join('') +
-        '</div>' +
-      '</div>' +
-      '<div style="margin-top:14px;padding:10px 12px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);font-size:12px;color:var(--mut);display:flex;justify-content:space-between;align-items:center">' +
-        '<span>Current Streak: <b style="color:var(--sand)">' + streak.current + ' days</b> &middot; Record: <b style="color:var(--tx)">' + streak.best + ' days</b></span>' +
-        '<span style="color:var(--acc);font-weight:800">Goal: 15+ Qs/day</span>' +
-      '</div>' +
-    '</div>' +
-  '</div>';
-
-  // Row 4: Full 30-Topic Granular Diagnostic Table (All 20 Math + 10 R&W Islands)
-  h += '<div class="archipelago-region">' +
-    '<div class="arch-hd">' +
-      '<div class="arch-title"><div class="arch-badge" style="background:var(--acc2)">' + spSvg('layers', 20) + '</div>' +
-      '<div><small style="color:var(--mut);font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px">COMPLETE SKILL INVENTORY (30 TOPICS)</small><h2 style="font-size:20px;font-weight:800">Topic-by-Topic Weakness &amp; Mastery Table</h2></div></div>' +
-      '<div class="island-pills">' +
-        [
-          ['weak', 'Weakest First (High ROI)'],
-          ['all', 'All 30 Topics'],
-          ['math', 'Math (20)'],
-          ['rw', 'R&W (10)']
-        ].map(function(pair) {
-          return '<button type="button" class="island-pill' + (anTopicFilter === pair[0] ? ' on' : '') + '" data-an-tfilt="' + pair[0] + '">' + pair[1] + '</button>';
-        }).join('') +
-      '</div>' +
-    '</div>' +
-    '<div class="an-table-wrap">' +
-      '<table class="an-table">' +
-        '<thead><tr><th>Section &amp; Domain</th><th>Topic Island</th><th>Odyssey Path</th><th>Atlas Drills</th><th>Active Mistakes</th><th>Mastery</th><th>Potential Gain</th><th style="text-align:right">Action</th></tr></thead>' +
-        '<tbody>' +
-          filteredTopics.map(function(r) {
-            var stCol = r.pct >= 85 ? 'var(--acc)' : (r.pct >= 60 ? '#38bdf8' : 'var(--sand)');
-            var roiPts = r.pct >= 85 && r.errCnt === 0 ? 'Mastered ✓' : ('+' + r.potentialGain + ' pts');
-            return '<tr>' +
-              '<td><span class="tag" style="margin:0;font-size:9.5px">' + r.sec + '</span> <small style="color:var(--mut);font-weight:700;margin-left:4px">' + r.dom + '</small></td>' +
-              '<td><b style="font-size:13.5px;color:var(--tx)">' + r.name + '</b></td>' +
-              '<td><span style="font-weight:700;color:var(--mut)">' + r.pathNodes + ' / 5</span></td>' +
-              '<td><b>' + r.c + ' / ' + r.a + '</b> <small style="color:var(--mut)">(' + (r.a ? Math.round((r.c / r.a) * 100) + '%' : 'Untested') + ')</small></td>' +
-              '<td>' + (r.errCnt > 0 ? '<span class="tag" style="margin:0;color:var(--sand);border-color:var(--sand-line);background:var(--sand-bg)">' + r.errCnt + ' to fix</span>' : '<small style="color:var(--mut)">0</small>') + '</td>' +
-              '<td><div style="display:flex;align-items:center;gap:8px"><div class="bar" style="width:74px;margin:0"><div style="width:' + Math.max(4, r.pct) + '%;background:' + stCol + '"></div></div><b style="color:' + stCol + ';font-size:12px">' + r.pct + '%</b></div></td>' +
-              '<td><span class="tag" style="margin:0;color:' + stCol + ';border-color:' + stCol + '">' + roiPts + '</span></td>' +
-              '<td style="text-align:right"><button type="button" class="an-drill-btn' + (r.errCnt > 0 ? ' amber' : '') + '" data-an-drill="' + (r.isRw ? 'r:' : 'm:') + r.ti + '" style="padding:6px 14px;font-size:11.5px">' + spSvg('zap', 12) + ' Drill →</button></td>' +
-            '</tr>';
-          }).join('') +
-        '</tbody>' +
-      '</table>' +
-    '</div>' +
-  '</div>';
-
+  h += '</div>';
   el.innerHTML = h;
 
-  function updateCustomGoal(val) {
-    var clean = Math.max(400, Math.min(1600, Math.round((+val || 1500) / 10) * 10));
-    anTargetGoal = clean;
+  /* ---- events ---- */
+  function setGoal(v) {
+    anTargetGoal = Math.max(400, Math.min(1600, Math.round((+v || 1500) / 10) * 10));
     spSet('satpath_goal_score', String(anTargetGoal));
     buildAnalyticsTab();
   }
-
-  var gInp = el.querySelector('#anGoalInput');
-  var gSlid = el.querySelector('#anGoalSlider');
-  var gMin = el.querySelector('#anGoalMinus');
-  var gPls = el.querySelector('#anGoalPlus');
-
-  if (gInp) {
-    gInp.onchange = function() { updateCustomGoal(gInp.value); };
-    gInp.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); updateCustomGoal(gInp.value); } };
+  var gi = el.querySelector('#anGoalInput');
+  if (gi) {
+    gi.onchange = function() { setGoal(gi.value); };
+    gi.onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); setGoal(gi.value); } };
   }
-  if (gSlid) {
-    gSlid.oninput = function() {
-      if (gInp) gInp.value = gSlid.value;
-    };
-    gSlid.onchange = function() { updateCustomGoal(gSlid.value); };
-  }
-  if (gMin) gMin.onclick = function() { updateCustomGoal(anTargetGoal - 10); };
-  if (gPls) gPls.onclick = function() { updateCustomGoal(anTargetGoal + 10); };
-
-  var goMk = el.querySelector('#anGoMistakes');
-  if (goMk) goMk.onclick = function() { show('mk'); };
-  var topMk = el.querySelector('#anTopMistakeBtn');
-  if (topMk) topMk.onclick = function() { show('mk'); };
-
-  el.querySelectorAll('[data-an-tfilt]').forEach(function(b) {
-    b.onclick = function() {
-      anTopicFilter = b.getAttribute('data-an-tfilt');
-      buildAnalyticsTab();
-    };
+  var mkBtn = el.querySelector('#anMk');
+  if (mkBtn) mkBtn.onclick = function() { show('mk'); };
+  var more = el.querySelector('#anMore');
+  if (more) more.onclick = function() { anShowAll = !anShowAll; buildAnalyticsTab(); };
+  el.querySelectorAll('[data-an-sec]').forEach(function(b) {
+    b.onclick = function() { anSecFilter = b.getAttribute('data-an-sec'); anShowAll = false; buildAnalyticsTab(); };
   });
   el.querySelectorAll('[data-an-drill]').forEach(function(b) {
     b.onclick = function() {
-      var parts = b.getAttribute('data-an-drill').split(':');
+      var p = b.getAttribute('data-an-drill').split(':');
       show('b');
-      if (parts[0] === 'r') rwBankOpen(+parts[1]);
-      else bankOpen(+parts[1]);
+      if (p[0] === 'r') rwBankOpen(+p[1]); else bankOpen(+p[1]);
     };
   });
 }
-
 /* Настройка сайдбара и контейнеров: кнопки Vocabulary / Mistake Log / Analytics */
 (function setupNavigationAndContainers() {
   var scBtn = document.getElementById('nvSC');
@@ -4764,7 +4137,7 @@ async function fbInit(){if(!FB_CONFIG||FB)return;
  var B='https://www.gstatic.com/firebasejs/10.12.2/';
  var a=await import(B+'firebase-app.js'),au=await import(B+'firebase-auth.js'),f=await import(B+'firebase-firestore.js');
  var app=a.initializeApp(FB_CONFIG);FB={auth:au.getAuth(app),db:f.getFirestore(app),au:au,fs:f};
- au.onAuthStateChanged(FB.auth,function(u){FBU=u;paintUser();if(u){var lov=document.getElementById('spLandingOv');if(lov)lov.remove();ensureUserCloudTokens(u);lbFlush();spSyncStart(u);}else{spSyncStop();}if(!document.getElementById('vLB').hidden)buildLB()})}
+ au.onAuthStateChanged(FB.auth,function(u){FBU=u;paintUser();if(u){ensureUserCloudTokens(u);lbFlush();spSyncStart(u);}else{spSyncStop();}if(!document.getElementById('vLB').hidden)buildLB()})}
 function paintUser(){var u=FBU,soAll=document.querySelectorAll('.so');
  if(u){var p=getProfile();if(!p.name||p.name==='Explorer'||p.name==='Guest'){p.name=u.displayName||u.email.split('@')[0];saveProfile(p)}}
  applyProfileUI();
@@ -5241,11 +4614,10 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     setTimeout(function() {
       if (!sessionStorage.getItem('satpath_guest')) {
         if (typeof FBU === 'undefined' || !FBU) {
-          if (typeof openLandingScreen === 'function') openLandingScreen();
-          else openAuthScreen();
+          openAuthScreen();
         }
       }
-    }, 450);
+    }, 800);
   });
 
   var soBtns = document.querySelectorAll('.so');
@@ -5442,6 +4814,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         try {
           var tier = lvl === 'mix' ? (k % 2 === 0 ? 'hard' : 'medium') : (lvl === 'hard' ? 'hard' : (k % 3 ? 'easy' : 'medium'));
           q = getMathQ(ti, tier, (t * 23) + (m * 11) + k);
+
           if (q && (k % 4 === 1) && /^[-+]?\d+(\.\d+|\/\d+)?$/.test(String(q.ans).trim())) {
             q.isGrid = true;
           }
@@ -5926,432 +5299,3 @@ updateNavBadges();
 function spRenderIcons() { try { if (window.lucide) lucide.createIcons(); } catch (e) {} }
 spRenderIcons();
 window.addEventListener('load', spRenderIcons);
-
-/* ===== ANIMATED LANDING & MINI-TOUR (SATPATH STYLE) ===== */
-(function initSatPathLanding() {
-  if (document.getElementById('spLandingCss')) return;
-  var st = document.createElement('style');
-  st.id = 'spLandingCss';
-  st.textContent = `
-    .sp-lp-ov {
-      position: fixed; inset: 0; z-index: 245;
-      background: var(--bg);
-      background-image:
-        radial-gradient(circle at 18% 10%, rgba(34, 163, 129, 0.16), transparent 40%),
-        radial-gradient(circle at 84% 18%, rgba(245, 184, 46, 0.13), transparent 38%),
-        var(--topo-svg);
-      background-attachment: fixed;
-      color: var(--tx);
-      overflow-y: auto;
-      animation: fade .3s ease;
-    }
-    .sp-lp-nav {
-      position: sticky; top: 0; z-index: 10;
-      display: flex; align-items: center; justify-content: space-between; gap: 16px;
-      max-width: 1120px; margin: 0 auto; padding: 16px 24px;
-      background: color-mix(in srgb, var(--bg) 82%, transparent);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    }
-    .sp-lp-links { display: flex; align-items: center; gap: 22px; font-size: 13.5px; font-weight: 600; color: var(--mut); }
-    .sp-lp-links button:hover { color: var(--tx); }
-    .sp-lp-hero {
-      max-width: 1040px; margin: 0 auto; padding: 38px 24px 72px; text-align: center;
-    }
-    .sp-lp-badge {
-      display: inline-flex; align-items: center; gap: 7px;
-      padding: 6px 14px; border-radius: 99px;
-      background: var(--sand-bg); border: 1px solid var(--sand-line);
-      color: var(--sand); font-size: 11.5px; font-weight: 800;
-      letter-spacing: .08em; text-transform: uppercase; margin-bottom: 18px;
-      animation: up .45s ease backwards;
-    }
-    .sp-lp-h1 {
-      font-size: clamp(34px, 5.2vw, 56px); font-weight: 800; line-height: 1.08;
-      letter-spacing: -.035em; color: var(--tx); max-width: 780px; margin: 0 auto 16px;
-      animation: up .5s .06s ease backwards;
-    }
-    .sp-lp-h1 b { color: var(--acc); }
-    .sp-lp-sub {
-      font-size: 16px; line-height: 1.6; color: var(--mut);
-      max-width: 620px; margin: 0 auto 28px;
-      animation: up .5s .12s ease backwards;
-    }
-    .sp-lp-ctas {
-      display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
-      margin-bottom: 44px; animation: up .5s .18s ease backwards;
-    }
-    .sp-lp-ghost {
-      padding: 12px 22px; border-radius: 16px; font-weight: 700; font-size: 14px;
-      background: var(--panel); border: 1.5px solid var(--line); color: var(--tx);
-      box-shadow: 0 3px 0 var(--line); transition: .18s;
-    }
-    .sp-lp-ghost:hover { border-color: var(--acc); transform: translateY(-2px); }
-
-    .sp-lp-stage {
-      position: relative; max-width: 960px; margin: 0 auto;
-      background: var(--panel); border: 2px solid var(--line); border-radius: 28px;
-      box-shadow: 0 28px 70px -18px rgba(0,0,0,0.34), 0 5px 0 var(--line);
-      overflow: hidden; text-align: left;
-      animation: up .65s .22s ease backwards;
-    }
-    .sp-lp-stage::before {
-      content: ""; position: absolute; inset: -1px; pointer-events: none;
-      border-radius: 28px;
-      background: linear-gradient(135deg, rgba(34,163,129,0.14), transparent 35%, rgba(245,184,46,0.12));
-      opacity: .55;
-    }
-    .sp-lp-winbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 11px 18px; border-bottom: 1px solid var(--line); background: var(--panel2);
-      position: relative; z-index: 2;
-    }
-    .sp-lp-dots { display: flex; gap: 7px; }
-    .sp-lp-dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
-    .sp-lp-dots i:nth-child(1) { background: #f5b82e; }
-    .sp-lp-dots i:nth-child(2) { background: #22a381; }
-    .sp-lp-dots i:nth-child(3) { background: #38bdf8; }
-    .sp-lp-url {
-      font-size: 11.5px; font-weight: 700; color: var(--mut);
-      background: var(--panel); border: 1px solid var(--line);
-      padding: 4px 14px; border-radius: 99px;
-    }
-    .sp-lp-body {
-      display: grid; grid-template-columns: 205px 1fr; min-height: 410px; position: relative; z-index: 2;
-    }
-    .sp-lp-side {
-      background: var(--side); border-right: 1px solid var(--line); padding: 16px 12px;
-      display: flex; flex-direction: column; gap: 4px;
-    }
-    .sp-lp-sitem {
-      display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 12px;
-      font-size: 12.5px; font-weight: 700; color: var(--mut); transition: .22s; width: 100%;
-    }
-    .sp-lp-sitem:hover { background: var(--panel2); color: var(--tx); }
-    .sp-lp-sitem.on {
-      background: linear-gradient(90deg, rgba(34,163,129,0.18), var(--panel2));
-      color: var(--tx); box-shadow: inset 3px 0 0 var(--sand);
-    }
-    .sp-lp-view {
-      padding: 22px 24px; background: var(--bg); position: relative; overflow: hidden;
-    }
-    .sp-lp-scene { animation: spLpSceneIn .38s cubic-bezier(.2,.85,.3,1); }
-    @keyframes spLpSceneIn {
-      from { opacity: 0; transform: translateY(10px) scale(.99); }
-      to { opacity: 1; transform: none; }
-    }
-
-    .sp-lp-cursor {
-      position: absolute; left: 0; top: 0; z-index: 20; pointer-events: none;
-      transition: transform .75s cubic-bezier(.22, 1, .36, 1);
-      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.32));
-    }
-    .sp-lp-cursor.click svg { transform: scale(.86); transition: transform .14s; }
-    .sp-lp-ripple {
-      position: absolute; left: 2px; top: 2px; width: 22px; height: 22px; border-radius: 50%;
-      border: 2px solid var(--sand); opacity: 0; pointer-events: none;
-    }
-    .sp-lp-cursor.click .sp-lp-ripple { animation: spLpRipple .5s ease-out; }
-    @keyframes spLpRipple {
-      0% { transform: scale(.4); opacity: .95; }
-      100% { transform: scale(2.1); opacity: 0; }
-    }
-
-    .sp-lp-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
-    .sp-lp-kpi {
-      background: var(--panel); border: 1.5px solid var(--line); border-radius: 16px; padding: 13px 14px;
-    }
-    .sp-lp-kpi small { display: block; font-size: 10.5px; color: var(--mut); font-weight: 700; text-transform: uppercase; }
-    .sp-lp-kpi b { display: block; font-size: 24px; font-weight: 800; margin-top: 4px; color: var(--tx); }
-    .sp-lp-grid2 { display: grid; grid-template-columns: 1.1fr 1fr; gap: 12px; }
-    .sp-lp-panel {
-      background: var(--panel); border: 1.5px solid var(--line); border-radius: 18px; padding: 14px 16px;
-    }
-    .sp-lp-heat { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 10px; }
-    .sp-lp-heat i {
-      aspect-ratio: 1; border-radius: 5px; background: var(--cell);
-      animation: spLpPop .4s backwards;
-    }
-    .sp-lp-heat i.a1 { background: rgba(34,163,129,0.4); }
-    .sp-lp-heat i.a2 { background: #11676a; }
-    .sp-lp-heat i.a3 { background: #22a381; }
-    .sp-lp-heat i.a4 { background: var(--sand); }
-    @keyframes spLpPop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-    .sp-lp-prog-anim { animation: spLpGrow .9s cubic-bezier(.2,.8,.2,1) backwards; transform-origin: left; }
-    @keyframes spLpGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-
-    .sp-lp-feats {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-      max-width: 960px; margin: 28px auto 0; text-align: left;
-    }
-    .sp-lp-feat {
-      background: var(--panel); border: 1.5px solid var(--line); border-radius: 20px; padding: 16px;
-      box-shadow: 0 4px 0 var(--line);
-    }
-    .sp-lp-feat b { display: block; font-size: 14px; margin: 8px 0 4px; }
-    .sp-lp-feat p { font-size: 12.5px; color: var(--mut); line-height: 1.5; }
-
-    @media (max-width: 820px) {
-      .sp-lp-links { display: none; }
-      .sp-lp-body { grid-template-columns: 1fr; }
-      .sp-lp-side { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); }
-      .sp-lp-sitem { width: auto; white-space: nowrap; }
-      .sp-lp-kpis, .sp-lp-grid2 { grid-template-columns: 1fr; }
-      .sp-lp-feats { grid-template-columns: 1fr 1fr; }
-      .sp-lp-cursor { display: none; }
-    }
-    @media (max-width: 520px) {
-      .sp-lp-feats { grid-template-columns: 1fr; }
-    }
-  `;
-  document.head.appendChild(st);
-
-  window.openLandingScreen = function() {
-    if (document.getElementById('spLandingOv')) return;
-    if (typeof FBU !== 'undefined' && FBU) return;
-
-    var ov = document.createElement('div');
-    ov.id = 'spLandingOv';
-    ov.className = 'sp-lp-ov';
-
-    var slides = [
-      {
-        id: 'dash', label: 'Base Camp', ico: 'compass', url: 'satpath.online/base-camp', curY: 74,
-        render: function() {
-          var cells = [0,1,2,3,2,4,3, 1,3,4,2,3,1,0, 2,4,3,3,4,2,1];
-          return '<div class="sp-lp-scene">' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
-              '<div><small style="color:var(--sand);font-weight:800;font-size:10px;letter-spacing:.08em">BASE CAMP · ARCHIPELAGO</small><div style="font-size:19px;font-weight:800">Good morning, Explorer</div></div>' +
-              '<span class="hud-pill coin" style="padding:4px 10px;font-size:11.5px">' + IC_COIN_HTML + ' 420 PC</span>' +
-            '</div>' +
-            '<div class="sp-lp-kpis">' +
-              '<div class="sp-lp-kpi"><small>Estimated Score</small><b style="color:var(--acc)">1480</b><div class="bar" style="margin:8px 0 0"><div class="sp-lp-prog-anim" style="width:86%"></div></div></div>' +
-              '<div class="sp-lp-kpi"><small>Daily Streak</small><b style="color:var(--sand)">12 days</b><small style="margin-top:6px;text-transform:none">Math 760 · R&amp;W 720</small></div>' +
-              '<div class="sp-lp-kpi"><small>Accuracy</small><b>89%</b><small style="margin-top:6px;text-transform:none;color:var(--acc)">+140 pts this month</small></div>' +
-            '</div>' +
-            '<div class="sp-lp-grid2">' +
-              '<div class="sp-lp-panel">' +
-                '<b style="font-size:13px">Math &amp; R&amp;W Odyssey Trails</b>' +
-                '<div style="margin-top:10px;display:grid;gap:10px">' +
-                  '<div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px"><span>Linear Equations</span><b style="color:var(--acc)">5/5 ✓</b></div><div class="bar" style="margin:0"><div class="sp-lp-prog-anim" style="width:100%"></div></div></div>' +
-                  '<div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px"><span>Nonlinear Functions</span><b style="color:var(--sand)">3/5</b></div><div class="bar" style="margin:0"><div class="sp-lp-prog-anim" style="width:60%;background:var(--sand)"></div></div></div>' +
-                  '<div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px"><span>Words in Context</span><b style="color:var(--acc)">4/5</b></div><div class="bar" style="margin:0"><div class="sp-lp-prog-anim" style="width:80%"></div></div></div>' +
-                '</div>' +
-              '</div>' +
-              '<div class="sp-lp-panel">' +
-                '<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">Activity Heatmap</b><small style="color:var(--mut);font-size:11px">21 days</small></div>' +
-                '<div class="sp-lp-heat">' +
-                  cells.map(function(v, idx) {
-                    return '<i class="' + (v ? 'a' + v : '') + '" style="animation-delay:' + (idx * 28) + 'ms"></i>';
-                  }).join('') +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        }
-      },
-      {
-        id: 'atlas', label: 'Atlas', ico: 'layers', url: 'satpath.online/atlas', curY: 118,
-        render: function() {
-          var items = [
-            ['Algebra', 'Linear Systems', 3, '94%'],
-            ['Adv. Math', 'Quadratics & Parabolas', 3, '91%'],
-            ['Geometry', 'Right Triangles & Trig', 2, '76%'],
-            ['R&W Craft', 'Words in Context', 3, '88%']
-          ];
-          return '<div class="sp-lp-scene">' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
-              '<div><small style="color:var(--sand);font-weight:800;font-size:10px;letter-spacing:.08em">30 TOPIC ISLANDS</small><div style="font-size:19px;font-weight:800">Question Atlas &amp; Mastery Stars</div></div>' +
-              '<span class="arch-stars-pill" style="font-size:11.5px">★ 72 / 90 Stars</span>' +
-            '</div>' +
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
-              items.map(function(it, idx) {
-                var stars = '★'.repeat(it[2]) + '☆'.repeat(3 - it[2]);
-                return '<div class="sp-lp-panel" style="animation:up .35s ' + (idx * 70) + 'ms backwards;border-color:' + (it[2] === 3 ? 'var(--sand-line)' : 'var(--line)') + '">' +
-                  '<div style="display:flex;justify-content:space-between;align-items:center"><span class="tag" style="margin:0;font-size:9.5px">' + it[0] + '</span><span style="color:var(--sand);font-size:13px">' + stars + '</span></div>' +
-                  '<b style="display:block;font-size:14.5px;margin:10px 0 8px">' + it[1] + '</b>' +
-                  '<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut)"><span>Accuracy: <b style="color:var(--acc)">' + it[3] + '</b></span><span style="color:var(--sand);font-weight:800">+15 PC ›</span></div>' +
-                '</div>';
-              }).join('') +
-            '</div>' +
-          '</div>';
-        }
-      },
-      {
-        id: 'mocks', label: 'Mock Exams', ico: 'target', url: 'satpath.online/mock-exams', curY: 162,
-        render: function() {
-          return '<div class="sp-lp-scene">' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
-              '<div><small style="color:var(--sand);font-weight:800;font-size:10px;letter-spacing:.08em">BLUEBOOK SIMULATION</small><div style="font-size:19px;font-weight:800">8 Adaptive Full-Length Mocks</div></div>' +
-              '<span class="tag n" style="margin:0">DESMOS BUILT-IN</span>' +
-            '</div>' +
-            '<div class="sp-lp-panel" style="margin-bottom:12px">' +
-              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
-                '<b>Mock 01 · Coral Reef Expedition</b><span style="color:var(--sand);font-weight:800;font-size:13px">34:18 remaining</span>' +
-              '</div>' +
-              '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">' +
-                '<div style="background:var(--panel2);padding:10px;border-radius:12px;border:1.5px solid var(--acc)"><b style="color:var(--acc);display:block">R&amp;W 1</b><small style="color:var(--mut)">25/27 ✓</small></div>' +
-                '<div style="background:var(--panel2);padding:10px;border-radius:12px;border:1.5px solid var(--acc)"><b style="color:var(--acc);display:block">R&amp;W 2</b><small style="color:var(--sand)">Hard Track</small></div>' +
-                '<div style="background:var(--panel2);padding:10px;border-radius:12px;border:1.5px solid var(--sand)"><b style="color:var(--sand);display:block">Math 1</b><small style="color:var(--mut)">In Progress</small></div>' +
-                '<div style="background:var(--panel2);padding:10px;border-radius:12px;border:1px solid var(--line);opacity:.6"><b style="display:block">Math 2</b><small style="color:var(--mut)">Adaptive</small></div>' +
-              '</div>' +
-            '</div>' +
-            '<div class="sp-lp-panel" style="display:flex;justify-content:space-between;align-items:center;gap:12px">' +
-              '<div><b style="font-size:13.5px">Instant Vocab Highlighter &amp; Reference Sheet</b><div style="font-size:12px;color:var(--mut);margin-top:2px">Click any word in R&amp;W passages to save it, or open Desmos side-by-side.</div></div>' +
-              '<span class="tag" style="margin:0;white-space:nowrap">10m Break Timer</span>' +
-            '</div>' +
-          '</div>';
-        }
-      },
-      {
-        id: 'analytics', label: 'Analytics', ico: 'trend', url: 'satpath.online/analytics', curY: 206,
-        render: function() {
-          return '<div class="sp-lp-scene">' +
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
-              '<div><small style="color:var(--sand);font-weight:800;font-size:10px;letter-spacing:.08em">WEAKNESS COMMAND CENTER</small><div style="font-size:19px;font-weight:800">Score Trajectory vs. 1550 Goal</div></div>' +
-              '<span class="tag" style="margin:0;color:var(--sand);border-color:var(--sand-line)">+40 pts to Goal</span>' +
-            '</div>' +
-            '<div class="sp-lp-panel">' +
-              '<svg viewBox="0 0 520 155" style="width:100%;height:auto">' +
-                '<line x1="20" y1="30" x2="500" y2="30" stroke="var(--sand)" stroke-width="1.8" stroke-dasharray="6 4"/>' +
-                '<text x="496" y="22" text-anchor="end" fill="var(--sand)" font-size="10.5" font-weight="800">TARGET 1550</text>' +
-                '<path class="an-draw-path" d="M 30 130 C 120 120, 170 95, 250 82 C 330 68, 400 50, 485 38" fill="none" stroke="var(--acc)" stroke-width="3.5" stroke-linecap="round"/>' +
-                '<circle cx="30" cy="130" r="5" fill="var(--panel)" stroke="var(--acc)" stroke-width="3"/>' +
-                '<circle cx="250" cy="82" r="5" fill="var(--panel)" stroke="var(--acc)" stroke-width="3"/>' +
-                '<circle cx="485" cy="38" r="6" fill="var(--sand)" stroke="var(--panel)" stroke-width="2.5"/>' +
-                '<text x="30" y="148" fill="var(--mut)" font-size="10" font-weight="700">1120</text>' +
-                '<text x="240" y="102" fill="var(--tx)" font-size="10.5" font-weight="800">1340</text>' +
-                '<text x="470" y="58" fill="var(--acc)" font-size="11" font-weight="800">1510</text>' +
-              '</svg>' +
-            '</div>' +
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">' +
-              '<div class="sp-lp-panel" style="padding:11px 14px"><small style="color:var(--sand);font-weight:800;font-size:10px">TOP WEAK SPOT</small><b style="display:block;font-size:13px;margin-top:2px">Circle Equations (+25 pts)</b></div>' +
-              '<div class="sp-lp-panel" style="padding:11px 14px"><small style="color:var(--acc);font-weight:800;font-size:10px">MISTAKE LOG</small><b style="display:block;font-size:13px;margin-top:2px">Auto-saves missed Qs</b></div>' +
-            '</div>' +
-          '</div>';
-        }
-      }
-    ];
-
-    ov.innerHTML =
-      '<header class="sp-lp-nav">' +
-        '<div style="display:flex;align-items:center;gap:9px">' +
-          '<img src="logo.png" alt="SATPath" style="width:28px;height:28px;object-fit:contain">' +
-          '<span style="font-size:20px;font-weight:800;letter-spacing:-.02em">SAT<b style="color:var(--acc)">Path</b></span>' +
-        '</div>' +
-        '<nav class="sp-lp-links">' +
-          '<button type="button" data-lp-jump="0">Overview</button>' +
-          '<button type="button" data-lp-jump="1">Atlas</button>' +
-          '<button type="button" data-lp-jump="2">Mock Exams</button>' +
-          '<button type="button" data-lp-jump="3">Analytics</button>' +
-        '</nav>' +
-        '<div style="display:flex;align-items:center;gap:10px">' +
-          '<button type="button" id="spLpTheme" class="tbtn" title="Toggle theme">' + spSvg('sparkles', 15) + '</button>' +
-          '<button type="button" id="spLpTopStart" class="cta-amber" style="padding:9px 18px;font-size:13px;border-radius:14px">Start now →</button>' +
-        '</div>' +
-      '</header>' +
-
-      '<section class="sp-lp-hero">' +
-        '<div class="sp-lp-badge">' + spSvg('compass', 14) + ' DIGITAL SAT ARCHIPELAGO</div>' +
-        '<h1 class="sp-lp-h1">Your SAT prep, <b>finally charted.</b></h1>' +
-        '<p class="sp-lp-sub">SATPath turns your study routine into a connected island journey — 8 adaptive Bluebook-style mock exams, 30 topic islands, built-in Desmos, Mistake Log, and live analytics.</p>' +
-        '<div class="sp-lp-ctas">' +
-          '<button type="button" id="spLpMainStart" class="cta-amber" style="padding:14px 28px;font-size:15px">Start now →</button>' +
-          '<button type="button" id="spLpExplore" class="sp-lp-ghost">Explore the platform ↓</button>' +
-        '</div>' +
-
-        '<div class="sp-lp-stage" id="spLpStage">' +
-          '<div class="sp-lp-winbar">' +
-            '<div class="sp-lp-dots"><i></i><i></i><i></i></div>' +
-            '<div class="sp-lp-url" id="spLpUrl">satpath.online/base-camp</div>' +
-            '<div style="font-size:11px;font-weight:800;color:var(--acc)">● LIVE TOUR</div>' +
-          '</div>' +
-          '<div class="sp-lp-body">' +
-            '<div class="sp-lp-side" id="spLpSide">' +
-              slides.map(function(s, idx) {
-                return '<button type="button" class="sp-lp-sitem' + (idx === 0 ? ' on' : '') + '" data-lp-slide="' + idx + '">' +
-                  spSvg(s.ico, 15) + ' ' + s.label +
-                '</button>';
-              }).join('') +
-              '<div style="margin-top:auto;padding-top:14px;border-top:1px dashed var(--line);font-size:11px;color:var(--mut)">Click any tab to preview</div>' +
-            '</div>' +
-            '<div class="sp-lp-view" id="spLpView"></div>' +
-            '<div class="sp-lp-cursor" id="spLpCursor" style="transform:translate(135px, 74px)">' +
-              '<span class="sp-lp-ripple"></span>' +
-              '<svg width="24" height="24" viewBox="0 0 24 24" fill="var(--tx)" stroke="var(--panel)" stroke-width="1.6"><path d="M5 3l14 9-6.5 1.6L10 20 5 3z"/></svg>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-
-        '<div class="sp-lp-feats">' +
-          '<div class="sp-lp-feat"><span style="color:var(--acc)">' + spSvg('compass', 20) + '</span><b>Odyssey Paths</b><p>150 structured Math &amp; R&amp;W islands from theory to boss stages.</p></div>' +
-          '<div class="sp-lp-feat"><span style="color:var(--sand)">' + spSvg('target', 20) + '</span><b>8 Adaptive Mocks</b><p>Bluebook modules, 10-min break, Reference Sheet &amp; full Desmos.</p></div>' +
-          '<div class="sp-lp-feat"><span style="color:var(--acc)">' + spSvg('book', 20) + '</span><b>Vocab &amp; Mistake Log</b><p>Highlight passage words for 3D flashcards and auto-drill missed Qs.</p></div>' +
-          '<div class="sp-lp-feat"><span style="color:var(--sand)">' + spSvg('trend', 20) + '</span><b>Weakness Radar</b><p>Pinpoint exact topics costing you points against your target score.</p></div>' +
-        '</div>' +
-      '</section>';
-
-    document.body.appendChild(ov);
-
-    var curIdx = 0;
-    var viewEl = ov.querySelector('#spLpView');
-    var urlEl = ov.querySelector('#spLpUrl');
-    var curEl = ov.querySelector('#spLpCursor');
-    var timer = null;
-
-    function showSlide(idx, animateCursor) {
-      curIdx = idx;
-      var s = slides[idx];
-      ov.querySelectorAll('[data-lp-slide]').forEach(function(b) {
-        b.classList.toggle('on', +b.dataset.lpSlide === idx);
-      });
-      if (urlEl) urlEl.textContent = s.url;
-      if (viewEl) viewEl.innerHTML = s.render();
-      if (animateCursor && curEl) {
-        curEl.style.transform = 'translate(135px, ' + s.curY + 'px)';
-        setTimeout(function() {
-          curEl.classList.remove('click');
-          void curEl.offsetWidth;
-          curEl.classList.add('click');
-        }, 520);
-      }
-    }
-
-    function startAutoTour() {
-      clearInterval(timer);
-      timer = setInterval(function() {
-        if (!document.body.contains(ov)) { clearInterval(timer); return; }
-        showSlide((curIdx + 1) % slides.length, true);
-      }, 3600);
-    }
-
-    function goToAuth() {
-      clearInterval(timer);
-      ov.remove();
-      if (typeof openAuthScreen === 'function') openAuthScreen();
-    }
-
-    ov.querySelector('#spLpTopStart').onclick = goToAuth;
-    ov.querySelector('#spLpMainStart').onclick = goToAuth;
-    ov.querySelector('#spLpExplore').onclick = function() {
-      ov.querySelector('#spLpStage').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-    ov.querySelector('#spLpTheme').onclick = function() {
-      var r = document.documentElement, dk = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme:dark)').matches;
-      r.dataset.theme = dk ? 'light' : 'dark';
-    };
-    ov.querySelectorAll('[data-lp-slide]').forEach(function(b) {
-      b.onclick = function() { showSlide(+b.dataset.lpSlide, false); startAutoTour(); };
-    });
-    ov.querySelectorAll('[data-lp-jump]').forEach(function(b) {
-      b.onclick = function() {
-        showSlide(+b.dataset.lpJump, false);
-        ov.querySelector('#spLpStage').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        startAutoTour();
-      };
-    });
-
-    showSlide(0, false);
-    startAutoTour();
-  };
-})();
