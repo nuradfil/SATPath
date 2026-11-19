@@ -4813,15 +4813,8 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
         var q = null;
         try {
           var tier = lvl === 'mix' ? (k % 2 === 0 ? 'hard' : 'medium') : (lvl === 'hard' ? 'hard' : (k % 3 ? 'easy' : 'medium'));
-          var gensList = (typeof MATH_GENS !== 'undefined' && MATH_GENS[ti]) ? MATH_GENS[ti] : ((typeof GENERATORS !== 'undefined' && GENERATORS[ti]) ? GENERATORS[ti] : null);
-          if (gensList && gensList.length) {
-            var gIdx = ((t - 1) * 3 + (m - 1) * 2 + k) % gensList.length;
-            var raw = gensList[gIdx](tier);
-            if (raw && raw.q) q = raw;
-          }
-          if (!q) {
-            q = getMathQ(ti, tier, (t * 23) + (m * 11) + k);
-          }
+          q = getMathQ(ti, tier, (t * 23) + (m * 11) + k);
+
           if (q && (k % 4 === 1) && /^[-+]?\d+(\.\d+|\/\d+)?$/.test(String(q.ans).trim())) {
             q.isGrid = true;
           }
