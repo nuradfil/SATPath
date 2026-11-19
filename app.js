@@ -4137,7 +4137,17 @@ async function fbInit(){if(!FB_CONFIG||FB)return;
  var B='https://www.gstatic.com/firebasejs/10.12.2/';
  var a=await import(B+'firebase-app.js'),au=await import(B+'firebase-auth.js'),f=await import(B+'firebase-firestore.js');
  var app=a.initializeApp(FB_CONFIG);FB={auth:au.getAuth(app),db:f.getFirestore(app),au:au,fs:f};
- au.onAuthStateChanged(FB.auth,function(u){FBU=u;paintUser();if(u){ensureUserCloudTokens(u);lbFlush();spSyncStart(u);}else{spSyncStop();}if(!document.getElementById('vLB').hidden)buildLB()})}
+au.onAuthStateChanged(FB.auth,function(u){
+  FBU=u;
+  paintUser();
+  if(u){
+    var lov=document.getElementById('spLandingOv'); if(lov) lov.remove();
+    ensureUserCloudTokens(u); lbFlush(); spSyncStart(u);
+  } else {
+    spSyncStop();
+  }
+  if(!document.getElementById('vLB').hidden) buildLB();
+});
 function paintUser(){var u=FBU,soAll=document.querySelectorAll('.so');
  if(u){var p=getProfile();if(!p.name||p.name==='Explorer'||p.name==='Guest'){p.name=u.displayName||u.email.split('@')[0];saveProfile(p)}}
  applyProfileUI();
@@ -4614,7 +4624,7 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
     setTimeout(function() {
       if (!sessionStorage.getItem('satpath_guest')) {
         if (typeof FBU === 'undefined' || !FBU) {
-          openAuthScreen();
+          openLandingScreen();
         }
       }
     }, 800);
@@ -5291,7 +5301,437 @@ if(btnRw) btnRw.onclick = function(){ show('r'); };
   mark('d');
   updateNavBadges();
 })();
+/* ===== ANIMATED LANDING & MINI-TOUR (SATPATH STYLE) ===== */
+(function initSatPathLanding() {
+  if (document.getElementById('spLandingCss')) return;
+  var st = document.createElement('style');
+  st.id = 'spLandingCss';
+  st.textContent = `
+    .sp-lp-ov {
+      position: fixed; inset: 0; z-index: 245;
+      background: var(--bg);
+      background-image:
+        radial-gradient(circle at 18% 10%, rgba(34, 163, 129, 0.16), transparent 40%),
+        radial-gradient(circle at 84% 18%, rgba(245, 184, 46, 0.13), transparent 38%),
+        var(--topo-svg);
+      background-attachment: fixed;
+      color: var(--tx);
+      overflow-y: auto;
+      animation: fade .3s ease;
+    }
+    .sp-lp-nav {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      max-width: 1120px; margin: 0 auto; padding: 16px 24px;
+      background: color-mix(in srgb, var(--bg) 82%, transparent);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    }
+    .sp-lp-links { display: flex; align-items: center; gap: 22px; font-size: 13.5px; font-weight: 600; color: var(--mut); }
+    .sp-lp-links button:hover { color: var(--tx); }
+    .sp-lp-hero {
+      max-width: 1040px; margin: 0 auto; padding: 38px 24px 72px; text-align: center;
+    }
+    .sp-lp-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 6px 14px; border-radius: 99px;
+      background: var(--sand-bg); border: 1px solid var(--sand-line);
+      color: var(--sand); font-size: 11.5px; font-weight: 800;
+      letter-spacing: .08em; text-transform: uppercase; margin-bottom: 18px;
+      animation: up .45s ease backwards;
+    }
+    .sp-lp-h1 {
+      font-size: clamp(34px, 5.2vw, 56px); font-weight: 800; line-height: 1.08;
+      letter-spacing: -.035em; color: var(--tx); max-width: 780px; margin: 0 auto 16px;
+      animation: up .5s .06s ease backwards;
+    }
+    .sp-lp-h1 b { color: var(--acc); }
+    .sp-lp-sub {
+      font-size: 16px; line-height: 1.6; color: var(--mut);
+      max-width: 620px; margin: 0 auto 28px;
+      animation: up .5s .12s ease backwards;
+    }
+    .sp-lp-ctas {
+      display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 44px; animation: up .5s .18s ease backwards;
+    }
+    .sp-lp-ghost {
+      padding: 12px 22px; border-radius: 16px; font-weight: 700; font-size: 14px;
+      background: var(--panel); border: 1.5px solid var(--line); color: var(--tx);
+      box-shadow: 0 3px 0 var(--line); transition: .18s;
+    }
+    .sp-lp-ghost:hover { border-color: var(--acc); transform: translateY(-2px); }
 
+    /* Интерактивное анимированное окно-превью */
+    .sp-lp-stage {
+      position: relative; max-width: 960px; margin: 0 auto;
+      background: var(--panel); border: 2px solid var(--line); border-radius: 28px;
+      box-shadow: 0 28px 70px -18px rgba(0,0,0,0.34), 0 5px 0 var(--line);
+      overflow: hidden; text-align: left;
+      animation: up .65s .22s ease backwards;
+    }
+    .sp-lp-stage::before {
+      content: ""; position: absolute; inset: -1px; pointer-events: none;
+      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(34,163,129,0.14), transparent 35%, rgba(245,184,46,0.12));
+      opacity: .55;
+    }
+    .sp-lp-winbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 18px; border-bottom: 1px solid var(--line); background: var(--panel2);
+      position: relative; z-index: 2;
+    }
+    .sp-lp-dots { display: flex; gap: 7px; }
+    .sp-lp-dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
+    .sp-lp-dots i:nth-child(1) { background: #f5b82e; }
+    .sp-lp-dots i:nth-child(2) { background: #22a381; }
+    .sp-lp-dots i:nth-child(3) { background: #38bdf8; }
+    .sp-lp-url {
+      font-size: 11.5px; font-weight: 700; color: var(--mut);
+      background: var(--panel); border: 1px solid var(--line);
+      padding: 4px 14px; border-radius: 99px;
+    }
+    .sp-lp-body {
+      display: grid; grid-template-columns: 205px 1fr; min-height: 410px; position: relative; z-index: 2;
+    }
+    .sp-lp-side {
+      background: var(--side); border-right: 1px solid var(--line); padding: 16px 12px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .sp-lp-sitem {
+      display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 12px;
+      font-size: 12.5px; font-weight: 700; color: var(--mut); transition: .22s; width: 100%;
+    }
+    .sp-lp-sitem:hover { background: var(--panel2); color: var(--tx); }
+    .sp-lp-sitem.on {
+      background: linear-gradient(90deg, rgba(34,163,129,0.18), var(--panel2));
+      color: var(--tx); box-shadow: inset 3px 0 0 var(--sand);
+    }
+    .sp-lp-view {
+      padding: 22px 24px; background: var(--bg); position: relative; overflow: hidden;
+    }
+    .sp-lp-scene { animation: spLpSceneIn .38s cubic-bezier(.2,.85,.3,1); }
+    @keyframes spLpSceneIn {
+      from { opacity: 0; transform: translateY(10px) scale(.99); }
+      to { opacity: 1; transform: none; }
+    }
+
+    /* Анимированный курсор-указка */
+    .sp-lp-cursor {
+      position: absolute; left: 0; top: 0; z-index: 20; pointer-events: none;
+      transition: transform .75s cubic-bezier(.22, 1, .36, 1);
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.32));
+    }
+    .sp-lp-cursor.click svg { transform: scale(.86); transition: transform .14s; }
+    .sp-lp-ripple {
+      position: absolute; left: 2px; top: 2px; width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid var(--sand); opacity: 0; pointer-events: none;
+    }
+    .sp-lp-cursor.click .sp-lp-ripple { animation: spLpRipple .5s ease-out; }
+    @keyframes spLpRipple {
+      0% { transform: scale(.4); opacity: .95; }
+      100% { transform: scale(2.1); opacity: 0; }
+    }
+
+    /* Мини-виджеты внутри превью */
+    .sp-lp-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+    .sp-lp-kpi {
+      background: var(--panel); border: 1.5px solid var(--line); border-radius: 16px; padding: 13px 14px;
+    }
+    .sp-lp-kpi small { display: block; font-size: 10.5px; color: var(--mut); font-weight: 700; text-transform: uppercase; }
+    .sp-lp-kpi b { display: block; font-size: 24px; font-weight: 800; margin-top: 4px; color: var(--tx); }
+    .sp-lp-grid2 { display: grid; grid-template-columns: 1.1fr 1fr; gap: 12px; }
+    .sp-lp-panel {
+      background: var(--panel); border: 1.5px solid var(--line); border-radius: 18px; padding: 14px 16px;
+    }
+    .sp-lp-heat { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 10px; }
+    .sp-lp-heat i {
+      aspect-ratio: 1; border-radius: 5px; background: var(--cell);
+      animation: spLpPop .4s backwards;
+    }
+    .sp-lp-heat i.a1 { background: rgba(34,163,129,0.4); }
+    .sp-lp-heat i.a2 { background: #11676a; }
+    .sp-lp-heat i.a3 { background: #22a381; }
+    .sp-lp-heat i.a4 { background: var(--sand); }
+    @keyframes spLpPop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .sp-lp-prog-anim { animation: spLpGrow .9s cubic-bezier(.2,.8,.2,1) backwards; transform-origin: left; }
+    @keyframes spLpGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    .sp-lp-feats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+      max-width: 960px; margin: 28px auto 0; text-align: left;
+    }
+    .sp-lp-feat {
+      background: var(--panel); border: 1.5px solid var(--line); border-radius: 20px; padding: 16px;
+      box-shadow: 0 4px 0 var(--line);
+    }
+    .sp-lp-feat b { display: block; font-size: 14px; margin: 8px 0 4px; }
+    .sp-lp-feat p { font-size: 12.5px; color: var(--mut); line-height: 1.5; }
+
+    @media (max-width: 820px) {
+      .sp-lp-links { display: none; }
+      .sp-lp-body { grid-template-columns: 1fr; }
+      .sp-lp-side { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .sp-lp-sitem { width: auto; white-space: nowrap; }
+      .sp-lp-kpis, .sp-lp-grid2 { grid-template-columns: 1fr; }
+      .sp-lp-feats { grid-template-columns: 1fr 1fr; }
+      .sp-lp-cursor { display: none; }
+    }
+    @media (max-width: 520px) {
+      .sp-lp-feats { grid-template-columns: 1fr; }
+    }
+  `;
+  document.head.appendChild(st);
+
+  window.openLandingScreen = function() {
+    if (document.getElementById('spLandingOv')) return;
+    if (typeof FBU !== 'undefined' && FBU) return;
+
+    var ov = document.createElement('div');
+    ov.id = 'spLandingOv';
+    ov.className = 'sp-lp-ov';
+
+    var slides = [
+      {
+        id: 'dash', label: 'Base Camp', ico: 'compass', url: 'satpath.online/base-camp', curY: 74,
+        render: function() {
+          var cells = [0,1,2,3,2,4,3, 1,3,4,2,3,1,0, 2,4,3,3,4,2,1];
+          return '<div class="sp-lp-scene">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+              '<div><small style="color:var(--sand);font-weight:800;font-size:10px;letter-spacing:.08em">BASE CAMP · ARCHIPELAGO</small><div style="font-size:19px;font-weight:800">Good morning, Explorer</div></div>' +
+              '<span class="hud-pill coin" style="padding:4px 10px;font-size:11.5px">' + IC_COIN_HTML + ' 420 PC</span>' +
+            '</div>' +
+            '<div class="sp-lp-kpis">' +
+              '<div class="sp-lp-kpi"><small>Estimated Score</small><b style="color:var(--acc)">1480</b><div class="bar" style="margin:8px 0 0"><div class="sp-lp-prog-anim" style="width:86%"></div></div></div>' +
+              '<div class="sp-lp-kpi"><small>Daily Streak</small><b style="color:var(--sand)">12 days</b><small style="margin-top:6px;text-transform:none">Math 760 · R&amp;W 720</small></div>' +
+              '<div class="sp-lp-kpi"><small>Accuracy</small><b>89%</b><small style="margin-top:6px;text-transform:none;color:var(--acc)">+140 pts this month</small></div>' +
+            '</div>' +
+            '<div class="sp-lp-grid2">' +
+              '<div class="sp-lp-panel">' +
+                '<b style="font-size:13px">Math &amp; R&amp;W Odyssey Trails</b>' +
+                '<div style="margin-top:10px;display:grid;gap:10px">' +
+                  '<div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px"><span>Linear Equations</span><b style="color:var(--acc)">5/5 ✓</b></div><div class="bar" style="margin:0"><div class="sp-lp-prog-anim" style="width:100%"></div></div></div>' +
+                  '<div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px"><span>Nonlinear Functions</span><b style="color:var(--sand)">3/5</b></div><div class="bar" style="margin:0"><div class="sp-lp-prog-anim" style="width:60%;background:var(--sand)"></div></div></div>' +
+                  '<div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px"><span>Words in Context</span><b style="color:var(--acc)">4/5</b></div><div class="bar" style="margin:0"><div class="sp-lp-prog-anim" style="width:80%"></div></div></div>' +
+                '</div>' +
+              '</div>' +
+              '<div class="sp-lp-panel">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">Activity Heatmap</b><small style="color:var(--mut);font-size:11px">21 days</small></div>' +
+                '<div class="sp-lp-heat">' +
+                  cells.map(function(v, idx) {
+                    return '<i class="' + (v ? 'a' + v : '') + '" style="animation-delay:' + (idx * 28) + 'ms"></i>';
+                  }).join('') +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }
+      },
+      {
+        id: 'atlas', label: 'Atlas', ico: 'layers', url: 'satpath.online/atlas', curY: 118,
+        render: function() {
+          var items = [
+            ['Algebra', 'Linear Systems', 3, '94%'],
+            ['Adv. Math', 'Quadratics & Parabolas', 3, '91%'],
+            ['Geometry', 'Right Triangles & Trig', 2, '76%'],
+            ['R&W Craft', 'Words in Context', 3, '88%']
+          ];
+          return '<div class="sp-lp-scene">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+              '<div><small style="color:var(--sand);font-weight:800;font-size:10px;letter-spacing:.08em">30 TOPIC ISLANDS</small><div style="font-size:19px;font-weight:800">Question Atlas &amp; Mastery Stars</div></div>' +
+              '<span class="arch-stars-pill" style="font-size:11.5px">★ 72 / 90 Stars</span>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+              items.map(function(it, idx) {
+                var stars = '★'.repeat(it[2]) + '☆'.repeat(3 - it[2]);
+                return '<div class="sp-lp-panel" style="animation:up .35s ' + (idx * 70) + 'ms backwards;border-color:' + (it[2] === 3 ? 'var(--sand-line)' : 'var(--line)') + '">' +
+                  '<div style="display:flex;justify-content:space-between;align-items:center"><span class="tag" style="margin:0;font-size:9.5px">' + it[0] + '</span><span style="color:var(--sand);font-size:13px">' + stars + '</span></div>' +
+                  '<b style="display:block;font-size:14.5px;margin:10px 0 8px">' + it[1] + '</b>' +
+                  '<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut)"><span>Accuracy: <b style="color:var(--acc)">' + it[3] + '</b></span><span style="color:var(--sand);font-weight:800">+15 PC ›</span></div>' +
+                '</div>';
+              }).join('') +
+            '</div>' +
+          '</div>';
+        }
+      },
+      {
+        id: 'mocks', label: 'Mock Exams', ico: 'target', url: 'satpath.online/mock-exams', curY: 162,
+        render: function() {
+          return '<div class="sp-lp-scene">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+              '<div><small style="color:var(--sand);font-weight:800;font-size:10px;letter-spacing:.08em">BLUEBOOK SIMULATION</small><div style="font-size:19px;font-weight:800">8 Adaptive Full-Length Mocks</div></div>' +
+              '<span class="tag n" style="margin:0">DESMOS BUILT-IN</span>' +
+            '</div>' +
+            '<div class="sp-lp-panel" style="margin-bottom:12px">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+                '<b>Mock 01 · Coral Reef Expedition</b><span style="color:var(--sand);font-weight:800;font-size:13px">34:18 remaining</span>' +
+              '</div>' +
+              '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">' +
+                '<div style="background:var(--panel2);padding:10px;border-radius:12px;border:1.5px solid var(--acc)"><b style="color:var(--acc);display:block">R&amp;W 1</b><small style="color:var(--mut)">25/27 ✓</small></div>' +
+                '<div style="background:var(--panel2);padding:10px;border-radius:12px;border:1.5px solid var(--acc)"><b style="color:var(--acc);display:block">R&amp;W 2</b><small style="color:var(--sand)">Hard Track</small></div>' +
+                '<div style="background:var(--panel2);padding:10px;border-radius:12px;border:1.5px solid var(--sand)"><b style="color:var(--sand);display:block">Math 1</b><small style="color:var(--mut)">In Progress</small></div>' +
+                '<div style="background:var(--panel2);padding:10px;border-radius:12px;border:1px solid var(--line);opacity:.6"><b style="display:block">Math 2</b><small style="color:var(--mut)">Adaptive</small></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="sp-lp-panel" style="display:flex;justify-content:space-between;align-items:center;gap:12px">' +
+              '<div><b style="font-size:13.5px">Instant Vocab Highlighter &amp; Reference Sheet</b><div style="font-size:12px;color:var(--mut);margin-top:2px">Click any word in R&amp;W passages to save it, or open Desmos side-by-side.</div></div>' +
+              '<span class="tag" style="margin:0;white-space:nowrap">10m Break Timer</span>' +
+            '</div>' +
+          '</div>';
+        }
+      },
+      {
+        id: 'analytics', label: 'Analytics', ico: 'trend', url: 'satpath.online/analytics', curY: 206,
+        render: function() {
+          return '<div class="sp-lp-scene">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">' +
+              '<div><small style="color:var(--sand);font-weight:800;font-size:10px;letter-spacing:.08em">WEAKNESS COMMAND CENTER</small><div style="font-size:19px;font-weight:800">Score Trajectory vs. 1550 Goal</div></div>' +
+              '<span class="tag" style="margin:0;color:var(--sand);border-color:var(--sand-line)">+40 pts to Goal</span>' +
+            '</div>' +
+            '<div class="sp-lp-panel">' +
+              '<svg viewBox="0 0 520 155" style="width:100%;height:auto">' +
+                '<line x1="20" y1="30" x2="500" y2="30" stroke="var(--sand)" stroke-width="1.8" stroke-dasharray="6 4"/>' +
+                '<text x="496" y="22" text-anchor="end" fill="var(--sand)" font-size="10.5" font-weight="800">TARGET 1550</text>' +
+                '<path class="an-draw-path" d="M 30 130 C 120 120, 170 95, 250 82 C 330 68, 400 50, 485 38" fill="none" stroke="var(--acc)" stroke-width="3.5" stroke-linecap="round"/>' +
+                '<circle cx="30" cy="130" r="5" fill="var(--panel)" stroke="var(--acc)" stroke-width="3"/>' +
+                '<circle cx="250" cy="82" r="5" fill="var(--panel)" stroke="var(--acc)" stroke-width="3"/>' +
+                '<circle cx="485" cy="38" r="6" fill="var(--sand)" stroke="var(--panel)" stroke-width="2.5"/>' +
+                '<text x="30" y="148" fill="var(--mut)" font-size="10" font-weight="700">1120</text>' +
+                '<text x="240" y="102" fill="var(--tx)" font-size="10.5" font-weight="800">1340</text>' +
+                '<text x="470" y="58" fill="var(--acc)" font-size="11" font-weight="800">1510</text>' +
+              '</svg>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">' +
+              '<div class="sp-lp-panel" style="padding:11px 14px"><small style="color:var(--sand);font-weight:800;font-size:10px">TOP WEAK SPOT</small><b style="display:block;font-size:13px;margin-top:2px">Circle Equations (+25 pts)</b></div>' +
+              '<div class="sp-lp-panel" style="padding:11px 14px"><small style="color:var(--acc);font-weight:800;font-size:10px">MISTAKE LOG</small><b style="display:block;font-size:13px;margin-top:2px">Auto-saves missed Qs</b></div>' +
+            '</div>' +
+          '</div>';
+        }
+      }
+    ];
+
+    ov.innerHTML =
+      '<header class="sp-lp-nav">' +
+        '<div style="display:flex;align-items:center;gap:9px">' +
+          '<img src="logo.png" alt="SATPath" style="width:28px;height:28px;object-fit:contain">' +
+          '<span style="font-size:20px;font-weight:800;letter-spacing:-.02em">SAT<b style="color:var(--acc)">Path</b></span>' +
+        '</div>' +
+        '<nav class="sp-lp-links">' +
+          '<button type="button" data-lp-jump="0">Overview</button>' +
+          '<button type="button" data-lp-jump="1">Atlas</button>' +
+          '<button type="button" data-lp-jump="2">Mock Exams</button>' +
+          '<button type="button" data-lp-jump="3">Analytics</button>' +
+        '</nav>' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<button type="button" id="spLpTheme" class="tbtn" title="Toggle theme">' + spSvg('sparkles', 15) + '</button>' +
+          '<button type="button" id="spLpTopStart" class="cta-amber" style="padding:9px 18px;font-size:13px;border-radius:14px">Start now →</button>' +
+        '</div>' +
+      '</header>' +
+
+      '<section class="sp-lp-hero">' +
+        '<div class="sp-lp-badge">' + spSvg('compass', 14) + ' DIGITAL SAT ARCHIPELAGO</div>' +
+        '<h1 class="sp-lp-h1">Your SAT prep, <b>finally charted.</b></h1>' +
+        '<p class="sp-lp-sub">SATPath turns your study routine into a connected island journey — 8 adaptive Bluebook-style mock exams, 30 topic islands, built-in Desmos, Mistake Log, and live analytics.</p>' +
+        '<div class="sp-lp-ctas">' +
+          '<button type="button" id="spLpMainStart" class="cta-amber" style="padding:14px 28px;font-size:15px">Start now →</button>' +
+          '<button type="button" id="spLpExplore" class="sp-lp-ghost">Explore the platform ↓</button>' +
+        '</div>' +
+
+        '<div class="sp-lp-stage" id="spLpStage">' +
+          '<div class="sp-lp-winbar">' +
+            '<div class="sp-lp-dots"><i></i><i></i><i></i></div>' +
+            '<div class="sp-lp-url" id="spLpUrl">satpath.online/base-camp</div>' +
+            '<div style="font-size:11px;font-weight:800;color:var(--acc)">● LIVE TOUR</div>' +
+          '</div>' +
+          '<div class="sp-lp-body">' +
+            '<div class="sp-lp-side" id="spLpSide">' +
+              slides.map(function(s, idx) {
+                return '<button type="button" class="sp-lp-sitem' + (idx === 0 ? ' on' : '') + '" data-lp-slide="' + idx + '">' +
+                  spSvg(s.ico, 15) + ' ' + s.label +
+                '</button>';
+              }).join('') +
+              '<div style="margin-top:auto;padding-top:14px;border-top:1px dashed var(--line);font-size:11px;color:var(--mut)">Click any tab to preview</div>' +
+            '</div>' +
+            '<div class="sp-lp-view" id="spLpView"></div>' +
+            '<div class="sp-lp-cursor" id="spLpCursor" style="transform:translate(135px, 74px)">' +
+              '<span class="sp-lp-ripple"></span>' +
+              '<svg width="24" height="24" viewBox="0 0 24 24" fill="var(--tx)" stroke="var(--panel)" stroke-width="1.6"><path d="M5 3l14 9-6.5 1.6L10 20 5 3z"/></svg>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="sp-lp-feats">' +
+          '<div class="sp-lp-feat"><span style="color:var(--acc)">' + spSvg('compass', 20) + '</span><b>Odyssey Paths</b><p>150 structured Math &amp; R&amp;W islands from theory to boss stages.</p></div>' +
+          '<div class="sp-lp-feat"><span style="color:var(--sand)">' + spSvg('target', 20) + '</span><b>8 Adaptive Mocks</b><p>Bluebook modules, 10-min break, Reference Sheet &amp; full Desmos.</p></div>' +
+          '<div class="sp-lp-feat"><span style="color:var(--acc)">' + spSvg('book', 20) + '</span><b>Vocab &amp; Mistake Log</b><p>Highlight passage words for 3D flashcards and auto-drill missed Qs.</p></div>' +
+          '<div class="sp-lp-feat"><span style="color:var(--sand)">' + spSvg('trend', 20) + '</span><b>Weakness Radar</b><p>Pinpoint exact topics costing you points against your target score.</p></div>' +
+        '</div>' +
+      '</section>';
+
+    document.body.appendChild(ov);
+
+    var curIdx = 0;
+    var viewEl = ov.querySelector('#spLpView');
+    var urlEl = ov.querySelector('#spLpUrl');
+    var curEl = ov.querySelector('#spLpCursor');
+    var timer = null;
+
+    function showSlide(idx, animateCursor) {
+      curIdx = idx;
+      var s = slides[idx];
+      ov.querySelectorAll('[data-lp-slide]').forEach(function(b) {
+        b.classList.toggle('on', +b.dataset.lpSlide === idx);
+      });
+      if (urlEl) urlEl.textContent = s.url;
+      if (viewEl) viewEl.innerHTML = s.render();
+      if (animateCursor && curEl) {
+        curEl.style.transform = 'translate(135px, ' + s.curY + 'px)';
+        setTimeout(function() {
+          curEl.classList.remove('click');
+          void curEl.offsetWidth;
+          curEl.classList.add('click');
+        }, 520);
+      }
+    }
+
+    function startAutoTour() {
+      clearInterval(timer);
+      timer = setInterval(function() {
+        if (!document.body.contains(ov)) { clearInterval(timer); return; }
+        showSlide((curIdx + 1) % slides.length, true);
+      }, 3600);
+    }
+
+    function goToAuth() {
+      clearInterval(timer);
+      ov.remove();
+      if (typeof openAuthScreen === 'function') openAuthScreen();
+    }
+
+    ov.querySelector('#spLpTopStart').onclick = goToAuth;
+    ov.querySelector('#spLpMainStart').onclick = goToAuth;
+    ov.querySelector('#spLpExplore').onclick = function() {
+      ov.querySelector('#spLpStage').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    ov.querySelector('#spLpTheme').onclick = function() {
+      var r = document.documentElement, dk = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme:dark)').matches;
+      r.dataset.theme = dk ? 'light' : 'dark';
+    };
+    ov.querySelectorAll('[data-lp-slide]').forEach(function(b) {
+      b.onclick = function() { showSlide(+b.dataset.lpSlide, false); startAutoTour(); };
+    });
+    ov.querySelectorAll('[data-lp-jump]').forEach(function(b) {
+      b.onclick = function() {
+        showSlide(+b.dataset.lpJump, false);
+        ov.querySelector('#spLpStage').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        startAutoTour();
+      };
+    });
+
+    showSlide(0, false);
+    startAutoTour();
+  };
+})();
 applyProfileUI();
 refreshDash();
 initDailyChallenges();
