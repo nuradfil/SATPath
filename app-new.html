@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B0D14">
+<title>SATPath — Digital SAT preparation</title>
+<link rel="icon" type="image/png" href="logo.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<!-- Тема применяется ДО первой отрисовки, чтобы не было вспышки -->
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('satpath_theme_v2');
+    var dark = t ? t === 'dark' : true;           // Dark Mode по умолчанию
+    document.documentElement.classList.toggle('dark', dark);
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', dark ? '#0B0D14' : '#F6F7FB');
+  } catch (e) {}
+})();
+</script>
+
+<!-- Tailwind CSS (CDN) + дизайн-токены -->
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+      },
+      colors: {
+        canvas:  'rgb(var(--c-canvas) / <alpha-value>)',   // фон страницы
+        surface: 'rgb(var(--c-surface) / <alpha-value>)',  // карточки, сайдбар, модалки
+        raised:  'rgb(var(--c-raised) / <alpha-value>)',   // hover / вторичные элементы
+        accent: {
+          DEFAULT: 'rgb(var(--c-accent) / <alpha-value>)',
+          hover:   'rgb(var(--c-accent-hover) / <alpha-value>)'
+        },
+        success: 'rgb(var(--c-success) / <alpha-value>)',
+        danger:  'rgb(var(--c-danger) / <alpha-value>)',
+        hl:      'rgb(var(--c-hl) / <alpha-value>)',       // Highlights & Notes (янтарный)
+        ink: {
+          DEFAULT: 'rgb(var(--c-ink) / <alpha-value>)',       // основной текст
+          soft:    'rgb(var(--c-ink-soft) / <alpha-value>)',  // вторичный
+          mute:    'rgb(var(--c-ink-mute) / <alpha-value>)'   // приглушённый
+        }
+      },
+      borderColor: { DEFAULT: 'var(--c-hairline)' }          // hairline вместо теней
+    }
+  }
+};
+</script>
+
+<style>
+/* ===================== ДИЗАЙН-ТОКЕНЫ ===================== */
+/* Light Mode */
+:root {
+  --c-canvas: 246 247 251;
+  --c-surface: 255 255 255;
+  --c-raised: 238 240 246;
+  --c-hairline: rgba(15, 23, 42, 0.10);
+  --c-accent: 59 130 246;          /* #3B82F6 */
+  --c-accent-hover: 37 99 235;     /* #2563EB */
+  --c-success: 16 185 129;         /* #10B981 */
+  --c-danger: 239 68 68;           /* #EF4444 */
+  --c-hl: 245 158 11;              /* #F59E0B */
+  --c-ink: 15 23 42;
+  --c-ink-soft: 91 98 114;
+  --c-ink-mute: 120 127 142;
+  --heat-0: rgba(15, 23, 42, 0.06);
+}
+/* Dark Mode (по умолчанию) */
+.dark {
+  --c-canvas: 11 13 20;            /* #0B0D14 */
+  --c-surface: 19 22 32;           /* #131620 */
+  --c-raised: 28 32 48;            /* #1C2030 */
+  --c-hairline: rgba(255, 255, 255, 0.08);
+  --c-ink: 248 250 252;            /* #F8FAFC */
+  --c-ink-soft: 138 143 152;       /* #8A8F98 */
+  --c-ink-mute: 82 88 102;         /* #525866 */
+  --heat-0: rgba(255, 255, 255, 0.05);
+}
+
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
+body {
+  margin: 0;
+  background: rgb(var(--c-canvas));
+  color: rgb(var(--c-ink));
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+[hidden] { display: none !important; }
+.num { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+/* ===================== КОМПОНЕНТЫ ===================== */
+.card {
+  background: rgb(var(--c-surface));
+  border: 1px solid var(--c-hairline);
+  border-radius: 16px;
+  transition: border-color .2s, transform .2s, background .2s;
+}
+.card-link:hover { border-color: rgb(var(--c-accent) / .45); transform: translateY(-2px); }
+.card-link:active { transform: translateY(0); }
+
+.icon-btn {
+  place-items: center; width: 36px; height: 36px; border-radius: 10px;
+  color: rgb(var(--c-ink-soft)); transition: background .15s, color .15s;
+}
+.icon-btn:hover { background: rgb(var(--c-raised)); color: rgb(var(--c-ink)); }
+.icon-btn:focus-visible, .nav-item:focus-visible, .btn-pill:focus-visible { outline: 2px solid rgb(var(--c-accent) / .7); outline-offset: 2px; }
+
+.kpi-label { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 500; color: rgb(var(--c-ink-soft)); }
+
+.btn-pill {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; padding: 0 22px; border-radius: 9999px;
+  background: rgb(var(--c-accent)); color: #fff; font-weight: 600; font-size: 14px;
+  transition: background .15s, transform .15s, box-shadow .15s;
+}
+.btn-pill:hover { background: rgb(var(--c-accent-hover)); box-shadow: 0 6px 20px rgb(var(--c-accent) / .30); }
+.btn-pill:active { transform: scale(.98); }
+.btn-pill svg { transition: transform .2s; }
+.btn-pill:hover svg { transform: translateX(3px); }
+
+/* Сайдбар */
+.nav-item[aria-current="page"] { background: rgb(var(--c-raised)); color: rgb(var(--c-ink)); }
+.nav-item[aria-current="page"]::before {
+  content: ""; position: absolute; left: -12px; top: 10px; bottom: 10px; width: 3px;
+  border-radius: 0 3px 3px 0; background: rgb(var(--c-accent));
+}
+.nav-item[aria-current="page"] svg { color: rgb(var(--c-accent)); }
+
+.theme-seg button { display: flex; flex: 1; align-items: center; justify-content: center; gap: 6px; height: 32px; border-radius: 8px; font-size: 12.5px; font-weight: 500; color: rgb(var(--c-ink-soft)); transition: background .15s, color .15s; }
+.theme-seg button[aria-pressed="true"] { background: rgb(var(--c-surface)); color: rgb(var(--c-ink)); box-shadow: 0 0 0 1px var(--c-hairline); }
+
+/* Макет: сайдбар 240px / свёрнутый 72px */
+#app { --side-w: 240px; }
+#app[data-collapsed="true"] { --side-w: 72px; }
+#sidebar { width: var(--side-w); transition: width .2s ease, transform .25s ease; }
+#main { min-height: 100vh; min-height: 100dvh; }
+@media (min-width: 768px) {
+  #main { padding-left: var(--side-w); transition: padding-left .2s ease; }
+  #app[data-collapsed="true"] .sb-label,
+  #app[data-collapsed="true"] .sb-meta { display: none; }
+  #app[data-collapsed="true"] .sb-group { font-size: 0; height: 1px; margin: 12px 12px; padding: 0; background: var(--c-hairline); }
+  #app[data-collapsed="true"] .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+  #app[data-collapsed="true"] .nav-badge { position: absolute; top: 4px; right: 8px; min-width: 16px; height: 16px; font-size: 10px; padding: 0 4px; }
+  #app[data-collapsed="true"] .theme-seg button[aria-pressed="true"] { display: none; }
+  #app[data-collapsed="true"] .theme-seg { background: transparent; padding: 0; }
+  #app[data-collapsed="true"] .user-row { justify-content: center; }
+}
+@media (max-width: 767px) {
+  #sidebar { width: 280px; transform: translateX(-100%); }
+  #app[data-drawer="open"] #sidebar { transform: none; box-shadow: 0 0 60px rgba(0, 0, 0, .5); }
+  #main { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+}
+/* Полноэкранный режим (Solver, экзамен): без сайдбара и шапок */
+#app[data-layout="full"] #sidebar,
+#app[data-layout="full"] #topbar,
+#app[data-layout="full"] #bottombar,
+#app[data-layout="full"] #scrim { display: none; }
+#app[data-layout="full"] #main { padding: 0; }
+
+/* Heatmap */
+.hm { display: block; width: 100%; aspect-ratio: 1 / 1; padding: 0; border: 0; border-radius: 4px; background: var(--heat-0); cursor: default; transition: outline-color .12s; outline: 1.5px solid transparent; outline-offset: 1px; }
+.hm:hover { outline-color: rgb(var(--c-ink) / .55); }
+.hm-1 { background: rgb(var(--c-accent) / .25); }
+.hm-2 { background: rgb(var(--c-accent) / .45); }
+.hm-3 { background: rgb(var(--c-accent) / .70); }
+.hm-4 { background: rgb(var(--c-accent)); }
+.hm-today { outline-color: rgb(var(--c-accent)); }
+.hm-void { visibility: hidden; }
+
+/* Анимации */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .45s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i, 0) * 55ms); }
+@keyframes toastin { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgb(var(--c-ink) / .12); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-ink) / .22); background-clip: padding-box; border: 2px solid transparent; }
+</style>
+
+<!-- Lucide Icons (CDN) -->
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+<div id="app"></div>
+<noscript><p style="padding:24px">SATPath requires JavaScript.</p></noscript>
+
+<!-- Подключай новые экраны ПОСЛЕ shell.js, например:
+<script src="question-bank.js"></script> -->
+<script src="shell.js"></script>
+<script src="dataAdapter.js"></script>
+<script src="firebaseAdapter.js"></script>
+<script src="leaderboard.js"></script>
+<script src="profile.js"></script>
+<script src="question-bank.js"></script>
+<script src="review.js"></script>
+<script src="highlighter.js"></script>
+<script src="solver.js"></script>
+<script src="practice-tests.js"></script>
+<script src="metrics.js"></script>
+<script src="vocabulary.js"></script>
+<script src="blitz.js"></script>
+</body>
+</html>
