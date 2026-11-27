@@ -37,6 +37,8 @@
   const NAV = [
     { group: 'Prep', items: [
       { id: 'dashboard',      label: 'Dashboard',      icon: 'layout-dashboard' },
+      { id: 'study-planner', label: 'Study Planner', icon: 'calendar-range' },
+      { id: 'islands', label: 'Learning Path', icon: 'map' },
       { id: 'question-bank',  label: 'Question Bank',  icon: 'library-big' },
       { id: 'leaderboard',    label: 'Leaderboard',    icon: 'trophy' },
             { id: 'vocabulary',     label: 'Vocabulary',     icon: 'book-open', badge: true }
